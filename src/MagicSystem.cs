@@ -56,6 +56,7 @@ namespace TheWitheringArt
             if (Campaign.Current == null || Mission.Current != null) return;
             MagicInputHandler.Tick(inMission: false);
             ActiveEffectManager.MapTick(dt);
+            SpellEffects.TickAuraOfHate();
         }
     }
 
@@ -168,19 +169,19 @@ namespace TheWitheringArt
                 Flavour="The formulas do not live in your mind. They live in your blood. This is simply the act of listening." },
 
             // ── ATTRIBUTE ────────────────────────────────────────────────
-            new SpellEntry { Name="Push",         Combo="UDDD",    DayCost=8,  BookTag="PUSH",
+            new SpellEntry { Name="Push",         Combo="UDD",     DayCost=8,  BookTag="PUSH",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=3,
                 LearnHint="Requires 3 Intelligence",
                 Flavour="The void presses outward from a point behind your eyes. Everything not anchored moves." },
 
-            new SpellEntry { Name="Vortex",       Combo="DUUU",    DayCost=8,  BookTag="VORTEX",
+            new SpellEntry { Name="Vortex",       Combo="DUU",     DayCost=8,  BookTag="VORTEX",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=3,
                 LearnHint="Requires 3 Intelligence",
                 Flavour="The same force, turned inward. You become the heaviest thing on the field." },
 
-            new SpellEntry { Name="Blast",        Combo="DRU",     DayCost=15, BookTag="BLAST",
+            new SpellEntry { Name="Blast",        Combo="DRUL",    DayCost=15, BookTag="BLAST",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=4,
                 LearnHint="Requires 4 Intelligence",
@@ -274,6 +275,12 @@ namespace TheWitheringArt
                 LearnHint="Visit the Aserai village while friendly",
                 Flavour="You are not lying. You are simply allowing them to believe what is convenient." },
 
+            new SpellEntry { Name="Sinister Will", Combo="RRLDR",  DayCost=25, BookTag="SINISTER_WILL",
+                Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
+                LearnHow=LearnHow.Travel, LordFaction="aserai",
+                LearnHint="Visit the Aserai village while friendly",
+                Flavour="The land does not resist you. It simply forgets how to produce." },
+
             new SpellEntry { Name="Severe Life",  Combo="UUDDRL",  DayCost=45, BookTag="SEVERE_LIFE",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Travel, LordFaction="aserai",
@@ -354,6 +361,18 @@ namespace TheWitheringArt
                 LearnHow=LearnHow.MageLord, LordFaction="empire",
                 LearnHint="Kill or befriend an Empire Mage Lord",
                 Flavour="You are there. They are here. Neither of you chose this." },
+
+            new SpellEntry { Name="Calling",      Combo="UURLDR",  DayCost=50, BookTag="CALLING",
+                Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
+                LearnHow=LearnHow.MageLord, LordFaction="empire",
+                LearnHint="Kill or befriend an Empire Mage Lord",
+                Flavour="The call carries further than a voice. Those who hear it do not know why they march." },
+
+            new SpellEntry { Name="Aura of Hate", Combo="RDDLL",   DayCost=25, BookTag="AURA_OF_HATE",
+                Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
+                LearnHow=LearnHow.MageLord, LordFaction="aserai",
+                LearnHint="Kill or befriend an Aserai or Khuzait Mage Lord",
+                Flavour="They see your intent. They see what you will do to them. They choose not to stop you anyway." },
 
             new SpellEntry { Name="Hollow Name",  Combo="RDDR",    DayCost=20, BookTag="HOLLOW_NAME",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
@@ -574,17 +593,18 @@ namespace TheWitheringArt
 
                 bool conditionMet;
                 string siteName = "";
-                if      (s.BookTag == "REJUVENATE")  { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
-                else if (s.BookTag == "FEATHERFALL") { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
-                else if (s.BookTag == "MENDING")     { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
-                else if (s.BookTag == "CHARM")       { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
-                else if (s.BookTag == "SEVERE_LIFE") { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
-                else if (s.BookTag == "HURL")        { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
-                else if (s.BookTag == "CLAIRVOYANCE"){ conditionMet = HasVisitedEmpire;     siteName = SiteEmpire; }
-                else if (s.BookTag == "RELOCATE")    { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
-                else if (s.BookTag == "PACIFY")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
-                else if (s.BookTag == "WEIGHTLESS")  { conditionMet = HasVisitedKhuzait;    siteName = SiteKhuzait; }
-                else                                 { conditionMet = false; }
+                if      (s.BookTag == "REJUVENATE")    { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
+                else if (s.BookTag == "FEATHERFALL")  { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
+                else if (s.BookTag == "MENDING")       { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
+                else if (s.BookTag == "CHARM")         { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
+                else if (s.BookTag == "SINISTER_WILL") { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
+                else if (s.BookTag == "SEVERE_LIFE")   { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
+                else if (s.BookTag == "HURL")          { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
+                else if (s.BookTag == "CLAIRVOYANCE")  { conditionMet = HasVisitedEmpire;     siteName = SiteEmpire; }
+                else if (s.BookTag == "RELOCATE")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
+                else if (s.BookTag == "PACIFY")        { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
+                else if (s.BookTag == "WEIGHTLESS")    { conditionMet = HasVisitedKhuzait;    siteName = SiteKhuzait; }
+                else                                   { conditionMet = false; }
 
                 if (conditionMet)
                 {
@@ -689,6 +709,8 @@ namespace TheWitheringArt
                     {
                         if (s.LordFaction == "battania" && !string.IsNullOrEmpty(SiteBattania))
                             hint = $"Visit {SiteBattania} (Battania) — friendly relations required";
+                        else if ((s.BookTag == "CHARM" || s.BookTag == "SINISTER_WILL") && !string.IsNullOrEmpty(SiteAserai))
+                            hint = $"Visit {SiteAserai} (Aserai) — friendly relations required";
                         else if (s.LordFaction == "aserai" && !string.IsNullOrEmpty(SiteAserai))
                             hint = $"Visit {SiteAserai} (Aserai) — friendly relations required";
                         else if (s.BookTag == "SEVERE_LIFE" && !string.IsNullOrEmpty(SiteAseraiCity))
@@ -1462,7 +1484,8 @@ namespace TheWitheringArt
             var teachable = SpellDatabase.All
                 .Where(s => !SpellKnowledge.IsKnown(s.BookTag) &&
                             s.LearnHow == LearnHow.MageLord &&
-                            (s.LordFaction == "" || s.LordFaction == lordFaction))
+                            (s.LordFaction == "" || s.LordFaction == lordFaction ||
+                             (s.BookTag == "AURA_OF_HATE" && lordFaction == "khuzait")))
                 .ToList();
 
             if (teachable.Count == 0) return;
@@ -1528,8 +1551,12 @@ namespace TheWitheringArt
         private static string _lastDisplayedBuffer = "";
         private const  int    MaxLen       = 10;
 
-        // True while the magic focus key is held — external systems can check this
-        // to skip their own gamepad input handling and avoid button conflicts.
+        // True while the magic focus key is held.
+        // NOTE: this flag cannot intercept Bannerlord's own input pipeline — the game
+        // still receives every button press regardless of this value.  On keyboard,
+        // Left Alt rarely conflicts with game bindings so the experience is clean.
+        // On controller, L3 + face buttons may trigger game actions alongside spells;
+        // full input isolation would require a Harmony patch.
         public static bool InputSuppressed { get; private set; }
 
         public static void Tick(bool inMission)
@@ -1537,7 +1564,6 @@ namespace TheWitheringArt
             if (!SpellKnowledge.HasGift) { InputSuppressed = false; return; }
 
             // Focus key: Left Alt (KB) or L3 / Left Stick Click (Gamepad)
-            // ControllerLThumb = L3, unused by Bannerlord natively
             bool focusing = Input.IsKeyDown(InputKey.LeftAlt)
                          || Input.IsKeyDown(InputKey.ControllerLThumb);
 
@@ -1692,12 +1718,12 @@ namespace TheWitheringArt
             {
                 // STARTING
                 case "UDL":     Memory();       break;
-                case "DRU":     Blast();        break;
                 case "LLRR":    Relocate();     break;
                 case "UULL":    Restore();      break;
                 // ATTRIBUTE
-                case "UDDD":    Push();         break;
-                case "DUUU":    Vortex();       break;
+                case "UDD":     Push();         break;
+                case "DUU":     Vortex();       break;
+                case "DRUL":    Blast();        break;
                 case "UDUUD":   Mending();      break;
                 case "LRDLU":   Confuse();      break;
                 // EVENT
@@ -1708,6 +1734,8 @@ namespace TheWitheringArt
                 case "DDDDUUU": DarkBargain();  break;
                 case "DLDR":    Rejuvenate();   break;
                 case "RLDL":    Charm();        break;
+                // TRAVEL
+                case "RRLDR":   SinisterWill(); break;
                 // MAGE LORD
                 case "UUDDR":   Hurl();         break;
                 case "DDDDU":   Repel();        break;
@@ -1728,6 +1756,8 @@ namespace TheWitheringArt
                 case "UUUR":    Levitate();     break;
                 case "UDLL":    Featherfall();  break;
                 case "LLUU":    Weightless();   break;
+                case "UURLDR":  Calling();      break;
+                case "RDDLL":   AuraOfHate();   break;
             }
         }
 
@@ -2232,17 +2262,25 @@ namespace TheWitheringArt
         {
             if (Player == null) return;
             if (ActiveEffectManager.Has("_accel")) { Fizzle("Already accelerated."); return; }
-            try { Player.SetMaximumSpeedLimit(14f, false); } catch { }
+
+            // SetMaximumSpeedLimit only CAPS speed; it cannot raise it above the agent's
+            // natural base.  The actual speed multiplier lives in AgentDrivenProperties.
+            // AgentDrivenProperties may be a struct, so we copy-modify-assign each tick.
+            const float SpeedMult = 2.5f;
+
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name            = "_accel",
                 Duration        = 300f,
                 IsMissionEffect = true,
-                OnExpire = () => { try { Player?.SetMaximumSpeedLimit(-1f, false); } catch { } },
                 OnTick = _ =>
                 {
-                    if (Player == null || !Player.IsActive())
-                        try { Player?.SetMaximumSpeedLimit(-1f, false); } catch { }
+                    if (Player == null || !Player.IsActive()) return;
+                    try { Player.AgentDrivenProperties.MaxSpeedMultiplier = SpeedMult; } catch { }
+                },
+                OnExpire = () =>
+                {
+                    try { Player?.AgentDrivenProperties?.MaxSpeedMultiplier = 1f; } catch { }
                 }
             });
             InformationManager.DisplayMessage(new InformationMessage(
@@ -2639,6 +2677,105 @@ namespace TheWitheringArt
                 InformationManager.DisplayMessage(new InformationMessage(
                     "The road's favour fades. Your pace returns to normal.",
                     new Color(0.4f, 0.6f, 0.4f)));
+        }
+
+        // ── New map spells ───────────────────────────────────────────────────
+
+        private static void SinisterWill()
+        {
+            if (MobileParty.MainParty == null) return;
+            CampaignVec2 playerPos = MobileParty.MainParty.Position;
+            Settlement target = Settlement.All
+                .Where(s => s.IsVillage)
+                .OrderBy(s => {
+                    try { Vec2 sp = s.GetPosition2D; float dx = sp.x - playerPos.X, dy = sp.y - playerPos.Y; return dx*dx + dy*dy; }
+                    catch { return float.MaxValue; }
+                })
+                .FirstOrDefault();
+            if (target == null) { Fizzle("No village is within reach."); return; }
+            try { if (target.Village != null) target.Village.Hearth = Math.Max(10f, target.Village.Hearth * 0.5f); }
+            catch { }
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"{target.Name} withers. Its hearths grow cold and its fields grow thin.",
+                new Color(0.5f, 0.1f, 0.3f)));
+        }
+
+        private static void Calling()
+        {
+            if (MobileParty.MainParty == null) return;
+            CharacterObject recruit =
+                MBObjectManager.Instance.GetObject<CharacterObject>("imperial_recruit")
+             ?? MBObjectManager.Instance.GetObject<CharacterObject>("imperial_levy_infantryman")
+             ?? MBObjectManager.Instance.GetObject<CharacterObject>("imperial_levy");
+            if (recruit == null)
+            {
+                // Runtime fallback: find any tier-1 empire troop
+                foreach (CharacterObject c in CharacterObject.All)
+                {
+                    if (!c.IsHero && c.Tier == 1 && c.Culture?.StringId?.Contains("empire") == true)
+                    { recruit = c; break; }
+                }
+            }
+            if (recruit == null) { Fizzle("The call finds no ears."); return; }
+            int count = 20 + _rng.Next(41); // 20-60
+            try { MobileParty.MainParty.MemberRoster.AddToCounts(recruit, count); }
+            catch { Fizzle("The call was heard but no one came."); return; }
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"{count} Imperial soldiers answer the call and fall in behind you.",
+                new Color(0.8f, 0.6f, 0.2f)));
+        }
+
+        // ── Aura of Hate state ────────────────────────────────────────────────
+        private static bool _auraOfHateActive = false;
+        private static CampaignTime _auraOfHateExpiry;
+        private static readonly List<string> _auraOfHateLordIds = new List<string>();
+
+        public static bool IsAuraOfHateActive =>
+            _auraOfHateActive && Campaign.Current != null && CampaignTime.Now < _auraOfHateExpiry;
+
+        // Called from OnApplicationTick (campaign map) every frame — cheap when inactive.
+        public static void TickAuraOfHate()
+        {
+            if (!_auraOfHateActive || Campaign.Current == null) return;
+            if (CampaignTime.Now < _auraOfHateExpiry) return;
+
+            _auraOfHateActive = false;
+            foreach (string id in _auraOfHateLordIds)
+            {
+                Hero lord = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == id);
+                if (lord == null) continue;
+                try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(Hero.MainHero, lord, -60, false); }
+                catch { }
+            }
+            _auraOfHateLordIds.Clear();
+            InformationManager.DisplayMessage(new InformationMessage(
+                "The aura of hate fades. The land forgets your will.",
+                new Color(0.5f, 0.2f, 0.3f)));
+        }
+
+        private static void AuraOfHate()
+        {
+            if (MobileParty.MainParty == null || Hero.MainHero == null) return;
+            if (IsAuraOfHateActive) { Fizzle("The aura already holds over these lands."); return; }
+
+            _auraOfHateLordIds.Clear();
+            foreach (Settlement s in Settlement.All.Where(s => s.IsVillage))
+            {
+                Hero owner = s.OwnerClan?.Leader;
+                if (owner == null || owner == Hero.MainHero) continue;
+                if (_auraOfHateLordIds.Contains(owner.StringId)) continue;
+                try
+                {
+                    ChangeRelationAction.ApplyRelationChangeBetweenHeroes(Hero.MainHero, owner, 60, false);
+                    _auraOfHateLordIds.Add(owner.StringId);
+                }
+                catch { }
+            }
+            _auraOfHateActive = true;
+            _auraOfHateExpiry = CampaignTime.Now + CampaignTime.Hours(3);
+            InformationManager.DisplayMessage(new InformationMessage(
+                "A dark weight settles across the land. For three hours, no villager dares raise a hand against you.",
+                new Color(0.7f, 0.1f, 0.2f)));
         }
 
         // ── Visual feedback system ───────────────────────────────────────────
@@ -3057,6 +3194,30 @@ namespace TheWitheringArt
                         try { lord.Clan?.AddRenown(-2f); } catch { }
                         return $"{lord.Name}'s dealings grow unusually profitable.";
                     }});
+                    // Sinister Will — drain the nearest enemy village of hearth
+                    if (lord.PartyBelongedTo != null)
+                        pool.Add(new MapSpellEntry { SpellName="Sinister Will", DayCost=25, Action=() =>
+                        {
+                            CampaignVec2 lordPos = lord.PartyBelongedTo.Position;
+                            Settlement nearest = Settlement.All
+                                .Where(s => s.IsVillage && s.MapFaction != lord.MapFaction)
+                                .OrderBy(s => {
+                                    try { Vec2 sp = s.GetPosition2D; float dx = sp.x - lordPos.X, dy = sp.y - lordPos.Y; return dx*dx + dy*dy; }
+                                    catch { return float.MaxValue; }
+                                })
+                                .FirstOrDefault();
+                            if (nearest == null) return null;
+                            try { if (nearest.Village != null) nearest.Village.Hearth = Math.Max(10f, nearest.Village.Hearth * 0.5f); }
+                            catch { }
+                            return $"{nearest.Name} withers under {lord.Name}'s will.";
+                        }});
+                    // Aura of Hate — boost own party relations with nearby settlements
+                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=25, Action=() =>
+                    {
+                        if (lord.PartyBelongedTo == null) return null;
+                        lord.PartyBelongedTo.RecentEventsMorale += 8f;
+                        return $"A dark weight radiates from {lord.Name}. Those nearby comply without question.";
+                    }});
                     // Hollow Name — drain an enemy clan
                     pool.Add(new MapSpellEntry { SpellName="Hollow Name", DayCost=20, Action=() =>
                     {
@@ -3069,9 +3230,8 @@ namespace TheWitheringArt
                         try { target.Clan?.AddRenown(-10f); } catch { }
                         return $"{target.Name}'s name grows quieter in the world.";
                     }});
-                    // Dark Bargain — age an enemy (rare, handled via separate low-probability check)
-                    // Only added if the low-probability gate passes (caller checks separately)
-                    if (_rng.Next(100) < 8) // ~8% chance this makes it into the pool
+                    // Dark Bargain — age an enemy (rare)
+                    if (_rng.Next(100) < 8)
                         pool.Add(new MapSpellEntry { SpellName="Dark Bargain", DayCost=0, Action=() =>
                         {
                             var rival = Hero.AllAliveHeroes
@@ -3081,7 +3241,6 @@ namespace TheWitheringArt
                             rival.SetBirthDay(rival.BirthDay - CampaignTime.Years(10f / 252f));
                             return $"{rival.Name} feels years settle onto their shoulders uninvited.";
                         }});
-                    // Ensure pool isn't empty if Dark Bargain didn't make it
                     if (pool.Count == 0) pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
                     {
                         lord.Gold += 200;
@@ -3118,6 +3277,19 @@ namespace TheWitheringArt
                     // Clairvoyance — flavour, no mechanical effect
                     pool.Add(new MapSpellEntry { SpellName="Clairvoyance", DayCost=10, Action=() =>
                         $"{lord.Name} watches the roads. Nothing moves unseen."});
+                    // Calling — summon Imperial recruits to own party
+                    if (lord.PartyBelongedTo != null)
+                        pool.Add(new MapSpellEntry { SpellName="Calling", DayCost=50, Action=() =>
+                        {
+                            CharacterObject recruit =
+                                MBObjectManager.Instance.GetObject<CharacterObject>("imperial_recruit")
+                             ?? MBObjectManager.Instance.GetObject<CharacterObject>("imperial_levy_infantryman");
+                            if (recruit == null) return null;
+                            int count = 10 + _rng.Next(16); // 10-25 for lords (balanced vs player 20-60)
+                            try { lord.PartyBelongedTo.MemberRoster.AddToCounts(recruit, count); }
+                            catch { return null; }
+                            return $"{count} soldiers answer {lord.Name}'s call and march to join them.";
+                        }});
                     // Hollow Name — the Empire strips renown through law and whisper
                     pool.Add(new MapSpellEntry { SpellName="Hollow Name", DayCost=20, Action=() =>
                     {
@@ -3128,6 +3300,31 @@ namespace TheWitheringArt
                         if (target == null) return null;
                         try { target.Clan?.AddRenown(-10f); } catch { }
                         return $"{target.Name}'s name loses weight in the great houses.";
+                    }});
+                    break;
+
+                case "khuzait":
+                    // Aura of Hate — intimidate a nearby enemy party into lowering morale
+                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=25, Action=() =>
+                    {
+                        var enemy = Hero.AllAliveHeroes
+                            .Where(h => h.IsLord && h.MapFaction != lord.MapFaction
+                                        && h.PartyBelongedTo != null && h.IsAlive)
+                            .OrderBy(h => _rng.Next()).FirstOrDefault();
+                        if (enemy == null) return null;
+                        enemy.PartyBelongedTo.RecentEventsMorale -= 10f;
+                        return $"A dark compulsion ripples from {lord.Name}. Nearby enemies feel it in their bones.";
+                    }});
+                    // Hollow Name — Khuzait riders spread word of weakness
+                    pool.Add(new MapSpellEntry { SpellName="Hollow Name", DayCost=20, Action=() =>
+                    {
+                        var target = Hero.AllAliveHeroes
+                            .Where(h => h.IsLord && h.MapFaction != lord.MapFaction
+                                        && h.Clan != null && h.IsAlive)
+                            .OrderBy(h => _rng.Next()).FirstOrDefault();
+                        if (target == null) return null;
+                        try { target.Clan?.AddRenown(-8f); } catch { }
+                        return $"Rumour travels the steppe. {target.Name}'s name carries less weight tonight.";
                     }});
                     break;
 
@@ -3217,11 +3414,13 @@ namespace TheWitheringArt
 
         public static void RevealRandomUnknownSpell(string lordName, string lordFaction = "")
         {
-            // Prefer spells matching this lord's faction
+            // Prefer spells matching this lord's faction.
+            // Special case: Aura of Hate can also be learned from Khuzait lords.
             var unknown = SpellDatabase.All
                 .Where(s => !SpellKnowledge.IsKnown(s.BookTag) &&
                             s.LearnHow == LearnHow.MageLord &&
-                            (s.LordFaction == "" || s.LordFaction == lordFaction))
+                            (s.LordFaction == "" || s.LordFaction == lordFaction ||
+                             (s.BookTag == "AURA_OF_HATE" && lordFaction == "khuzait")))
                 .ToList();
 
             // Fallback: only generic (faction="") spells — no cross-faction teaching
