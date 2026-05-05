@@ -1030,7 +1030,7 @@ namespace TheWitheringArt
             CampaignEvents.BeforeHeroKilledEvent.AddNonSerializedListener(this, OnBeforeHeroKilled);
             CampaignEvents.OnCharacterCreationIsOverEvent.AddNonSerializedListener(this, OnNewGameCreated);
             CampaignEvents.PlayerStartTalkFromMenu.AddNonSerializedListener(this, OnPlayerTalkToHero);
-            CampaignEvents.OnHeroCreatedEvent.AddNonSerializedListener(this, OnHeroCreated);
+            CampaignEvents.HeroCreated.AddNonSerializedListener(this, OnHeroCreated);
         }
 
         // ── Daily: scan inventory for new spell books ─────────────────────
@@ -1442,7 +1442,8 @@ namespace TheWitheringArt
             if (!SpellKnowledge.HasGift) return;
             try
             {
-                if (detail == KillCharacterAction.KillCharacterActionDetail.Executed)
+                if (detail == KillCharacterAction.KillCharacterActionDetail.Executed
+                    && victim != null && victim.IsLord)
                     SpellKnowledge.TriggerExecutedLord();
             }
             catch { }
@@ -1744,16 +1745,6 @@ namespace TheWitheringArt
                 if (a != Player && !a.IsMount && a.IsActive() &&
                     a.Team != null && a.Team != Player.Team)
                     yield return a;
-        }
-
-        private static void DamageAgent(Agent target, float magnitude,
-                                        DamageTypes type = DamageTypes.Blunt)
-        {
-            if (target == null || !target.IsActive()) return;
-            // Void-stun: freeze the agent permanently via continuous SetActionChannel.
-            // This is equivalent to a kill for combat purposes — the agent cannot
-            // move, attack, or participate in battle.
-            KillAgent(target);
         }
 
         public static void KillAgent(Agent target)
@@ -2240,13 +2231,13 @@ namespace TheWitheringArt
         {
             if (Player == null) return;
             if (ActiveEffectManager.Has("_accel")) { Fizzle("Already accelerated."); return; }
-            // Set foot speed to horse speed for 5 minutes
             try { Player.SetMaximumSpeedLimit(14f, false); } catch { }
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name            = "_accel",
                 Duration        = 300f,
                 IsMissionEffect = true,
+                OnExpire = () => { try { Player?.SetMaximumSpeedLimit(-1f, false); } catch { } },
                 OnTick = _ =>
                 {
                     if (Player == null || !Player.IsActive())
@@ -2397,7 +2388,6 @@ namespace TheWitheringArt
             roster.RemoveTroop(wounded.Character, 1);
             float gain = Math.Min(25f, Player.HealthLimit - Player.Health);
             Player.Health = Math.Min(Player.Health + 25f, Player.HealthLimit);
-            SpellKnowledge.TriggerReachedAge50();
 
             InformationManager.DisplayMessage(new InformationMessage(
                 $"You consume {wounded.Character.Name}. +{gain:F0} HP. They did not scream.",
@@ -2671,16 +2661,6 @@ namespace TheWitheringArt
             }
             catch { }
         }
-
-        // Flinch flash for area effects — makes nearby agents visibly react
-        private static void SpellFlashFire(Vec3 position, float radius = 8f)
-            => FlashAgentsNear(position, radius);
-
-        private static void SpellFlashBlood(Vec3 position)
-            => FlashAgentsNear(position, 3f);
-
-        private static void SpellFlashSmoke(Vec3 position, float radius = 5f)
-            => FlashAgentsNear(position, radius);
 
         private static void FlashAgentsNear(Vec3 position, float radius)
         {

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TheWitheringArt")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fa4475165c7311ee18945eb89aa6710abccea771")]
 [assembly: System.Reflection.AssemblyProductAttribute("TheWitheringArt")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TheWitheringArt")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
