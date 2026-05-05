@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CharacterDevelopment;
@@ -2640,26 +2641,290 @@ namespace TheWitheringArt
                     new Color(0.4f, 0.6f, 0.4f)));
         }
 
-        // Cast glow — bloom spike + caster animation + nearby flinch.
-        // Point lights require engine init context and return -1 here — removed.
-        // SetBloomStrength works reliably in all mission contexts.
-        // ─────────────────────────────────────────────────────────────────────
+        // ── Visual feedback system ───────────────────────────────────────────
+        // Layers (all wrapped in try/catch so nothing here can crash the game):
+        //   1. Cast animation  — school-specific, with confirmed-working fallbacks
+        //   2. Particle burst  — vanilla particle systems at caster position
+        //   3. Screen bloom    — fading flash via reflection (player casts only)
+        //   4. Agent flinch    — enemies + allies react differently per school
+        //   5. Positional sound
+        // ────────────────────────────────────────────────────────────────────
         public static void CastGlow(Agent caster, SpellGlowColor glowColor)
         {
             if (caster == null) return;
             try
             {
-                // Caster reacts visibly — confirmed working via SetActionChannel
-                string anim = glowColor == SpellGlowColor.Combat
-                    ? "act_struck_from_back_medium_left_staff"
-                    : "act_struck_from_front_light";
-                caster.SetActionChannel(0, ActionIndexCache.Create(anim), false);
-
-                // Nearby enemies flinch for combat spells
-                if (glowColor == SpellGlowColor.Combat)
-                    FlashAgentsNear(caster.Position, 6f);
+                PlayCastAnimation(caster, glowColor);
+                TrySpawnCastParticle(caster.Position, glowColor);
+                if (caster == Agent.Main)
+                    TryBeginScreenFlash();
+                FlinchAgentsNear(caster, glowColor);
+                TryCastSound(caster.Position, glowColor);
             }
             catch { }
+        }
+
+        // School-appropriate animations with a confirmed-working fallback at the end.
+        private static void PlayCastAnimation(Agent caster, SpellGlowColor glowColor)
+        {
+            string[] candidates;
+            switch (glowColor)
+            {
+                case SpellGlowColor.Combat:
+                    candidates = new[]
+                    {
+                        "act_yield_hard",
+                        "act_pickup_boulder_begin",
+                        "act_struck_from_back_medium_left_staff"  // confirmed
+                    };
+                    break;
+                case SpellGlowColor.Healing:
+                    candidates = new[]
+                    {
+                        "act_pickup_boulder_end",
+                        "act_struck_from_front_light"             // confirmed
+                    };
+                    break;
+                default: // Support
+                    candidates = new[]
+                    {
+                        "act_thrust_staff_wielder",
+                        "act_struck_from_front_light"             // confirmed
+                    };
+                    break;
+            }
+
+            foreach (string name in candidates)
+            {
+                try
+                {
+                    ActionIndexCache cache = ActionIndexCache.Create(name);
+                    if (cache.Index < 0) continue;
+                    caster.SetActionChannel(0, cache, false);
+                    return;
+                }
+                catch { }
+            }
+        }
+
+        // Spawn a vanilla particle burst at the cast origin.
+        // Uses reflection so the code compiles even if the engine API changes.
+        private static void TrySpawnCastParticle(Vec3 position, SpellGlowColor color)
+        {
+            try
+            {
+                var scene = Mission.Current?.Scene;
+                if (scene == null) return;
+
+                // Pick a vanilla particle that fits the spell school
+                string particleName = color == SpellGlowColor.Combat
+                    ? "psys_game_blood_burst_a"
+                    : color == SpellGlowColor.Healing
+                        ? "psys_game_dust_fall"
+                        : "psys_game_throw_stone";
+
+                // Resolve ParticleSystemManager at runtime — avoids a hard engine API dependency
+                Type psmType = Type.GetType(
+                    "TaleWorlds.Engine.ParticleSystemManager, TaleWorlds.Engine");
+                if (psmType == null) return;
+
+                MethodInfo getId = psmType.GetMethod("GetRuntimeIdByName",
+                    BindingFlags.Public | BindingFlags.Static);
+                if (getId == null) return;
+
+                object idObj = getId.Invoke(null, new object[] { particleName });
+                if (idObj == null || (int)idObj < 0) return;
+
+                MethodInfo burst = scene.GetType().GetMethod("CreateBurstParticle",
+                    BindingFlags.Public | BindingFlags.Instance);
+                if (burst == null) return;
+
+                burst.Invoke(scene, new object[] { idObj, new MatrixFrame(Mat3.Identity, position) });
+            }
+            catch { }
+        }
+
+        // Bloom flash that fades over 0.4 s.  Uses reflection so we handle both
+        // SetBloomStrength(float) and SetBloom(bool) variants of the engine API.
+        private static int _activeFlashCount = 0;
+
+        private static void TryBeginScreenFlash()
+        {
+            if (Mission.Current == null) return;
+            int flashId = ++_activeFlashCount;
+            float elapsed = 0f;
+            const float duration = 0.4f;
+
+            ActiveEffectManager.Add(new ActiveEffect
+            {
+                Name            = $"_sflash_{flashId}",
+                Duration        = duration,
+                IsMissionEffect = true,
+                OnTick = dt =>
+                {
+                    elapsed += dt;
+                    float t = Math.Max(0f, 1f - elapsed / duration);
+                    TrySetBloomStrength(t * 2.5f);
+                },
+                OnExpire = () =>
+                {
+                    _activeFlashCount = Math.Max(0, _activeFlashCount - 1);
+                    if (_activeFlashCount == 0)
+                        TrySetBloomStrength(0f);
+                }
+            });
+        }
+
+        private static void TrySetBloomStrength(float strength)
+        {
+            try
+            {
+                var scene = Mission.Current?.Scene;
+                if (scene == null) return;
+                Type t = scene.GetType();
+
+                // Prefer the float overload (SetBloomStrength confirmed working per code comment)
+                MethodInfo m = t.GetMethod("SetBloomStrength",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    null, new[] { typeof(float) }, null);
+                if (m != null) { m.Invoke(scene, new object[] { strength }); return; }
+
+                // Fall back to the bool toggle version
+                m = t.GetMethod("SetBloom",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    null, new[] { typeof(bool) }, null);
+                if (m != null) m.Invoke(scene, new object[] { strength > 0.05f });
+            }
+            catch { }
+        }
+
+        // Flinch nearby agents — enemies react to combat/support; allies react to healing.
+        private static void FlinchAgentsNear(Agent caster, SpellGlowColor glowColor)
+        {
+            if (Mission.Current == null) return;
+
+            // Combat: enemies flinch hard in a wide radius
+            // Healing: allies pulse with a lighter animation in medium radius
+            // Support: all agents flinch lightly in a small radius
+            float radius;
+            bool hitEnemies, hitAllies;
+            string enemyAnim, allyAnim;
+
+            switch (glowColor)
+            {
+                case SpellGlowColor.Combat:
+                    radius     = 10f;
+                    hitEnemies = true;
+                    hitAllies  = false;
+                    enemyAnim  = "act_struck_from_back_medium_left_staff";
+                    allyAnim   = "act_struck_from_front_light";
+                    break;
+                case SpellGlowColor.Healing:
+                    radius     = 8f;
+                    hitEnemies = false;
+                    hitAllies  = true;
+                    enemyAnim  = "act_struck_from_front_light";
+                    allyAnim   = "act_pickup_boulder_end";
+                    break;
+                default: // Support
+                    radius     = 6f;
+                    hitEnemies = true;
+                    hitAllies  = true;
+                    enemyAnim  = "act_struck_from_front_light";
+                    allyAnim   = "act_struck_from_front_light";
+                    break;
+            }
+
+            ActionIndexCache enemyCache = ActionIndexCache.Create(enemyAnim);
+            ActionIndexCache allyCache  = ActionIndexCache.Create(allyAnim);
+
+            foreach (Agent agent in Mission.Current.Agents.ToList())
+            {
+                if (!agent.IsActive() || agent.IsMount || agent == caster) continue;
+                if (agent.Position.Distance(caster.Position) > radius) continue;
+
+                bool isEnemy = caster.Team != null && agent.Team != caster.Team;
+                bool isAlly  = caster.Team != null && agent.Team == caster.Team;
+
+                try
+                {
+                    if (isEnemy && hitEnemies && enemyCache.Index >= 0)
+                        agent.SetActionChannel(0, enemyCache, false);
+                    else if (isAlly && hitAllies && allyCache.Index >= 0)
+                        agent.SetActionChannel(0, allyCache, false);
+                }
+                catch { }
+            }
+        }
+
+        // Cache of the SoundEvent type resolved once at runtime.
+        private static Type _soundEventType;
+        private static MethodInfo _soundGetId;
+
+        private static bool TryResolveSoundEvent()
+        {
+            if (_soundGetId != null) return true;
+            try
+            {
+                foreach (System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    foreach (string candidate in new[]
+                        { "TaleWorlds.MountAndBlade.SoundEvent",
+                          "TaleWorlds.Engine.SoundEvent" })
+                    {
+                        Type t = asm.GetType(candidate);
+                        if (t == null) continue;
+                        MethodInfo m = t.GetMethod("GetEventIdFromString",
+                            BindingFlags.Public | BindingFlags.Static);
+                        if (m == null) continue;
+                        _soundEventType = t;
+                        _soundGetId     = m;
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        // Positional sound at the cast origin.  Tries school-appropriate events first.
+        private static void TryCastSound(Vec3 position, SpellGlowColor color)
+        {
+            if (Mission.Current == null) return;
+            if (!TryResolveSoundEvent()) return;
+
+            string[] candidates = color == SpellGlowColor.Combat
+                ? new[]
+                {
+                    "event:/mission/ambient/detail/wind_hit",
+                    "event:/mission/ambient/detail/wind_medium",
+                    "event:/ui/panels/open"
+                }
+                : color == SpellGlowColor.Healing
+                ? new[]
+                {
+                    "event:/ui/notifications/quest_update",
+                    "event:/ui/panels/open"
+                }
+                : new[]
+                {
+                    "event:/ui/notifications/quest_update",
+                    "event:/ui/panels/open"
+                };
+
+            foreach (string path in candidates)
+            {
+                try
+                {
+                    object idObj = _soundGetId.Invoke(null, new object[] { path });
+                    if (idObj == null) continue;
+                    int soundId = (int)idObj;
+                    if (soundId < 0) continue;
+                    Mission.Current.MakeSound(soundId, position, false, false, -1, -1);
+                    return;
+                }
+                catch { }
+            }
         }
 
         private static void FlashAgentsNear(Vec3 position, float radius)
