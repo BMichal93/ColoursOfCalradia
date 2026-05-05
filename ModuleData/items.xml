@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Items>
+
+    <!-- Void Anchor  RUUL  12 Days -->
+    <Item id="twa_book_void_anchor" name="The Fisherman's Knot" mesh="book_a"
+          value="1800" weight="0.8" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VOID_ANCHOR] Distance is a lie the Gift can correct. Right-Up-Up-Left. Twelve days to drag whatever stands across from you directly to your feet."/>
+    </Item>
+
+    <!-- Ashen Vigour  RRDD  20 Days -->
+    <Item id="twa_book_ashen_vigour" name="The Final Ember" mesh="book_a"
+          value="3000" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[ASHEN_VIGOUR] The fire in you can be divided. It burns others instead. Right-Right-Down-Down. Twenty days of your life to restore thirty points of health to every ally at your shoulder."/>
+    </Item>
+
+    <!-- The Wasting  DRLU  35 Days -->
+    <Item id="twa_book_wasting" name="Pale Surgeon's Notes" mesh="book_b"
+          value="5500" weight="1.2" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[THE_WASTING] The body is not destroyed all at once. It can be persuaded to fail. Down-Right-Left-Up. Thirty-five days of life. One enemy, fifteen seconds. Six points of health, per second, until there is nothing left."/>
+    </Item>
+
+    <!-- Grave Debt  LLDU  45 Days -->
+    <Item id="twa_book_grave_debt" name="The Shepherd's Last Reckoning" mesh="book_b"
+          value="7000" weight="1.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[GRAVE_DEBT] The gift does not heal without cost. One of your wounded must go so the rest may stand. Left-Left-Down-Up. Forty-five days of your life. One soldier lost. Every other wound in your warband closed."/>
+    </Item>
+         Carrying this scroll and reading it permanently unlocks the
+         Tyrant Ritual (prisoner sacrifice for youth restoration).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Item id="twa_scroll_ritual" name="The Hollow Covenant" mesh="book_c"
+          value="15000" weight="0.3" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="What the gifted are never told: the years do not have to be yours. Those you hold captive carry time inside them. Fear, despair, proximity to death — these ripen it. While you wait, and they wait beside you, the years can pass from them to you. One prisoner. Thirty days of youth. Your honour will not survive it. Your soldiers will know something is wrong. But you will not age. The art does not care what you are. Only what you are willing to do. And if you have no prisoners — consider who else is waiting beside you. The willing carry years too. More of them, perhaps. The cost of that is yours to reckon with."/>
+    </Item>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         GIFT TOKEN — legacy item (console/save compat). Not sold.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Item id="twa_gift_mark" name="The Awakening Mark" mesh="book_a"
+          value="0" weight="0.1" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="It was always there. Whatever you carry, you have carried it since birth."/>
+    </Item>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         UTILITY TIER
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Shadow Step  LLRR  2 Days -->
+    <Item id="twa_book_shadow_step" name="Scout's Hidden Note" mesh="book_a"
+          value="300" weight="0.1" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[SHADOW_STEP] The body moves before the eye can follow. Left-Left-Right-Right. Two days of life, two metres of escape."/>
+    </Item>
+
+    <!-- Spur of the Void  UURR  3 Days -->
+    <Item id="twa_book_spur_void" name="Rider's Blood Pact" mesh="book_a"
+          value="500" weight="0.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[SPUR_VOID] Horse and rider become one storm. Up-Up-Right-Right. Three days, and no mount will fail you."/>
+    </Item>
+
+    <!-- Aegis Spark  DUDU  6 Days -->
+    <Item id="twa_book_aegis_spark" name="Duelist's Last Testament" mesh="book_a"
+          value="600" weight="0.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[AEGIS_SPARK] The flesh forgets pain for five breaths. Down-Up-Down-Up. Six days of life, five seconds of near-invulnerability."/>
+    </Item>
+
+    <!-- Warband's Boon  UULR  4 Days -->
+    <Item id="twa_book_warbands_boon" name="Field Surgeon's Covenant" mesh="book_a"
+          value="800" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[WARBANDS_BOON] The Gift can mend more than one body. Up-Up-Left-Down. Four days of life to close the wounds of twenty warriors."/>
+    </Item>
+
+    <!-- Repel  DDDD  4 Days -->
+    <Item id="twa_book_repel" name="Warlord's Shout Treatise" mesh="book_a"
+          value="700" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[REPEL] Push the world away from you. Down-Down-Down-Down. Four days to clear a radius of enemies."/>
+    </Item>
+
+    <!-- Mending  UDUD  5 Days -->
+    <Item id="twa_book_mending" name="Tattered Healer's Journal" mesh="book_a"
+          value="400" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[MENDING] The flesh remembers wholeness. Up-Down-Up-Down. Five days of life for twenty points of health."/>
+    </Item>
+
+    <!-- Gilded Touch  LRLR  20 Days -->
+    <Item id="twa_book_gilded_touch" name="Alchemist's Forbidden Page" mesh="book_a"
+          value="900" weight="0.3" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[GILDED_TOUCH] Base matter becomes gold when life is the reagent. Left-Right-Right-Left. Forty days of life for five hundred denar. The exchange rate is poor. The Gift does not care."/>
+    </Item>
+
+    <!-- Nature's Bounty  DLDR  5 Days -->
+    <Item id="twa_book_natures_bounty" name="Druid's Field Notes" mesh="book_a"
+          value="1200" weight="1.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[NATURES_BOUNTY] The earth gives what is taken from time. Down-Left-Down-Right. Twenty days of life for ten measures of grain. Enough to feed a small party. Not enough to make a profit."/>
+    </Item>
+
+    <!-- Vitality Siphon  DRDL  8 Days -->
+    <Item id="twa_book_vital_siphon" name="Leech-Lord's Treatise" mesh="book_a"
+          value="1500" weight="0.8" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VITAL_SIPHON] Tear the life from those who stand close. Down-Right-Down-Left. Eight days to drain fifteen health from every nearby enemy and claim it as your own."/>
+    </Item>
+
+    <!-- Thunder Clap  URDL  8 Days -->
+    <Item id="twa_book_thunder_clap" name="Stormcaller's Broken Tablet" mesh="book_b"
+          value="1500" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[THUNDER_CLAP] A single stroke of absolute force, directed at whoever stands closest. Up-Right-Down-Left. Eight days of life. One enemy destroyed at your feet."/>
+    </Item>
+
+    <!-- Corpse Bind  LRUU  10 Days -->
+    <Item id="twa_book_corpse_bind" name="Necromancer's Chain Scroll" mesh="book_b"
+          value="2000" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[CORPSE_BIND] Freeze the feet of your enemies to the earth itself. Left-Right-Up-Up. Ten days of life to root every nearby enemy in place for five seconds."/>
+    </Item>
+
+    <!-- Serenity  DDUU  15 Days -->
+    <Item id="twa_book_serenity" name="Absolution of the Void" mesh="book_b"
+          value="2500" weight="1.2" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[SERENITY] Guilt washed away in silver light, at great cost. Down-Down-Up-Up. Fifteen days of life to clear ten points of criminal rating."/>
+    </Item>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         COMBAT TIER
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Void Conscript  RRUUD  10 Days -->
+    <Item id="twa_book_void_conscript" name="Quartermaster's Void Contract" mesh="book_b"
+          value="2000" weight="1.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VOID_CONSCRIPT] Soldiers can be conjured as easily as grain, at twice the cost to the soul. Right-Right-Up-Up-Down. Ten days of life to pull five hollow warriors from the void."/>
+    </Item>
+
+    <!-- Iron Shout  LRLRU  14 Days -->
+    <Item id="twa_book_voice_khan" name="A Warlord's Broken Horn" mesh="book_b"
+          value="2500" weight="2.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VOICE_KHAN] Speak and the world obeys your fury. Left-Right-Left-Right-Up. Fourteen days to scatter men like leaves."/>
+    </Item>
+
+    <!-- Vanish  LLLLU  20 Days -->
+    <Item id="twa_book_vanish" name="Shadow Dancer's Pact" mesh="book_b"
+          value="3500" weight="0.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VANISH] Step between moments, unseen by mortal eyes. Left-Left-Left-Left-Up. Twenty days of life for thirty seconds of invisibility in settlements."/>
+    </Item>
+
+    <!-- Horsebane  DDLRUU  20 Days -->
+    <Item id="twa_book_batt_veil" name="The Spurless Veil" mesh="book_b"
+          value="4000" weight="1.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[BATT_VEIL] What rides the horse shall ride no more. Down-Down-Left-Right-Up-Up. Twenty days to kill or panic every mount within ten metres."/>
+    </Item>
+
+    <!-- Pressure Wave  UULRDD  30 Days -->
+    <Item id="twa_book_imp_flare" name="The Hollow Detonation" mesh="book_b"
+          value="4500" weight="2.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[IMP_FLARE] The void does not burn. It displaces. Compress enough of nothing into one point and release it — the force comes out like a detonation without needing heat. Up-Up-Left-Right-Down-Down. Thirty days for a wave of displaced force that breaks everything within ten metres."/>
+    </Item>
+
+    <!-- The Stillness  LLDDRR  60 Days -->
+    <Item id="twa_book_stur_chill" name="The Stillness Codex" mesh="book_b"
+          value="8000" weight="2.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[STUR_CHILL] The Gift can stop the world. Not freeze it — stop it. Motion arrested. Momentum unmade. Left-Left-Down-Down-Right-Right. Two months of life to shackle every enemy on the field while time continues eating through them."/>
+    </Item>
+
+    <!-- Soul Harvest  DDDDD  1 Day -->
+    <Item id="twa_book_soul_harvest" name="Void-Eater's Primer" mesh="book_b"
+          value="5000" weight="0.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[SOUL_HARVEST] The simplest transaction: a life for fifteen points of your wounds closed. Up-Up-Up-Up-Up. One day. A civilian dies. You are mended."/>
+    </Item>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SIEGE TIER
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Rain of Iron  UDLRUDLR  1 Year -->
+    <Item id="twa_book_rain_iron" name="The Iron Rain Tablets" mesh="book_c"
+          value="20000" weight="3.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[RAIN_IRON] Fifty shafts from a cloudless sky. Up-Down-Left-Right-Up-Down-Left-Right. One year of your life for fifty arrows from heaven."/>
+    </Item>
+
+    <!-- Voidstrike  DDDUUULR  1 Year -->
+    <Item id="twa_book_voidstrike" name="The Siege Rune" mesh="book_c"
+          value="20000" weight="4.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[VOIDSTRIKE] Point at a man and unmake him. No armor. No salvation. Down-Down-Down-Up-Up-Up-Left-Right. One year of your life to execute a single target with absolute certainty."/>
+    </Item>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         RITUAL TIER
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Call Ancestors  UUDDLRLRUD  2 Years -->
+    <Item id="twa_book_call_ancestors" name="The Void's Bargain" mesh="book_c"
+          value="50000" weight="5.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[CALL_ANCESTORS] Bargain with the dead for their temporary service. Up-Up-Down-Down-Left-Right-Left-Right-Up-Down. Two years for a chance at resurrection."/>
+    </Item>
+
+    <!-- The Convergence  ULDRULDRUU  3 Years -->
+    <Item id="twa_book_suns_wrath" name="The Convergence Codex" mesh="book_c"
+          value="60000" weight="5.0" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[SUNS_WRATH] Everything converges. All force, all void, all drawn to one point and released outward at once. Up-Left-Down-Right-Up-Left-Down-Right-Up-Up. Three years of life for a twenty-metre detonation of collapsed void."/>
+    </Item>
+
+    <!-- Plague Wind  LRLRDDUULR  5 Years -->
+    <Item id="twa_book_plague_wind" name="The Withered Scroll" mesh="book_c"
+          value="80000" weight="0.5" type="Goods">
+        <ItemComponent><Armor body_armor="0"/></ItemComponent>
+        <Description text="[PLAGUE_WIND] Breathe out and armies die. Left-Right-Left-Right-Down-Down-Up-Up-Left-Right. Five years of your life. Every enemy rots at two health per second for a full minute."/>
+    </Item>
+
+</Items>

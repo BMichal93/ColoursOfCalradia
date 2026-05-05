@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>TheWitheringArt</AssemblyName>
+    <RootNamespace>TheWitheringArt</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Optimize>true</Optimize>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+
+    <!--
+      OUTPUT: Copy the compiled DLL directly into the mod's bin folder.
+      Adjust the path to match your actual Bannerlord Modules directory.
+    -->
+    <OutputPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\Modules\TheWitheringArt\bin\Gaming.Desktop.x64_Shipping_Client\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!--
+    ══════════════════════════════════════════════════════════════════════
+    BEFORE BUILDING:
+      Set the BannerlordPath environment variable to your game folder.
+      Examples:
+        Windows (Steam):
+          $env:BannerlordPath = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
+        Windows (Xbox/Game Pass):
+          $env:BannerlordPath = "C:\XboxGames\Mount & Blade II- Bannerlord\Content"
+
+      OR replace C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content below with the literal path.
+    ══════════════════════════════════════════════════════════════════════
+  -->
+  <ItemGroup>
+    <Reference Include="TaleWorlds.Library">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.Library.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="TaleWorlds.Core">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="TaleWorlds.MountAndBlade">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.MountAndBlade.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="TaleWorlds.CampaignSystem">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.CampaignSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="TaleWorlds.InputSystem">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="TaleWorlds.ObjectSystem">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.ObjectSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.DotNet">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.DotNet.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.Localization">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.Localization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.Engine">
+      <HintPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\bin\Gaming.Desktop.x64_Shipping_Client\TaleWorlds.Engine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="MagicSystem.cs"/>
+  </ItemGroup>
+
+</Project>

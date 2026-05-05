@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    THE WITHERING ART — Mage Unit Troop Definitions
+    All equipment references use existing Native StringIds so no custom assets are needed.
+    Every troop id must begin with "twa_mage_" — this is how MageUnitManager identifies them.
+
+    UPGRADE TREE (shared across all faction variants):
+        twa_mage_initiate  →  twa_mage_channeler  →  twa_mage_void_weaver
+
+    FACTION-FLAVOURED TIER 2s (same stats as twa_mage_channeler, different culture):
+        twa_mage_channeler_empire
+        twa_mage_channeler_vlandia
+        twa_mage_channeler_sturgia
+        twa_mage_channeler_aserai
+        twa_mage_channeler_khuzait
+        twa_mage_channeler_battania
+
+    HOW TO ADD THEM TO FACTION ROSTERS:
+        Add each culture-specific channeler to the relevant kingdom's
+        <Troops> list in the Native troops.xml, or distribute them via
+        the LordPartyGenerator in a future update.
+-->
+<Troops>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TIER 1 — Void Initiate
+         Recruit-level. Fragile, barely trained, drawn to the Gift.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <NPCCharacter id="twa_mage_initiate"
+                  name="{=twa_mage_initiate}Void Initiate"
+                  age="22"
+                  level="8"
+                  culture="Culture.empire"
+                  occupation="Soldier"
+                  is_template="false"
+                  is_hero="false"
+                  default_group="Infantry">
+        <Attributes
+            vigor="4" control="5" endurance="4"
+            cunning="5" social="3" intelligence="6"/>
+        <Skills>
+            <Skill id="OneHanded" value="50"/>
+            <Skill id="Athletics" value="60"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <!-- Simple robes + staff using Native items -->
+                <equipment slot="Item0" id="Item.wooden_stick"/>
+                <equipment slot="Head"  id="Item.hood"/>
+                <equipment slot="Body"  id="Item.linen_tunic"/>
+                <equipment slot="Leg"   id="Item.strapped_shoes"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_channeler" xp_cost="500"/>
+    </NPCCharacter>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TIER 2 — Void Channeler (base, culturally neutral)
+         The spec unit: no Wither, 5% burn-out per cast, Battery effect.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <NPCCharacter id="twa_mage_channeler"
+                  name="{=twa_mage_channeler}Void Channeler"
+                  age="28"
+                  level="18"
+                  culture="Culture.empire"
+                  occupation="Soldier"
+                  is_template="false"
+                  is_hero="false"
+                  default_group="Infantry">
+        <Attributes
+            vigor="5" control="7" endurance="5"
+            cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded"  value="80"/>
+            <Skill id="Athletics"  value="70"/>
+            <Skill id="Throwing"   value="60"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.voulge"/>
+                <equipment slot="Head"  id="Item.desert_cloth_robe_head"/>
+                <equipment slot="Body"  id="Item.pilgrim_cloak"/>
+                <equipment slot="Leg"   id="Item.light_leather_boots"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TIER 2 FACTION VARIANTS — identical stats to twa_mage_channeler,
+         different culture + equipment for immersion.
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <NPCCharacter id="twa_mage_channeler_empire"
+                  name="{=twa_mage_channeler_empire}Imperial Void Channeler"
+                  age="28" level="18" culture="Culture.empire"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded" value="80"/>
+            <Skill id="Athletics" value="70"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.empire_sword_1_t2"/>
+                <equipment slot="Head"  id="Item.wrapped_headband"/>
+                <equipment slot="Body"  id="Item.battanian_civil_cloak_v2"/>
+                <equipment slot="Leg"   id="Item.strapped_leather_boots"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <NPCCharacter id="twa_mage_channeler_vlandia"
+                  name="{=twa_mage_channeler_vlandia}Vlandian Void Channeler"
+                  age="30" level="18" culture="Culture.vlandia"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded" value="80"/>
+            <Skill id="Athletics" value="70"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.wooden_stick"/>
+                <equipment slot="Head"  id="Item.leather_coif"/>
+                <equipment slot="Body"  id="Item.vlandia_leather_coat"/>
+                <equipment slot="Leg"   id="Item.strapped_leather_boots"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <NPCCharacter id="twa_mage_channeler_sturgia"
+                  name="{=twa_mage_channeler_sturgia}Sturgian Void Channeler"
+                  age="32" level="18" culture="Culture.sturgia"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded" value="80"/>
+            <Skill id="Athletics" value="70"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.voulge"/>
+                <equipment slot="Head"  id="Item.nasal_helmet"/>
+                <equipment slot="Body"  id="Item.rough_tied_cloth_tunic"/>
+                <equipment slot="Leg"   id="Item.ragged_boots"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <NPCCharacter id="twa_mage_channeler_aserai"
+                  name="{=twa_mage_channeler_aserai}Aserai Void Channeler"
+                  age="26" level="18" culture="Culture.aserai"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded" value="80"/>
+            <Skill id="Athletics" value="70"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.aserai_sword_1_t2"/>
+                <equipment slot="Head"  id="Item.desert_cloth_robe_head"/>
+                <equipment slot="Body"  id="Item.desert_robe"/>
+                <equipment slot="Leg"   id="Item.strapped_shoes"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <NPCCharacter id="twa_mage_channeler_khuzait"
+                  name="{=twa_mage_channeler_khuzait}Khuzait Void Channeler"
+                  age="27" level="18" culture="Culture.khuzait"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded"  value="80"/>
+            <Skill id="Riding"     value="60"/>
+            <Skill id="Athletics"  value="70"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0"  id="Item.khuzait_saber_1_t2"/>
+                <equipment slot="Head"   id="Item.khuzait_civil_hood"/>
+                <equipment slot="Body"   id="Item.khuzait_lamellar_shoulders_c"/>
+                <equipment slot="Leg"    id="Item.khuzait_leather_boots"/>
+                <equipment slot="Horse"  id="Item.sumpter_horse"/>
+                <equipment slot="HorseHarness" id="Item.light_harness"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <NPCCharacter id="twa_mage_channeler_battania"
+                  name="{=twa_mage_channeler_battania}Battanian Void Channeler"
+                  age="25" level="18" culture="Culture.battania"
+                  occupation="Soldier" is_template="false" is_hero="false"
+                  default_group="Infantry">
+        <Attributes vigor="5" control="7" endurance="5" cunning="6" social="4" intelligence="8"/>
+        <Skills>
+            <Skill id="OneHanded"  value="80"/>
+            <Skill id="Athletics"  value="90"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <equipment slot="Item0" id="Item.battanian_voulge_1_t3"/>
+                <equipment slot="Head"  id="Item.battanian_cloth_hood_a"/>
+                <equipment slot="Body"  id="Item.battanian_civil_cloak_v2"/>
+                <equipment slot="Leg"   id="Item.wrapped_shoes"/>
+            </EquipmentRoster>
+        </Equipments>
+        <UpgradesTo id="twa_mage_void_weaver" xp_cost="1200"/>
+    </NPCCharacter>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TIER 3 — Void Weaver
+         Elite. High stats, still subject to burn-out. Upgraded from any
+         faction Channeler. Rare — costs heavy XP to produce.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <NPCCharacter id="twa_mage_void_weaver"
+                  name="{=twa_mage_void_weaver}Void Weaver"
+                  age="35"
+                  level="30"
+                  culture="Culture.empire"
+                  occupation="Soldier"
+                  is_template="false"
+                  is_hero="false"
+                  default_group="Infantry">
+        <Attributes
+            vigor="6" control="9" endurance="6"
+            cunning="8" social="5" intelligence="10"/>
+        <Skills>
+            <Skill id="OneHanded"  value="120"/>
+            <Skill id="Athletics"  value="100"/>
+            <Skill id="Throwing"   value="80"/>
+        </Skills>
+        <Equipments>
+            <EquipmentRoster>
+                <!-- Better gear — still all Native items -->
+                <equipment slot="Item0" id="Item.voulge_2_t4"/>
+                <equipment slot="Head"  id="Item.vlandia_leather_helmet_v2"/>
+                <equipment slot="Body"  id="Item.lamellar_over_mail"/>
+                <equipment slot="Leg"   id="Item.strapped_leather_boots"/>
+                <equipment slot="Gloves" id="Item.leather_gloves"/>
+            </EquipmentRoster>
+        </Equipments>
+        <!-- No further upgrade — this is the elite tier -->
+    </NPCCharacter>
+
+</Troops>
