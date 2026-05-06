@@ -297,11 +297,11 @@ namespace TheWitheringArt
                 LearnHint="Visit the Empire settlement while friendly",
                 Flavour="You are everywhere. Briefly. The cost of being everywhere is that you are briefly nowhere." },
 
-            new SpellEntry { Name="Hurl",         Combo="RUURL",   DayCost=20, BookTag="HURL",
+            new SpellEntry { Name="Hurt",         Combo="RUURL",   DayCost=20, BookTag="HURT",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=4,
                 LearnHint="Requires 4 Intelligence",
-                Flavour="What goes up comes down. The void is not responsible for what happens between." },
+                Flavour="The void does not throw. It simply removes the distance between your will and their ruin." },
 
             // Vlandia — order, positioning
             new SpellEntry { Name="Relocate",     Combo="LLRR",    DayCost=10, BookTag="RELOCATE",
@@ -399,7 +399,7 @@ namespace TheWitheringArt
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.MageLord, LordFaction="",
                 LearnHint="Kill or befriend any Mage Lord",
-                Flavour="Higher. The fall is proportional to the height. So is what is left of them." },
+                Flavour="More. The force is proportional to your will. So is what is left of them." },
         };
         public static SpellEntry Find(string combo) =>
             All.FirstOrDefault(s => s.Combo == combo);
@@ -1737,7 +1737,7 @@ namespace TheWitheringArt
                 // TRAVEL
                 case "RRULR":   SinisterWill(); break;
                 // MAGE LORD
-                case "RUURL":   Hurl();         break;
+                case "RUURL":   Hurt();         break;
                 case "LUURL":   Repel();        break;
                 case "LLURL":   Pacify();       break;
                 case "RRLL":    Accelerate();   break;
@@ -1922,7 +1922,7 @@ namespace TheWitheringArt
 
         private static void Push()
         {
-            // Repel enemies in forward cone 10m — TeleportToPosition away
+            // Repel enemies in forward cone 10m — TeleportToPosition away, then trip
             if (Player == null) return;
 
             // Track for Repel unlock (7 uses in one combat)
@@ -1931,6 +1931,7 @@ namespace TheWitheringArt
                 SpellKnowledge.TriggerPush7InBattle();
 
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            ActionIndexCache trip = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
             int pushed = 0;
             foreach (Agent a in Enemies().ToList())
             {
@@ -1942,7 +1943,12 @@ namespace TheWitheringArt
                 if (dot < 0.5f) continue; // outside cone
                 Vec3 pushDest = a.Position + fwd * 10f;
                 pushDest.z = a.Position.z;
-                try { a.TeleportToPosition(pushDest); pushed++; }
+                try
+                {
+                    a.TeleportToPosition(pushDest);
+                    if (trip.Index >= 0) a.SetActionChannel(0, trip, false);
+                    pushed++;
+                }
                 catch { }
             }
             InformationManager.DisplayMessage(new InformationMessage(
@@ -1953,8 +1959,9 @@ namespace TheWitheringArt
 
         private static void Vortex()
         {
-            // Pull enemies within 10m radius 6m closer to player
+            // Pull enemies within 10m radius 6m closer to player, then trip
             if (Player == null) return;
+            ActionIndexCache trip = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
             int pulled = 0;
             foreach (Agent a in Enemies().ToList())
             {
@@ -1963,7 +1970,12 @@ namespace TheWitheringArt
                 Vec3 dir = (Player.Position - a.Position).NormalizedCopy();
                 Vec3 dest = a.Position + dir * 6f;
                 dest.z = a.Position.z;
-                try { a.TeleportToPosition(dest); pulled++; }
+                try
+                {
+                    a.TeleportToPosition(dest);
+                    if (trip.Index >= 0) a.SetActionChannel(0, trip, false);
+                    pulled++;
+                }
                 catch { }
             }
             InformationManager.DisplayMessage(new InformationMessage(
@@ -2170,26 +2182,25 @@ namespace TheWitheringArt
 
         // ── MAGE LORD ────────────────────────────────────────────────────
 
-        private static void Hurl()
+        private static void Hurt()
         {
-            // Lift enemies in forward 10m cone 5m up — fall damage kills/injures
+            // Deal direct damage in forward 10m cone — enough to kill a looter
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            int hurled = 0;
+            int hurt = 0;
             foreach (Agent a in Enemies().ToList())
             {
                 Vec3 toAgent = (a.Position - Player.Position);
                 if (toAgent.Length > 10f) continue;
                 float dot = Vec3.DotProduct(fwd, toAgent.NormalizedCopy());
                 if (dot < 0.3f) continue;
-                Vec3 lifted = a.Position;
-                lifted.z += 5f;
-                try { a.TeleportToPosition(lifted); hurled++; }
-                catch { }
+                a.Health = Math.Max(0f, a.Health - 100f);
+                if (a.Health <= 0f) KillAgent(a);
+                hurt++;
             }
             InformationManager.DisplayMessage(new InformationMessage(
-                hurled > 0 ? $"{hurled} {(hurled==1?"enemy":"enemies")} hurled into the air."
-                           : "No enemies in forward cone.",
+                hurt > 0 ? $"{hurt} {(hurt==1?"enemy":"enemies")} struck."
+                         : "No enemies in forward cone.",
                 new Color(0.9f, 0.4f, 0.1f)));
         }
 
@@ -2352,9 +2363,10 @@ namespace TheWitheringArt
 
         private static void Crush()
         {
-            // Lift enemies in forward 10m cone 10m up — much higher fall damage than Hurl
+            // Deal direct damage in forward 10m cone — twice Hurt's damage (200f) — stagger survivors
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            ActionIndexCache stagger = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
             int crushed = 0;
             foreach (Agent a in Enemies().ToList())
             {
@@ -2362,13 +2374,13 @@ namespace TheWitheringArt
                 if (toAgent.Length > 10f) continue;
                 float dot = Vec3.DotProduct(fwd, toAgent.NormalizedCopy());
                 if (dot < 0.3f) continue;
-                Vec3 lifted = a.Position;
-                lifted.z += 10f;
-                try { a.TeleportToPosition(lifted); crushed++; }
-                catch { }
+                a.Health = Math.Max(0f, a.Health - 200f);
+                if (a.Health <= 0f) { KillAgent(a); }
+                else if (stagger.Index >= 0) { try { a.SetActionChannel(0, stagger, false); } catch { } }
+                crushed++;
             }
             InformationManager.DisplayMessage(new InformationMessage(
-                crushed > 0 ? $"{crushed} {(crushed==1?"enemy":"enemies")} thrown 10 metres up."
+                crushed > 0 ? $"{crushed} {(crushed==1?"enemy":"enemies")} crushed."
                             : "No enemies in forward cone.",
                 new Color(1f, 0.3f, 0.1f)));
         }
@@ -3631,7 +3643,7 @@ namespace TheWitheringArt
                 return;
             }
 
-            // Priority 3 — Hurl when 2+ enemies are directly ahead
+            // Priority 3 — Hurt when 2+ enemies are directly ahead
             int coneEnemies = Mission.Current.Agents
                 .Count(a => a != agent && a.IsActive() && !a.IsMount &&
                             a.Team != agent.Team &&
@@ -3641,7 +3653,7 @@ namespace TheWitheringArt
                                 (a.Position - agent.Position).NormalizedCopy()) > 0.5f);
 
             if (coneEnemies >= 2)
-                TriggerCast(agent, hero, "Hurl", 20, () => AIHurl(agent));
+                TriggerCast(agent, hero, "Hurt", 20, () => AIHurt(agent));
         }
 
         private static void TriggerCast(Agent agent, Hero hero,
@@ -3691,7 +3703,7 @@ namespace TheWitheringArt
             }
         }
 
-        private static void AIHurl(Agent caster)
+        private static void AIHurt(Agent caster)
         {
             if (Mission.Current == null) return;
             Vec3 forward = caster.LookDirection.NormalizedCopy();
@@ -3706,8 +3718,8 @@ namespace TheWitheringArt
                 if (toEnemy.Length > 12f) continue;
                 if (Vec3.DotProduct(forward, toEnemy.NormalizedCopy()) < 0.5f) continue;
 
-                Vec3 push = toEnemy.NormalizedCopy() + new Vec3(0f, 0f, 0.25f);
-                enemy.TeleportToPosition(enemy.Position + push * 5f);
+                enemy.Health = Math.Max(0f, enemy.Health - 100f);
+                if (enemy.Health <= 0f) KillAgent(enemy);
             }
         }
 
