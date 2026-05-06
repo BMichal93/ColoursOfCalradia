@@ -13,6 +13,7 @@
 //   Those spells still apply their age cost and display flavour text — they are
 //   placeholders, not crashes.
 // !! TODO Refactor spells to different classes; remove unused parts of code !!
+// !! TODO: Using magic during tournament should give 75% chances for disqualification (50% if Cunning >5, 25% if Cunning >8)
 // =============================================================================
 
 using System;
@@ -2793,8 +2794,6 @@ namespace TheWitheringArt
             {
                 PlayCastAnimation(caster, glowColor);
                 TrySpawnCastParticle(caster.Position, glowColor);
-                if (caster == Agent.Main)
-                    TryBeginScreenFlash();
                 FlinchAgentsNear(caster, glowColor);
                 TryCastSound(caster.Position, glowColor);
             }
