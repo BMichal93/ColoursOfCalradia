@@ -1057,6 +1057,7 @@ namespace TheWitheringArt
             CampaignEvents.OnCharacterCreationIsOverEvent.AddNonSerializedListener(this, OnNewGameCreated);
             CampaignEvents.PlayerStartTalkFromMenu.AddNonSerializedListener(this, OnPlayerTalkToHero);
             CampaignEvents.HeroCreated.AddNonSerializedListener(this, OnHeroCreated);
+            CampaignEvents.NewCompanionAdded.AddNonSerializedListener(this, OnCompanionAdded);
         }
 
         // ── Daily: scan inventory for new spell books ─────────────────────
@@ -1530,6 +1531,17 @@ namespace TheWitheringArt
                         $"{hero.Name} was born carrying a faint echo of the Gift.",
                         new Color(0.6f, 0.2f, 0.8f)));
                 }
+            }
+            catch { }
+        }
+
+        private void OnCompanionAdded(Hero companion)
+        {
+            if (!SpellKnowledge.HasGift || companion == null) return;
+            try
+            {
+                if (MBRandom.RandomInt(100) < 10)
+                    MageLordRegistry.TryGrantCompanionMagic(companion);
             }
             catch { }
         }
@@ -2277,7 +2289,7 @@ namespace TheWitheringArt
             // SetMaximumSpeedLimit only CAPS speed; it cannot raise it above the agent's
             // natural base.  The actual speed multiplier lives in AgentDrivenProperties.
             // AgentDrivenProperties may be a struct, so we copy-modify-assign each tick.
-            const float SpeedMult = 2.5f;
+            const float SpeedMult = 3f;
 
             ActiveEffectManager.Add(new ActiveEffect
             {
@@ -3532,6 +3544,15 @@ namespace TheWitheringArt
             }
         }
 
+        public static void TryGrantCompanionMagic(Hero companion)
+        {
+            if (companion == null || _mageLordIds.Contains(companion.StringId)) return;
+            _mageLordIds.Add(companion.StringId);
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"{companion.Name} carries a faint echo of the Gift. They will fight as one who knows it.",
+                new Color(0.7f, 0.2f, 1f)));
+        }
+
         // ── Save / Load ───────────────────────────────────────────────────
         public static void Save(IDataStore store)
         {
@@ -3719,7 +3740,7 @@ namespace TheWitheringArt
                 if (Vec3.DotProduct(forward, toEnemy.NormalizedCopy()) < 0.5f) continue;
 
                 enemy.Health = Math.Max(0f, enemy.Health - 100f);
-                if (enemy.Health <= 0f) KillAgent(enemy);
+                if (enemy.Health <= 0f) SpellEffects.KillAgent(enemy);
             }
         }
 
