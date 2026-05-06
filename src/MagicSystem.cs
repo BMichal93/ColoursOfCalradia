@@ -80,6 +80,7 @@ namespace TheWitheringArt
             MageLordAI.MissionTick(dt);
             MageUnitManager.MissionTick(dt);
             SpellEffects.TickSuppress(dt);
+            SpellEffects.TickGlows(dt);
 
             if (Agent.Main != null && Agent.Main.IsActive() &&
                 Hero.MainHero != null && Hero.MainHero.Age > 120f)
@@ -1654,6 +1655,9 @@ namespace TheWitheringArt
             if (needsMap && inMission)
             { Fizzle($"{spell.Name} can only be cast on the campaign map."); return; }
 
+            if (inMission && Agent.Main?.MountAgent != null)
+            { Fizzle("Dismount to cast."); return; }
+
             // Age cost: spec-days / 252 = campaign years
             // 252 = 3 Bannerlord years — keeps costs felt but not punishing on frequent casts
             Hero.MainHero.SetBirthDay(
@@ -2787,11 +2791,44 @@ namespace TheWitheringArt
         //   4. Agent flinch    — enemies + allies react differently per school
         //   5. Positional sound
         // ────────────────────────────────────────────────────────────────────
+        // ── Agent contour glow ───────────────────────────────────────────────
+        private static readonly List<(Agent agent, float remaining)> _glowTimers
+            = new List<(Agent, float)>();
+
+        public static void TickGlows(float dt)
+        {
+            for (int i = _glowTimers.Count - 1; i >= 0; i--)
+            {
+                float t = _glowTimers[i].remaining - dt;
+                if (t <= 0f)
+                {
+                    try { _glowTimers[i].agent?.AgentVisuals?.GetEntity()
+                              ?.SetContourColor(null, false); } catch { }
+                    _glowTimers.RemoveAt(i);
+                }
+                else _glowTimers[i] = (_glowTimers[i].agent, t);
+            }
+        }
+
+        private static void BeginAgentGlow(Agent agent, SpellGlowColor color)
+        {
+            try
+            {
+                uint col = color == SpellGlowColor.Combat  ? 0xFFFF4400u
+                         : color == SpellGlowColor.Healing ? 0xFF44FF88u
+                         :                                   0xFF9944FFu;
+                agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
+                _glowTimers.Add((agent, 1.5f));
+            }
+            catch { }
+        }
+
         public static void CastGlow(Agent caster, SpellGlowColor glowColor)
         {
             if (caster == null) return;
             try
             {
+                BeginAgentGlow(caster, glowColor);
                 PlayCastAnimation(caster, glowColor);
                 TrySpawnCastParticle(caster.Position, glowColor);
                 FlinchAgentsNear(caster, glowColor);
