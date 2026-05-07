@@ -149,7 +149,7 @@ namespace TheWitheringArt
     // =========================================================================
     public enum SpellContext   { Mission, Map, Both }
     public enum SpellGlowColor { Combat, Healing, Support }
-    public enum LearnHow       { Starting, Attribute, Event, Travel, MageLord }
+    public enum LearnHow       { Starting, Companion, Event, Travel, MageLord }
 
     public class SpellEntry
     {
@@ -180,19 +180,13 @@ namespace TheWitheringArt
                 Flavour="The formulas do not live in your mind. They live in your blood. This is simply the act of listening." },
 
             // ── ATTRIBUTE ────────────────────────────────────────────────
-            new SpellEntry { Name="Push",         Combo="RUL",     DayCost=8,  BookTag="PUSH",
-                Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=3,
-                LearnHint="Requires 3 Intelligence",
-                Flavour="The void presses outward from a point behind your eyes. Everything not anchored moves." },
-
             new SpellEntry { Name="Vortex",       Combo="LRL",     DayCost=8,  BookTag="VORTEX",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=3,
-                LearnHint="Requires 3 Intelligence",
+                LearnHow=LearnHow.Companion, LordFaction="", ReqIntelligence=3,
+                LearnHint="Recruit a magical companion",
                 Flavour="The same force, turned inward. You become the heaviest thing on the field." },
 
-            new SpellEntry { Name="Blast",        Combo="UURR",    DayCost=15, BookTag="BLAST",
+            new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=15, BookTag="BLAST",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Travel, LordFaction="sturgia",
                 LearnHint="Visit the Sturgian settlement while friendly",
@@ -200,7 +194,7 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Mark",         Combo="ULR",     DayCost=8,  BookTag="MARK",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqCunning=5,
+                LearnHow=LearnHow.Companion, LordFaction="", ReqCunning=5,
                 LearnHint="Requires 5 Cunning",
                 Flavour="You leave part of yourself here. It waits. It is patient in a way you are not." },
 
@@ -226,7 +220,7 @@ namespace TheWitheringArt
             new SpellEntry { Name="Repel",        Combo="LUURL",   DayCost=40, BookTag="REPEL",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Use Push seven times in a single battle",
+                LearnHint="Use Blast seven times in a single battle",
                 Flavour="A pulse, repeated. The first time is a warning. The rest are a statement." },
 
             new SpellEntry { Name="Scatter",      Combo="RULR",    DayCost=25, BookTag="SCATTER",
@@ -257,8 +251,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Restore",      Combo="UULL",    DayCost=15, BookTag="RESTORE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Healing,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=3,
-                LearnHint="Requires 3 Intelligence",
+                LearnHow=LearnHow.Companion, LordFaction="", ReqIntelligence=3,
+                LearnHint="Recruit a magical companion",
                 Flavour="You cannot give life. But you can redistribute it — from your years to their wounds." },
 
             new SpellEntry { Name="Featherfall",  Combo="LUUL",    DayCost=10, BookTag="FEATHERFALL",
@@ -305,10 +299,10 @@ namespace TheWitheringArt
                 LearnHint="Visit the Empire settlement while friendly",
                 Flavour="You are everywhere. Briefly. The cost of being everywhere is that you are briefly nowhere." },
 
-            new SpellEntry { Name="Hurt",         Combo="RUURL",   DayCost=20, BookTag="HURT",
+            new SpellEntry { Name="Blast",        Combo="RUURL",   DayCost=20, BookTag="HURT",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqIntelligence=4,
-                LearnHint="Requires 4 Intelligence",
+                LearnHow=LearnHow.Companion, LordFaction="", ReqIntelligence=4,
+                LearnHint="Recruit a magical companion",
                 Flavour="The void does not throw. It simply removes the distance between your will and their ruin." },
 
             // Vlandia — order, positioning
@@ -362,8 +356,8 @@ namespace TheWitheringArt
             // Vlandia lords
             new SpellEntry { Name="Accelerate",   Combo="RRLL",    DayCost=15, BookTag="ACCELERATE",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Attribute, LordFaction="", ReqCunning=4,
-                LearnHint="Requires 4 Cunning",
+                LearnHow=LearnHow.Companion, LordFaction="", ReqCunning=4,
+                LearnHint="Recruit a magical companion",
                 Flavour="The body was always capable of this. The mind simply did not believe it yet." },
 
             // Empire lords
@@ -545,6 +539,7 @@ namespace TheWitheringArt
 
         private static readonly HashSet<string> _notifiedTags   = new HashSet<string>();
         private static readonly HashSet<string> _taughtByLords  = new HashSet<string>();
+        private static readonly HashSet<string> _intellectLearnedTags = new HashSet<string>();
         private static readonly HashSet<string> _giftedChildIds = new HashSet<string>();
         private static int _grimoirePage = 0;
         private const  int GrimoirePageSize = 4;
@@ -570,13 +565,32 @@ namespace TheWitheringArt
                 _notifiedTags.Add(s.BookTag);
         }
 
-        // Check attribute-gated spells against hero's current attributes
-        public static void CheckAttributeSpells()
+        // Learn random spells from raw Intelligence, and reserve companion spells
+        // for magical companion recruitment.
+        public static void CheckIntellectSpells()
         {
             if (!_hasGift || Hero.MainHero == null) return;
             Hero h = Hero.MainHero;
+            int targetCount = h.GetAttributeValue(DefaultCharacterAttributes.Intelligence) / 2;
 
-            foreach (SpellEntry s in SpellDatabase.All.Where(s => s.LearnHow == LearnHow.Attribute))
+            while (_intellectLearnedTags.Count < targetCount)
+            {
+                var candidates = SpellDatabase.All
+                    .Where(s => !IsKnown(s.BookTag) &&
+                                s.LearnHow != LearnHow.Starting &&
+                                s.LearnHow != LearnHow.Companion)
+                    .ToList();
+                if (candidates.Count == 0) return;
+
+                SpellEntry learned = candidates[MBRandom.RandomInt(candidates.Count)];
+                _intellectLearnedTags.Add(learned.BookTag);
+                RevealSpell(learned, "Your intellect sharpens â€” a new formula surfaces.");
+            }
+
+            return;
+            /*
+
+            foreach (SpellEntry s in SpellDatabase.All.Where(s => s.LearnHow == LearnHow.Companion))
             {
                 if (_notifiedTags.Contains(s.BookTag)) continue;
                 try
@@ -593,6 +607,7 @@ namespace TheWitheringArt
                 }
                 catch { }
             }
+            */
         }
 
         public static void CheckTravelSpells()
@@ -664,6 +679,24 @@ namespace TheWitheringArt
             InformationManager.DisplayMessage(new InformationMessage(
                 $"You learn {s.Name}. Combo: {s.Combo} — {cost}. (S / L3 opens grimoire)",
                 new Color(0.8f, 0.4f, 1f)));
+        }
+
+        public static void LearnFromCompanion(string companionName)
+        {
+            var candidates = SpellDatabase.All
+                .Where(s => !IsKnown(s.BookTag) && s.LearnHow == LearnHow.Companion)
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{companionName} carries the Gift, but you already know the companion-taught formulas.",
+                    new Color(0.5f, 0.3f, 0.7f)));
+                return;
+            }
+
+            SpellEntry learned = candidates[MBRandom.RandomInt(candidates.Count)];
+            RevealSpell(learned, $"{companionName} teaches you something only they know.");
         }
 
         public static void ShowGrimoire()
@@ -839,6 +872,7 @@ namespace TheWitheringArt
         {
             var tagList    = _notifiedTags.ToList();
             var taughtList = _taughtByLords.ToList();
+            var intellectList = _intellectLearnedTags.ToList();
             bool hfm = HasFoughtMage;      bool hdk = HasDefeatedKhuzait;
             bool hfb = HasFledBattle;      bool hwsb = HasWonSoloBattle;
             bool hel = HasExecutedLord;    bool hvb = HasVisitedBattania;
@@ -857,6 +891,7 @@ namespace TheWitheringArt
             store.SyncData("TWA_FirstSoldierSacrifice", ref _firstSoldierSacrifice);
             store.SyncData("TWA_NotifiedTags",    ref tagList);
             store.SyncData("TWA_TaughtByLords",   ref taughtList);
+            store.SyncData("TWA_IntellectLearnedTags", ref intellectList);
 
             // Seeded travel locations
             string sb = SiteBattania; string ss = SiteSturgia; string sv = SiteVlandia;
@@ -920,6 +955,8 @@ namespace TheWitheringArt
             if (tagList    != null) foreach (var t in tagList)    _notifiedTags.Add(t);
             _taughtByLords.Clear();
             if (taughtList != null) foreach (var t in taughtList) _taughtByLords.Add(t);
+            _intellectLearnedTags.Clear();
+            if (intellectList != null) foreach (var t in intellectList) _intellectLearnedTags.Add(t);
 
             var giftedList = _giftedChildIds.ToList();
             store.SyncData("TWA_GiftedChildIds", ref giftedList);
@@ -1086,7 +1123,7 @@ namespace TheWitheringArt
             }
 
             // Check attribute-gated spells every day
-            SpellKnowledge.CheckAttributeSpells();
+            SpellKnowledge.CheckIntellectSpells();
 
             // Age milestone check
             SpellKnowledge.TriggerReachedAge50();
@@ -1207,7 +1244,7 @@ namespace TheWitheringArt
             SpellKnowledge.GrantGift();
             SpellKnowledge.GrantStartingSpells();
             // Immediately reveal any attribute spells the player already qualifies for
-            SpellKnowledge.CheckAttributeSpells();
+            SpellKnowledge.CheckIntellectSpells();
             ApplyBirthPenalty();
             _giftCheckDone = true;
 
@@ -1767,9 +1804,8 @@ namespace TheWitheringArt
                 case "LLRR":    Relocate();     break;
                 case "UULL":    Restore();      break;
                 // ATTRIBUTE
-                case "RUL":     Push();         break;
                 case "LRL":     Vortex();       break;
-                case "UURR":    Blast();        break;
+                case "UURR":    Detonate();     break;
                 case "UULUR":   Mending();      break;
                 case "LRULR":   Confuse();      break;
                 // EVENT
@@ -1783,7 +1819,7 @@ namespace TheWitheringArt
                 // TRAVEL
                 case "RRULR":   SinisterWill(); break;
                 // MAGE LORD
-                case "RUURL":   Hurt();         break;
+                case "RUURL":   Blast();        break;
                 case "LUURL":   Repel();        break;
                 case "LLURL":   Pacify();       break;
                 case "RRLL":    Accelerate();   break;
@@ -1921,7 +1957,7 @@ namespace TheWitheringArt
             SpellKnowledge.ShowGrimoire();
         }
 
-        private static void Blast()
+        private static void Detonate()
         {
             // Void-stun nearest enemy within 15 m — reliable kill equivalent
             if (Player == null) return;
@@ -1932,7 +1968,7 @@ namespace TheWitheringArt
             if (target == null) { Fizzle("No enemy in range."); return; }
             KillAgent(target);
             InformationManager.DisplayMessage(new InformationMessage(
-                $"Blast strikes {target.Name}.", new Color(0.9f, 0.3f, 0.3f)));
+                $"Detonate strikes {target.Name}.", new Color(0.9f, 0.3f, 0.3f)));
         }
 
         private static void Relocate()
@@ -2245,25 +2281,44 @@ namespace TheWitheringArt
 
         // ── MAGE LORD ────────────────────────────────────────────────────
 
-        private static void Hurt()
+        private static void Blast()
         {
             // Deal direct damage in forward 10m cone — enough to kill a looter
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            ActionIndexCache trip = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
+            int pushed = 0;
             int hurt = 0;
+            _pushCastCount++;
+            if (_pushCastCount >= 7)
+                SpellKnowledge.TriggerPush7InBattle();
             foreach (Agent a in Enemies().ToList())
             {
                 Vec3 toAgent = (a.Position - Player.Position);
-                if (toAgent.Length > 10f) continue;
+                if (toAgent.Length > 20f) continue;
                 float dot = Vec3.DotProduct(fwd, toAgent.NormalizedCopy());
-                if (dot < 0.3f) continue;
+                if (toAgent.Length <= 20f && dot >= 0.5f)
+                {
+                    Vec3 pushDest = a.Position + fwd * 20f;
+                    pushDest.z = a.Position.z;
+                    try
+                    {
+                        a.TeleportToPosition(pushDest);
+                        if (trip.Index >= 0) a.SetActionChannel(0, trip, false);
+                        pushed++;
+                    }
+                    catch { }
+                }
+                if (toAgent.Length > 10f || dot < 0.3f) continue;
                 a.Health = Math.Max(0f, a.Health - 100f);
                 if (a.Health <= 0f) KillAgent(a);
                 hurt++;
             }
             InformationManager.DisplayMessage(new InformationMessage(
-                hurt > 0 ? $"{hurt} {(hurt==1?"enemy":"enemies")} struck."
-                         : "No enemies in forward cone.",
+                (pushed > 0 || hurt > 0)
+                    ? $"{pushed} {(pushed == 1 ? "enemy" : "enemies")} thrown back; " +
+                      $"{hurt} {(hurt == 1 ? "enemy" : "enemies")} struck."
+                    : "No enemies in forward cone.",
                 new Color(0.9f, 0.4f, 0.1f)));
         }
 
@@ -3629,8 +3684,7 @@ namespace TheWitheringArt
                 $"{companion.Name} carries a faint echo of the Gift. They will fight as one who knows it.",
                 new Color(0.7f, 0.2f, 1f)));
 
-            if (_rng.Next(100) < 25)
-                RevealRandomUnknownSpell(companion.Name.ToString());
+            SpellKnowledge.LearnFromCompanion(companion.Name.ToString());
         }
 
         // ── Save / Load ───────────────────────────────────────────────────
@@ -3755,7 +3809,7 @@ namespace TheWitheringArt
 
             if (coneEnemies >= 2)
             {
-                TriggerCast(agent, hero, "Hurt", 20, () => AIHurt(agent));
+                TriggerCast(agent, hero, "Blast", 20, () => AIBlast(agent));
                 return;
             }
 
@@ -3778,7 +3832,7 @@ namespace TheWitheringArt
                           a.Position.Distance(agent.Position) < 15f);
 
             if (anyEnemy)
-                TriggerCast(agent, hero, "Blast", 15, () => AIBlast(agent));
+                TriggerCast(agent, hero, "Detonate", 15, () => AIDetonate(agent));
         }
 
         private static void TriggerCast(Agent agent, Hero hero,
@@ -3828,11 +3882,12 @@ namespace TheWitheringArt
             }
         }
 
-        private static void AIHurt(Agent caster)
+        private static void AIBlast(Agent caster)
         {
             if (Mission.Current == null) return;
             Vec3 forward = caster.LookDirection.NormalizedCopy();
             Vec3 origin  = caster.Position;
+            ActionIndexCache trip = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
 
             foreach (Agent enemy in Mission.Current.Agents.ToList())
             {
@@ -3840,8 +3895,21 @@ namespace TheWitheringArt
                 if (enemy.Team == caster.Team) continue;
 
                 Vec3 toEnemy = enemy.Position - origin;
-                if (toEnemy.Length > 12f) continue;
-                if (Vec3.DotProduct(forward, toEnemy.NormalizedCopy()) < 0.5f) continue;
+                float dot = Vec3.DotProduct(forward, toEnemy.NormalizedCopy());
+
+                if (toEnemy.Length <= 20f && dot >= 0.5f)
+                {
+                    Vec3 pushDest = enemy.Position + forward * 20f;
+                    pushDest.z = enemy.Position.z;
+                    try
+                    {
+                        enemy.TeleportToPosition(pushDest);
+                        if (trip.Index >= 0) enemy.SetActionChannel(0, trip, false);
+                    }
+                    catch { }
+                }
+
+                if (toEnemy.Length > 10f || dot < 0.3f) continue;
 
                 enemy.Health = Math.Max(0f, enemy.Health - 100f);
                 if (enemy.Health <= 0f) SpellEffects.KillAgent(enemy);
@@ -3875,7 +3943,7 @@ namespace TheWitheringArt
             }
         }
 
-        private static void AIBlast(Agent caster)
+        private static void AIDetonate(Agent caster)
         {
             if (Mission.Current == null) return;
             Agent target = Mission.Current.Agents
