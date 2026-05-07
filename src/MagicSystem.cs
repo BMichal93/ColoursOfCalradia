@@ -141,7 +141,7 @@ namespace TheWitheringArt
     // =========================================================================
     public enum SpellContext   { Mission, Map, Both }
     public enum SpellGlowColor { Combat, Healing, Support }
-    public enum LearnHow       { Starting, Companion, Event, Travel, MageLord, Condition }
+    public enum LearnHow       { Starting, Companion, Event, Travel, MageLord, Condition, Personality }
 
     public class SpellEntry
     {
@@ -174,8 +174,8 @@ namespace TheWitheringArt
             // ── ATTRIBUTE ────────────────────────────────────────────────
             new SpellEntry { Name="Vortex",       Combo="LRL",     DayCost=8,  BookTag="VORTEX",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Companion, LordFaction="", ReqIntelligence=3,
-                LearnHint="Recruit a magical companion",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Munificent",
                 Flavour="The same force, turned inward. You become the heaviest thing on the field." },
 
             new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=75, BookTag="BLAST",
@@ -193,7 +193,7 @@ namespace TheWitheringArt
             // ── EVENT ────────────────────────────────────────────────────
             new SpellEntry { Name="Suppress",     Combo="RRLU",    DayCost=20, BookTag="SUPPRESS",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Event, LordFaction="",
+                LearnHow=LearnHow.Personality, LordFaction="",
                 LearnHint="Fight a Mage Lord or Mage Unit in battle",
                 Flavour="The art requires a channel. For sixty seconds, every channel on this field is closed." },
 
@@ -203,10 +203,10 @@ namespace TheWitheringArt
                 LearnHint="Visit the Vlandian settlement while friendly",
                 Flavour="The enemy line remembers what it was doing and decides to stop." },
 
-            new SpellEntry { Name="Shrouding",    Combo="LLUR",    DayCost=60, BookTag="SHROUDING",
+            new SpellEntry { Name="Shroud",       Combo="LLUR",    DayCost=60, BookTag="SHROUDING",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Escape any battle without losses",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Deceitful",
                 Flavour="You step sideways out of the world and leave the battle behind. No one notices until you are already gone." },
 
             new SpellEntry { Name="Bane",         Combo="LULR",    DayCost=25, BookTag="BANE",
@@ -229,8 +229,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Repel",        Combo="LUURL",   DayCost=40, BookTag="REPEL",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Use Blast seven times in a single battle",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Very Cautious",
                 Flavour="A pulse, repeated. The first time is a warning. The rest are a statement." },
 
             new SpellEntry { Name="Stop Arrows",  Combo="LURLUR",  DayCost=60, BookTag="STOP_ARROWS",
@@ -241,7 +241,7 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Scatter",      Combo="RULR",    DayCost=25, BookTag="SCATTER",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Event, LordFaction="",
+                LearnHow=LearnHow.Personality, LordFaction="",
                 LearnHint="Win a battle while outnumbered 3 to 1",
                 Flavour="Formation is belief. The Gift ends the belief." },
 
@@ -261,8 +261,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Restore",      Combo="UULL",    DayCost=15, BookTag="RESTORE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Healing,
-                LearnHow=LearnHow.Companion, LordFaction="", ReqIntelligence=3,
-                LearnHint="Recruit a magical companion",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Munificent",
                 Flavour="You cannot give life. But you can redistribute it — from your years to their wounds." },
 
             new SpellEntry { Name="Featherfall",  Combo="LUUL",    DayCost=10, BookTag="FEATHERFALL",
@@ -273,8 +273,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Inspire",      Combo="RULRU",   DayCost=15, BookTag="INSPIRE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Healing,
-                LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Win a battle using only soldiers — no companions",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Fearless",
                 Flavour="Not courage. Certainty. They feel — briefly — that you cannot lose." },
 
             new SpellEntry { Name="Mending",      Combo="UULUR",   DayCost=30, BookTag="MENDING",
@@ -292,8 +292,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Sinister Will", Combo="RRULR",  DayCost=25, BookTag="SINISTER_WILL",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Travel, LordFaction="aserai",
-                LearnHint="Visit the Aserai village while friendly",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Sadistic",
                 Flavour="The land does not resist you. It simply forgets how to produce." },
 
             new SpellEntry { Name="Severe Life",  Combo="UURRLL",  DayCost=45, BookTag="SEVERE_LIFE",
@@ -324,8 +324,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Pacify",       Combo="LLURL",   DayCost=40, BookTag="PACIFY",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Travel, LordFaction="vlandia",
-                LearnHint="Visit the Vlandian settlement while friendly",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Compassionate",
                 Flavour="The killing impulse, suspended. They will remember how to hate you. Later." },
 
             // Khuzait — absorbed from the land, not taught
@@ -352,8 +352,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Confuse",      Combo="LRULR",   DayCost=30, BookTag="CONFUSE",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.MageLord, LordFaction="aserai",
-                LearnHint="Kill or befriend an Aserai Mage Lord",
+                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHint="Become Cerebral",
                 Flavour="A word in the blood, not the ear. The enemy follows an order they did not choose." },
 
             // Vlandia lords
@@ -574,8 +574,8 @@ namespace TheWitheringArt
                 _notifiedTags.Add(s.BookTag);
         }
 
-        // Learn random spells from raw Intelligence, and reserve companion spells
-        // for magical companion recruitment.
+        // Learn random spells from raw Intelligence, and reserve companion and
+        // personality spells for their dedicated unlock paths.
         public static void CheckIntellectSpells()
         {
             if (!_hasGift || Hero.MainHero == null) return;
@@ -587,7 +587,8 @@ namespace TheWitheringArt
                 var candidates = SpellDatabase.All
                     .Where(s => !IsKnown(s.BookTag) &&
                                 s.LearnHow != LearnHow.Starting &&
-                                s.LearnHow != LearnHow.Companion)
+                                s.LearnHow != LearnHow.Companion &&
+                                s.LearnHow != LearnHow.Personality)
                     .ToList();
                 if (candidates.Count == 0) return;
 
@@ -619,6 +620,63 @@ namespace TheWitheringArt
             */
         }
 
+        public static void CheckPersonalitySpells()
+        {
+            if (!_hasGift || Hero.MainHero == null) return;
+
+            Hero h = Hero.MainHero;
+            foreach (SpellEntry s in SpellDatabase.All.Where(s => s.LearnHow == LearnHow.Personality))
+            {
+                if (_notifiedTags.Contains(s.BookTag)) continue;
+
+                bool conditionMet = false;
+                string traitLabel = "";
+
+                try
+                {
+                    if (s.BookTag == "SHROUDING")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Honor) <= -2;
+                        traitLabel = "Deceitful";
+                    }
+                    else if (s.BookTag == "PACIFY")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Mercy) >= 2;
+                        traitLabel = "Compassionate";
+                    }
+                    else if (s.BookTag == "SINISTER_WILL")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Mercy) <= -2;
+                        traitLabel = "Sadistic";
+                    }
+                    else if (s.BookTag == "REPEL")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Valor) <= -2;
+                        traitLabel = "Very Cautious";
+                    }
+                    else if (s.BookTag == "INSPIRE")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Valor) >= 2;
+                        traitLabel = "Fearless";
+                    }
+                    else if (s.BookTag == "CONFUSE")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Calculating) >= 2;
+                        traitLabel = "Cerebral";
+                    }
+                    else if (s.BookTag == "RESTORE")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Generosity) >= 2;
+                        traitLabel = "Munificent";
+                    }
+                }
+                catch { }
+
+                if (conditionMet)
+                    RevealSpell(s, $"Your {traitLabel.ToLowerInvariant()} nature unlocks a new formula.");
+            }
+        }
+
         public static void CheckTravelSpells()
         {
             if (!_hasGift) return;
@@ -632,13 +690,11 @@ namespace TheWitheringArt
                 else if (s.BookTag == "FEATHERFALL")  { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
                 else if (s.BookTag == "MENDING")       { conditionMet = HasVisitedBattania;   siteName = SiteBattania; }
                 else if (s.BookTag == "CHARM")         { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
-                else if (s.BookTag == "SINISTER_WILL") { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
                 else if (s.BookTag == "SEVERE_LIFE")   { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
                 else if (s.BookTag == "BANE")          { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
                 else if (s.BookTag == "BLAST")         { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
                 else if (s.BookTag == "CLAIRVOYANCE")  { conditionMet = HasVisitedEmpire;     siteName = SiteEmpire; }
                 else if (s.BookTag == "RELOCATE")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
-                else if (s.BookTag == "PACIFY")        { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "HALT")          { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "ENRAGE")        { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
                 else if (s.BookTag == "DISMOUNT")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
@@ -666,9 +722,6 @@ namespace TheWitheringArt
 
                 bool conditionMet;
                 if      (s.BookTag == "SUPPRESS")     conditionMet = HasFoughtMage;
-                else if (s.BookTag == "SHROUDING")     conditionMet = HasFledBattle;
-                else if (s.BookTag == "INSPIRE")       conditionMet = HasWonSoloBattle;
-                else if (s.BookTag == "REPEL")         conditionMet = HasUsedPush7InBattle;
                 else if (s.BookTag == "SCATTER")       conditionMet = HasWonOutnumbered3to1;
                 else if (s.BookTag == "DARK_BARGAIN")  conditionMet = HasExecutedLord;
                 else if (s.BookTag == "HOLLOW_NAME")   conditionMet = HasReachedAge70;
@@ -704,13 +757,11 @@ namespace TheWitheringArt
             else if (s.BookTag == "FEATHERFALL")   siteName = SiteBattania;
             else if (s.BookTag == "MENDING")       siteName = SiteBattania;
             else if (s.BookTag == "CHARM")         siteName = SiteAserai;
-            else if (s.BookTag == "SINISTER_WILL") siteName = SiteAserai;
             else if (s.BookTag == "SEVERE_LIFE")   siteName = SiteAseraiCity;
             else if (s.BookTag == "BANE")          siteName = SiteAseraiCity;
             else if (s.BookTag == "BLAST")         siteName = SiteSturgia;
             else if (s.BookTag == "CLAIRVOYANCE")  siteName = SiteEmpire;
             else if (s.BookTag == "RELOCATE")      siteName = SiteVlandia;
-            else if (s.BookTag == "PACIFY")        siteName = SiteVlandia;
             else if (s.BookTag == "HALT")          siteName = SiteVlandia;
             else if (s.BookTag == "ENRAGE")        siteName = SiteSturgia;
             else if (s.BookTag == "DISMOUNT")      siteName = SiteVlandia;
@@ -725,7 +776,9 @@ namespace TheWitheringArt
             if (!_hasGift) return;
 
             var candidates = SpellDatabase.All
-                .Where(s => !IsKnown(s.BookTag) && s.LearnHow != LearnHow.Starting)
+                .Where(s => !IsKnown(s.BookTag) &&
+                            s.LearnHow != LearnHow.Starting &&
+                            s.LearnHow != LearnHow.Personality)
                 .ToList();
 
             if (candidates.Count == 0) return;
@@ -1220,8 +1273,9 @@ namespace TheWitheringArt
                     _pendingStartingBookDays = 0;
             }
 
-            // Check attribute-gated spells every day
+            // Check intelligence and personality spells every day
             SpellKnowledge.CheckIntellectSpells();
+            SpellKnowledge.CheckPersonalitySpells();
             SpellKnowledge.CheckConditionSpells();
 
             // Age milestone check
@@ -1342,8 +1396,9 @@ namespace TheWitheringArt
         {
             SpellKnowledge.GrantGift();
             SpellKnowledge.GrantStartingSpells();
-            // Immediately reveal any attribute spells the player already qualifies for
+            // Immediately reveal any intellect or personality spells the player already qualifies for
             SpellKnowledge.CheckIntellectSpells();
+            SpellKnowledge.CheckPersonalitySpells();
             ApplyBirthPenalty();
             _giftCheckDone = true;
 
@@ -2418,7 +2473,7 @@ namespace TheWitheringArt
         {
             if (TaleWorlds.CampaignSystem.Encounters.PlayerEncounter.Battle == null)
             {
-                Fizzle("Shrouding can only be used while an encounter is active.");
+                Fizzle("Shroud can only be used while an encounter is active.");
                 return;
             }
 
