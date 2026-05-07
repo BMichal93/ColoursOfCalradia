@@ -91,14 +91,6 @@ namespace TheWitheringArt
                     Color.FromUint(0xFFCC0000)));
             }
 
-            // Near-death survival unlocks Sink (player drops below 5% HP and survives)
-            if (SpellKnowledge.HasGift && !SpellKnowledge.HasFallenAndSurvived &&
-                Agent.Main != null && Agent.Main.IsActive() &&
-                Agent.Main.Health / Math.Max(Agent.Main.HealthLimit, 1f) < 0.05f)
-            {
-                SpellKnowledge.TriggerFallenAndSurvived();
-            }
-
             if (!SpellKnowledge.HasGift || Mission.Current == null) return;
 
             // Detect mage fight (once per mission)
@@ -211,11 +203,17 @@ namespace TheWitheringArt
                 LearnHint="Defeat a Khuzait party in battle",
                 Flavour="The Gift does not hate horses. It simply forgets to hold them up." },
 
-            new SpellEntry { Name="Shrouding",    Combo="LLUR",    DayCost=15, BookTag="SHROUDING",
+            new SpellEntry { Name="Shrouding",    Combo="LLUR",    DayCost=60, BookTag="SHROUDING",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Flee from a battle",
-                Flavour="You are there. You are just not worth looking at. Not for a few hours." },
+                LearnHint="Escape any battle without losses",
+                Flavour="You step sideways out of the world and leave the battle behind. No one notices until you are already gone." },
+
+            new SpellEntry { Name="Bane",         Combo="LULR",    DayCost=25, BookTag="BANE",
+                Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
+                LearnHow=LearnHow.Travel, LordFaction="aserai",
+                LearnHint="Visit the Aserai city while allied",
+                Flavour="A shadow settles over the roads and camps around you. Enemy scouts forget their purpose." },
 
             new SpellEntry { Name="Repel",        Combo="LUURL",   DayCost=40, BookTag="REPEL",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
@@ -228,12 +226,6 @@ namespace TheWitheringArt
                 LearnHow=LearnHow.Event, LordFaction="",
                 LearnHint="Win a battle while outnumbered 3 to 1",
                 Flavour="Formation is belief. The Gift ends the belief." },
-
-            new SpellEntry { Name="Sink",         Combo="LURR",    DayCost=18, BookTag="SINK",
-                Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Event, LordFaction="",
-                LearnHint="Fall from a height and survive in battle",
-                Flavour="Down is a direction. The void is very good at down." },
 
             new SpellEntry { Name="Dark Bargain", Combo="RRRLLLU", DayCost=0,  BookTag="DARK_BARGAIN",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
@@ -491,14 +483,9 @@ namespace TheWitheringArt
         public static bool HasFoughtAlone10   { get; private set; }
 
         public static bool HasUsedLevitate     { get; private set; }
-        public static bool HasFallenAndSurvived { get; private set; }
         public static void TriggerUsedLevitate()
         {
             if (!HasUsedLevitate) { HasUsedLevitate = true; CheckEventSpells(); }
-        }
-        public static void TriggerFallenAndSurvived()
-        {
-            if (!HasFallenAndSurvived) { HasFallenAndSurvived = true; CheckEventSpells(); }
         }
         public static void TriggerPush7InBattle()    { if (!HasUsedPush7InBattle) { HasUsedPush7InBattle = true; CheckEventSpells(); } }
         public static void TriggerVisitedSturgia()   { if (!HasVisitedSturgia)  { HasVisitedSturgia  = true; CheckEventSpells(); CheckTravelSpells(); } }
@@ -625,6 +612,7 @@ namespace TheWitheringArt
                 else if (s.BookTag == "CHARM")         { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
                 else if (s.BookTag == "SINISTER_WILL") { conditionMet = HasVisitedAserai;     siteName = SiteAserai; }
                 else if (s.BookTag == "SEVERE_LIFE")   { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
+                else if (s.BookTag == "BANE")          { conditionMet = HasVisitedAseraiCity; siteName = SiteAseraiCity; }
                 else if (s.BookTag == "BLAST")         { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
                 else if (s.BookTag == "CLAIRVOYANCE")  { conditionMet = HasVisitedEmpire;     siteName = SiteEmpire; }
                 else if (s.BookTag == "RELOCATE")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
@@ -657,7 +645,6 @@ namespace TheWitheringArt
                 else if (s.BookTag == "INSPIRE")       conditionMet = HasWonSoloBattle;
                 else if (s.BookTag == "REPEL")         conditionMet = HasUsedPush7InBattle;
                 else if (s.BookTag == "SCATTER")       conditionMet = HasWonOutnumbered3to1;
-                else if (s.BookTag == "SINK")          conditionMet = HasFallenAndSurvived;
                 else if (s.BookTag == "DARK_BARGAIN")  conditionMet = HasExecutedLord;
                 else if (s.BookTag == "HOLLOW_NAME")   conditionMet = HasReachedAge70;
                 else                                   conditionMet = false;
@@ -758,6 +745,8 @@ namespace TheWitheringArt
                         else if (s.LordFaction == "aserai" && !string.IsNullOrEmpty(SiteAserai))
                             hint = $"Visit {SiteAserai} (Aserai) — friendly relations required";
                         else if (s.BookTag == "SEVERE_LIFE" && !string.IsNullOrEmpty(SiteAseraiCity))
+                            hint = $"Visit {SiteAseraiCity} (Aserai city) — alliance required";
+                        else if (s.BookTag == "BANE" && !string.IsNullOrEmpty(SiteAseraiCity))
                             hint = $"Visit {SiteAseraiCity} (Aserai city) — alliance required";
                         else if (s.LordFaction == "sturgia" && !string.IsNullOrEmpty(SiteSturgia))
                             hint = $"Visit {SiteSturgia} (Sturgia) — friendly relations required";
@@ -882,7 +871,7 @@ namespace TheWitheringArt
             bool hp7 = HasUsedPush7InBattle; bool hve = HasVisitedEmpire;
             bool hfa = HasFoughtAlone10;  bool hr50 = HasReachedAge50;
             bool hr70 = HasReachedAge70;
-            bool ho3 = HasWonOutnumbered3to1; bool hfall = HasFallenAndSurvived;
+            bool ho3 = HasWonOutnumbered3to1;
             bool hlev = HasUsedLevitate;
 
             store.SyncData("TWA_HasGift",               ref _hasGift);
@@ -926,7 +915,6 @@ namespace TheWitheringArt
             store.SyncData("TWA_HasReachedAge50",       ref hr50);
             store.SyncData("TWA_HasReachedAge70",       ref hr70);
             store.SyncData("TWA_HasWonOutnumbered",     ref ho3);
-            store.SyncData("TWA_HasFallenAndSurvived",  ref hfall);
             store.SyncData("TWA_HasUsedLevitate",       ref hlev);
             store.SyncData("TWA_HasVisitedKhuzait",     ref hvk);
             store.SyncData("TWA_HasVisitedEmpire",      ref hve);
@@ -948,7 +936,6 @@ namespace TheWitheringArt
             if (hr50) HasReachedAge50       = true;
             if (hr70) HasReachedAge70       = true;
             if (ho3)  HasWonOutnumbered3to1 = true;
-            if (hfall) HasFallenAndSurvived = true;
             if (hlev) HasUsedLevitate       = true;
 
             _notifiedTags.Clear();
@@ -1811,7 +1798,8 @@ namespace TheWitheringArt
                 // EVENT
                 case "RRLU":    Suppress();     break;
                 case "RRUUL":   Dismount();     break;
-                case "LLUR":    Shrouding();    break;
+                case "LLUR":    ShroudEscape(); break;
+                case "LULR":    Bane();         break;
                 case "RULRU":   Inspire();      break;
                 case "RRRLLLU": DarkBargain();  break;
                 case "ULUL":    Rejuvenate();   break;
@@ -1830,7 +1818,6 @@ namespace TheWitheringArt
                 case "LRRL":    Swap();         break;
                 case "RULR":    Scatter();      break;
                 case "UULR":    Devour();       break;
-                case "LURR":    Sink();         break;
                 case "ULR":     Mark();         break;
                 case "LRRUL":   Unname();       break;
                 case "RUUR":    HollowName();   break;
@@ -2162,7 +2149,7 @@ namespace TheWitheringArt
                 new Color(0.9f, 0.7f, 0.2f)));
         }
 
-        private static void Shrouding()
+        private static void Bane()
         {
             if (MobileParty.MainParty == null) return;
             // Apply confusion to nearby enemy parties — they lose sight of your intent
@@ -2181,7 +2168,30 @@ namespace TheWitheringArt
             }
             catch { }
             InformationManager.DisplayMessage(new InformationMessage(
-                "A shroud settles over your party. Enemy scouts lose your trail for a few hours.",
+                "A bane settles over your party. Enemy scouts lose your trail for a few hours.",
+                new Color(0.4f, 0.4f, 0.7f)));
+        }
+
+        private static void ShroudEscape()
+        {
+            if (TaleWorlds.CampaignSystem.Encounters.PlayerEncounter.Battle == null)
+            {
+                Fizzle("Shrouding can only be used while an encounter is active.");
+                return;
+            }
+
+            try
+            {
+                TaleWorlds.CampaignSystem.Encounters.PlayerEncounter.LeaveBattle();
+            }
+            catch
+            {
+                Fizzle("The shroud fails to take hold.");
+                return;
+            }
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                "The battle falls away. You escape without losing a soldier.",
                 new Color(0.4f, 0.4f, 0.7f)));
         }
 
@@ -2663,7 +2673,7 @@ namespace TheWitheringArt
         // Mark anchor — stores the player's position for recall
         private static Vec3? _markAnchor = null;
 
-        private static void Sink()
+        private static void RemovedSpell_0()
         {
             if (Player == null) return;
             var targets = Enemies()
