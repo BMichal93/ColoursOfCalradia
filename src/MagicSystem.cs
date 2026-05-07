@@ -233,7 +233,7 @@ namespace TheWitheringArt
                 LearnHint="Become Very Cautious",
                 Flavour="A pulse, repeated. The first time is a warning. The rest are a statement." },
 
-            new SpellEntry { Name="Stop Arrows",  Combo="LURLUR",  DayCost=60, BookTag="STOP_ARROWS",
+            new SpellEntry { Name="Stop Arrows",  Combo="LURLUR",  DayCost=45, BookTag="STOP_ARROWS",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.Travel, LordFaction="vlandia",
                 LearnHint="Visit the Vlandian settlement while friendly",
@@ -259,7 +259,7 @@ namespace TheWitheringArt
                 LearnHint="Visit the Battanian village while friendly",
                 Flavour="The earth does not mourn what it yields. Only the one who asked pays the toll." },
 
-            new SpellEntry { Name="Restore",      Combo="UULL",    DayCost=15, BookTag="RESTORE",
+            new SpellEntry { Name="Restore",      Combo="UULL",    DayCost=25, BookTag="RESTORE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Healing,
                 LearnHow=LearnHow.Personality, LordFaction="",
                 LearnHint="Become Munificent",
@@ -271,7 +271,7 @@ namespace TheWitheringArt
                 LearnHint="Visit the Battanian village while friendly",
                 Flavour="The void does not catch you. It simply slows the agreement between you and the ground." },
 
-            new SpellEntry { Name="Inspire",      Combo="RULRU",   DayCost=15, BookTag="INSPIRE",
+            new SpellEntry { Name="Inspire",      Combo="RULRU",   DayCost=20, BookTag="INSPIRE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Healing,
                 LearnHow=LearnHow.Personality, LordFaction="",
                 LearnHint="Become Fearless",
@@ -376,7 +376,7 @@ namespace TheWitheringArt
                 LearnHint="Kill or befriend an Empire Mage Lord",
                 Flavour="The call carries further than a voice. Those who hear it do not know why they march." },
 
-            new SpellEntry { Name="Aura of Hate", Combo="RLLUR",   DayCost=25, BookTag="AURA_OF_HATE",
+            new SpellEntry { Name="Aura of Hate", Combo="RLLUR",   DayCost=45, BookTag="AURA_OF_HATE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Condition, LordFaction="",
                 LearnHint="Raze at least 5 villages",
@@ -3595,7 +3595,7 @@ namespace TheWitheringArt
                 case "battania":
                     // Inspire — morale boost own party
                     if (lord.PartyBelongedTo != null)
-                        pool.Add(new MapSpellEntry { SpellName="Inspire", DayCost=15, Action=() =>
+                        pool.Add(new MapSpellEntry { SpellName="Inspire", DayCost=20, Action=() =>
                         {
                             lord.PartyBelongedTo.RecentEventsMorale += 15f;
                             return $"{lord.Name}'s warband surges with renewed purpose.";
@@ -3654,7 +3654,7 @@ namespace TheWitheringArt
                             return $"{nearest.Name} withers under {lord.Name}'s will.";
                         }});
                     // Aura of Hate � drain militia from a random enemy village
-                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=25, Action=() =>
+                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=45, Action=() =>
                     {
                         Settlement target = Settlement.All
                             .Where(s => s.IsVillage && s.MapFaction != lord.MapFaction && s.Village != null && s.Village.Militia > 0f)
@@ -3761,7 +3761,7 @@ namespace TheWitheringArt
 
                 case "khuzait":
                     // Aura of Hate — drain militia from a random enemy village
-                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=25, Action=() =>
+                    pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=45, Action=() =>
                     {
                         Settlement target = Settlement.All
                             .Where(s => s.IsVillage && s.MapFaction != lord.MapFaction && s.Village != null && s.Village.Militia > 0f)
@@ -3793,7 +3793,7 @@ namespace TheWitheringArt
                         }});
                     // Inspire — secondary morale boost
                     if (lord.PartyBelongedTo != null)
-                        pool.Add(new MapSpellEntry { SpellName="Inspire", DayCost=15, Action=() =>
+                        pool.Add(new MapSpellEntry { SpellName="Inspire", DayCost=20, Action=() =>
                         {
                             lord.PartyBelongedTo.RecentEventsMorale += 10f;
                             return $"Discipline holds in {lord.Name}'s ranks.";
@@ -4174,7 +4174,7 @@ namespace TheWitheringArt
                         () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Dismount,
                             "{0} enemy formation{1} forced to dismount.")));
                 if (hasRanged)
-                    options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 60,
+                    options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 45,
                         () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.StopArrows,
                             "{0} enemy formation{1} told to stop shooting.")));
             }
@@ -4205,7 +4205,7 @@ namespace TheWitheringArt
                         "{0} enemy formation{1} forced to dismount.")));
 
             if (hasRanged)
-                options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 60,
+                options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 45,
                     () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.StopArrows,
                         "{0} enemy formation{1} told to stop shooting.")));
 
@@ -4514,6 +4514,7 @@ namespace TheWitheringArt
         public static void ClearTimers() => _castTimers.Clear();
     }
 }
+
 
 
 
