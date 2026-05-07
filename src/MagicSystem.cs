@@ -141,7 +141,7 @@ namespace TheWitheringArt
     // =========================================================================
     public enum SpellContext   { Mission, Map, Both }
     public enum SpellGlowColor { Combat, Healing, Support }
-    public enum LearnHow       { Starting, Companion, Event, Travel, MageLord }
+    public enum LearnHow       { Starting, Companion, Event, Travel, MageLord, Condition }
 
     public class SpellEntry
     {
@@ -178,7 +178,7 @@ namespace TheWitheringArt
                 LearnHint="Recruit a magical companion",
                 Flavour="The same force, turned inward. You become the heaviest thing on the field." },
 
-            new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=15, BookTag="BLAST",
+            new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=75, BookTag="BLAST",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Travel, LordFaction="sturgia",
                 LearnHint="Visit the Sturgian settlement while friendly",
@@ -217,8 +217,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Enrage",      Combo="URUR",    DayCost=35, BookTag="ENRAGE",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Travel, LordFaction="vlandia",
-                LearnHint="Visit the Vlandian settlement while friendly",
+                LearnHow=LearnHow.Travel, LordFaction="sturgia",
+                LearnHint="Visit the Sturgian settlement while friendly",
                 Flavour="The order reaches the enemy before their caution does. They surge forward in a murderous rush." },
 
             new SpellEntry { Name="Dismount",    Combo="RRUUL",   DayCost=30, BookTag="DISMOUNT",
@@ -378,8 +378,8 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Aura of Hate", Combo="RLLUR",   DayCost=25, BookTag="AURA_OF_HATE",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.MageLord, LordFaction="aserai",
-                LearnHint="Kill or befriend an Aserai or Khuzait Mage Lord",
+                LearnHow=LearnHow.Condition, LordFaction="",
+                LearnHint="Raze at least 5 villages",
                 Flavour="They see you coming. They see what you intend. Their legs simply will not carry them to the fight." },
 
             new SpellEntry { Name="Hollow Name",  Combo="RUUR",    DayCost=20, BookTag="HOLLOW_NAME",
@@ -479,12 +479,23 @@ namespace TheWitheringArt
         public static bool HasFledBattle      { get; private set; }
         public static bool HasWonSoloBattle   { get; private set; }
         public static bool HasExecutedLord    { get; private set; }
+        public static bool HasRazedAtLeast5Villages { get; private set; }
+        private static int _razedVillagesCount;
 
         public static void TriggerFoughtMage()      { if (!HasFoughtMage)      { HasFoughtMage      = true; CheckEventSpells(); } }
         public static void TriggerDefeatedKhuzait() { if (!HasDefeatedKhuzait) { HasDefeatedKhuzait = true; CheckEventSpells(); } }
         public static void TriggerFledBattle()      { if (!HasFledBattle)      { HasFledBattle      = true; CheckEventSpells(); } }
         public static void TriggerWonSoloBattle()   { if (!HasWonSoloBattle)   { HasWonSoloBattle   = true; CheckEventSpells(); } }
         public static void TriggerExecutedLord()    { if (!HasExecutedLord)    { HasExecutedLord    = true; CheckEventSpells(); } }
+        public static void TriggerRazedVillage()
+        {
+            _razedVillagesCount++;
+            if (!HasRazedAtLeast5Villages && _razedVillagesCount >= 5)
+            {
+                HasRazedAtLeast5Villages = true;
+                CheckConditionSpells();
+            }
+        }
         public static bool HasVisitedBattania { get; private set; }
         public static bool HasVisitedAserai   { get; private set; }
 
@@ -629,7 +640,7 @@ namespace TheWitheringArt
                 else if (s.BookTag == "RELOCATE")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "PACIFY")        { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "HALT")          { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
-                else if (s.BookTag == "ENRAGE")        { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
+                else if (s.BookTag == "ENRAGE")        { conditionMet = HasVisitedSturgia;    siteName = SiteSturgia; }
                 else if (s.BookTag == "DISMOUNT")      { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "STOP_ARROWS")   { conditionMet = HasVisitedVlandia;    siteName = SiteVlandia; }
                 else if (s.BookTag == "WEIGHTLESS")    { conditionMet = HasVisitedKhuzait;    siteName = SiteKhuzait; }
@@ -668,6 +679,22 @@ namespace TheWitheringArt
             }
         }
 
+        public static void CheckConditionSpells()
+        {
+            if (!_hasGift) return;
+            foreach (SpellEntry s in SpellDatabase.All.Where(s => s.LearnHow == LearnHow.Condition))
+            {
+                if (_notifiedTags.Contains(s.BookTag)) continue;
+
+                bool conditionMet;
+                if      (s.BookTag == "AURA_OF_HATE") conditionMet = HasRazedAtLeast5Villages;
+                else                                  conditionMet = false;
+
+                if (conditionMet)
+                    RevealSpell(s, "Your conquests leave a pattern behind.");
+            }
+        }
+
         private static bool TryGetTravelSpellSite(SpellEntry s, out string siteName)
         {
             siteName = "";
@@ -685,7 +712,7 @@ namespace TheWitheringArt
             else if (s.BookTag == "RELOCATE")      siteName = SiteVlandia;
             else if (s.BookTag == "PACIFY")        siteName = SiteVlandia;
             else if (s.BookTag == "HALT")          siteName = SiteVlandia;
-            else if (s.BookTag == "ENRAGE")        siteName = SiteVlandia;
+            else if (s.BookTag == "ENRAGE")        siteName = SiteSturgia;
             else if (s.BookTag == "DISMOUNT")      siteName = SiteVlandia;
             else if (s.BookTag == "STOP_ARROWS")   siteName = SiteVlandia;
             else if (s.BookTag == "WEIGHTLESS")    siteName = SiteKhuzait;
@@ -826,6 +853,8 @@ namespace TheWitheringArt
                             hint = $"Visit {SiteAseraiCity} (Aserai city) — alliance required";
                         else if (s.BookTag == "BANE" && !string.IsNullOrEmpty(SiteAseraiCity))
                             hint = $"Visit {SiteAseraiCity} (Aserai city) — alliance required";
+                        else if (s.BookTag == "ENRAGE" && !string.IsNullOrEmpty(SiteSturgia))
+                            hint = $"Visit {SiteSturgia} (Sturgia) — friendly relations required";
                         else if (s.LordFaction == "sturgia" && !string.IsNullOrEmpty(SiteSturgia))
                             hint = $"Visit {SiteSturgia} (Sturgia) — friendly relations required";
                         else if (s.LordFaction == "vlandia" && !string.IsNullOrEmpty(SiteVlandia))
@@ -994,6 +1023,7 @@ namespace TheWitheringArt
             store.SyncData("TWA_HasReachedAge70",       ref hr70);
             store.SyncData("TWA_HasWonOutnumbered",     ref ho3);
             store.SyncData("TWA_HasUsedLevitate",       ref hlev);
+            store.SyncData("TWA_RazedVillagesCount",    ref _razedVillagesCount);
             store.SyncData("TWA_HasVisitedKhuzait",     ref hvk);
             store.SyncData("TWA_HasVisitedEmpire",      ref hve);
 
@@ -1015,6 +1045,7 @@ namespace TheWitheringArt
             if (hr70) HasReachedAge70       = true;
             if (ho3)  HasWonOutnumbered3to1 = true;
             if (hlev) HasUsedLevitate       = true;
+            HasRazedAtLeast5Villages = _razedVillagesCount >= 5;
 
             _notifiedTags.Clear();
             if (tagList    != null) foreach (var t in tagList)    _notifiedTags.Add(t);
@@ -1191,6 +1222,7 @@ namespace TheWitheringArt
 
             // Check attribute-gated spells every day
             SpellKnowledge.CheckIntellectSpells();
+            SpellKnowledge.CheckConditionSpells();
 
             // Age milestone check
             SpellKnowledge.TriggerReachedAge50();
@@ -1708,6 +1740,7 @@ namespace TheWitheringArt
             if (raidingParty == null || raidingParty != MobileParty.MainParty) return;
             try
             {
+                SpellKnowledge.TriggerRazedVillage();
                 string settlementName = village.Bound?.Name?.ToString() ?? "";
                 if (string.IsNullOrEmpty(settlementName)) return;
                 SpellKnowledge.TryLearnTravelSpellFromSiteName(
@@ -2073,16 +2106,33 @@ namespace TheWitheringArt
 
         private static void Detonate()
         {
-            // Void-stun nearest enemy within 15 m — reliable kill equivalent
-            if (Player == null) return;
-            Agent target = Enemies()
-                .Where(a => a.Position.Distance(Player.Position) <= 15f)
-                .OrderBy(a => a.Position.Distance(Player.Position))
-                .FirstOrDefault();
-            if (target == null) { Fizzle("No enemy in range."); return; }
-            KillAgent(target);
+            if (Player == null || Mission.Current == null) return;
+
+            var targets = Mission.Current.Agents
+                .Where(a => a != null && a.IsActive() &&
+                            a.Position.Distance(Player.Position) <= 5f)
+                .ToList();
+
+            if (targets.Count == 0)
+            {
+                Fizzle("No units are close enough.");
+                return;
+            }
+
+            int killed = 0;
+            foreach (Agent target in targets)
+            {
+                try
+                {
+                    KillAgent(target);
+                    killed++;
+                }
+                catch { }
+            }
+
             InformationManager.DisplayMessage(new InformationMessage(
-                $"Detonate strikes {target.Name}.", new Color(0.9f, 0.3f, 0.3f)));
+                $"Detonate tears through {killed} {(killed == 1 ? "unit" : "units")} within 5 metres.",
+                new Color(0.9f, 0.3f, 0.3f)));
         }
 
         private static void Relocate()
@@ -2254,7 +2304,7 @@ namespace TheWitheringArt
                 new Color(0.5f, 0.5f, 0.8f)));
         }
 
-        private enum BattleCommandKind
+        public enum BattleCommandKind
         {
             Halt,
             Enrage,
@@ -2262,9 +2312,9 @@ namespace TheWitheringArt
             StopArrows
         }
 
-        private static void IssueBattleCommand(BattleCommandKind kind, string successText)
+        public static void IssueBattleCommand(Agent source, BattleCommandKind kind, string successText)
         {
-            if (Player == null || Mission.Current == null || Mission.Current.Scene == null)
+            if (source == null || Mission.Current == null || Mission.Current.Scene == null)
             {
                 Fizzle("No battle is active.");
                 return;
@@ -2276,12 +2326,12 @@ namespace TheWitheringArt
             foreach (Agent a in Enemies().ToList())
             {
                 if (a.Formation == null) continue;
-                if (a.Position.Distance(Player.Position) > 500f) continue;
+                if (a.Position.Distance(source.Position) > 500f) continue;
 
                 bool visible = false;
                 try
                 {
-                    visible = scene.CheckPointCanSeePoint(Player.Position, a.Position, 500f);
+                    visible = scene.CheckPointCanSeePoint(source.Position, a.Position, 500f);
                 }
                 catch { }
 
@@ -2336,10 +2386,10 @@ namespace TheWitheringArt
                 new Color(0.7f, 0.5f, 0.9f)));
         }
 
-        private static void Halt()     => IssueBattleCommand(BattleCommandKind.Halt,      "{0} enemy formation{1} ordered to halt.");
-        private static void Enrage()   => IssueBattleCommand(BattleCommandKind.Enrage,    "{0} enemy formation{1} driven into a charge.");
-        private static void Dismount() => IssueBattleCommand(BattleCommandKind.Dismount,  "{0} enemy formation{1} forced to dismount.");
-        private static void StopArrows()=> IssueBattleCommand(BattleCommandKind.StopArrows,"{0} enemy formation{1} told to stop shooting.");
+        private static void Halt()     => IssueBattleCommand(Player, BattleCommandKind.Halt,      "{0} enemy formation{1} ordered to halt.");
+        private static void Enrage()   => IssueBattleCommand(Player, BattleCommandKind.Enrage,    "{0} enemy formation{1} driven into a charge.");
+        private static void Dismount() => IssueBattleCommand(Player, BattleCommandKind.Dismount,  "{0} enemy formation{1} forced to dismount.");
+        private static void StopArrows()=> IssueBattleCommand(Player, BattleCommandKind.StopArrows,"{0} enemy formation{1} told to stop shooting.");
 
         private static void Bane()
         {
@@ -3495,9 +3545,9 @@ namespace TheWitheringArt
                             lord.PartyBelongedTo.RecentEventsMorale += 15f;
                             return $"{lord.Name}'s warband surges with renewed purpose.";
                         }});
-                    // Restore — heal wounded in own party
+                    // Mending — heal wounded in own party
                     if (lord.PartyBelongedTo != null)
-                        pool.Add(new MapSpellEntry { SpellName="Restore", DayCost=15, Action=() =>
+                        pool.Add(new MapSpellEntry { SpellName="Mending", DayCost=15, Action=() =>
                         {
                             int healed = 0;
                             foreach (var e in lord.PartyBelongedTo.MemberRoster.GetTroopRoster().ToList())
@@ -3523,15 +3573,15 @@ namespace TheWitheringArt
                     }});
                     break;
 
-                case "aserai":
-                    // Charm — give the lord's party some gold
+                                case "aserai":
+                    // Charm � give the lord's party some gold
                     pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
                     {
                         lord.Gold += 200;
                         try { lord.Clan?.AddRenown(-2f); } catch { }
                         return $"{lord.Name}'s dealings grow unusually profitable.";
                     }});
-                    // Sinister Will — drain the nearest enemy village of hearth
+                    // Sinister Will � drain the nearest enemy village of hearth
                     if (lord.PartyBelongedTo != null)
                         pool.Add(new MapSpellEntry { SpellName="Sinister Will", DayCost=25, Action=() =>
                         {
@@ -3548,7 +3598,7 @@ namespace TheWitheringArt
                             catch { }
                             return $"{nearest.Name} withers under {lord.Name}'s will.";
                         }});
-                    // Aura of Hate — drain militia from a random enemy village
+                    // Aura of Hate � drain militia from a random enemy village
                     pool.Add(new MapSpellEntry { SpellName="Aura of Hate", DayCost=25, Action=() =>
                     {
                         Settlement target = Settlement.All
@@ -3558,7 +3608,7 @@ namespace TheWitheringArt
                         if (!SpellEffects.TrySetMilitia(target.Village, 0f)) return null;
                         return $"Fear spreads from {lord.Name}. The defenders of {target.Name} disperse.";
                     }});
-                    // Hollow Name — drain an enemy clan
+                    // Hollow Name � drain an enemy clan
                     pool.Add(new MapSpellEntry { SpellName="Hollow Name", DayCost=20, Action=() =>
                     {
                         var target = Hero.AllAliveHeroes
@@ -3570,7 +3620,18 @@ namespace TheWitheringArt
                         try { target.Clan?.AddRenown(-10f); } catch { }
                         return $"{target.Name}'s name grows quieter in the world.";
                     }});
-                    // Dark Bargain — age an enemy (rare)
+                    // Severe Life � sometimes age a random enemy lord
+                    if (_rng.Next(100) < 25)
+                        pool.Add(new MapSpellEntry { SpellName="Severe Life", DayCost=45, Action=() =>
+                        {
+                            var target = Hero.AllAliveHeroes
+                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.IsAlive)
+                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            if (target == null) return null;
+                            target.SetBirthDay(target.BirthDay - CampaignTime.Years(10f / 252f));
+                            return $"{target.Name} reels as life is torn loose.";
+                        }});
+                    // Dark Bargain � age an enemy (rare)
                     if (_rng.Next(100) < 8)
                         pool.Add(new MapSpellEntry { SpellName="Dark Bargain", DayCost=0, Action=() =>
                         {
@@ -3913,6 +3974,7 @@ namespace TheWitheringArt
         // Seconds between consecutive casts per Mage Lord
         private const float CastInterval = 10f;
 
+        private static readonly Random _rng = new Random();
         private static readonly Dictionary<string, float> _cooldowns =
             new Dictionary<string, float>();
 
@@ -3945,6 +4007,13 @@ namespace TheWitheringArt
 
                 if (_cooldowns.ContainsKey(hero.StringId)) continue;
 
+                if (agent.MountAgent != null)
+                {
+                    try { agent.SetRidingOrder(RidingOrder.RidingOrderDismount.OrderEnum); }
+                    catch { }
+                    continue;
+                }
+
                 DecideAndCast(agent, hero);
             }
         }
@@ -3959,6 +4028,9 @@ namespace TheWitheringArt
                 TriggerCast(agent, hero, "Mending", 30, () => AIMending(agent));
                 return;
             }
+
+            if (MBRandom.RandomInt(100) < 5 && TryCastRandomSpell(agent, hero))
+                return;
 
             // Priority 2 — Repel when 3+ enemies are swarming within melee range
             int closeEnemies = Mission.Current.Agents
@@ -3999,14 +4071,130 @@ namespace TheWitheringArt
                 return;
             }
 
-            // Priority 5 — Blast any single enemy in range as last resort
-            bool anyEnemy = Mission.Current.Agents
-                .Any(a => a != agent && a.IsActive() && !a.IsMount &&
-                          a.Team != agent.Team &&
-                          a.Position.Distance(agent.Position) < 15f);
+            if (TryCastCommandSpell(agent, hero))
+                return;
+        }
 
-            if (anyEnemy)
-                TriggerCast(agent, hero, "Detonate", 15, () => AIDetonate(agent));
+        private static bool TryCastRandomSpell(Agent agent, Hero hero)
+        {
+            var options = new List<Action>();
+
+            int closeEnemies = Mission.Current.Agents
+                .Count(a => a != agent && a.IsActive() && !a.IsMount &&
+                            a.Team != agent.Team &&
+                            a.Position.Distance(agent.Position) < 8f);
+            if (closeEnemies >= 3)
+                options.Add(() => TriggerCast(agent, hero, "Repel", 40, () => AIRepel(agent)));
+
+            int coneEnemies = Mission.Current.Agents
+                .Count(a => a != agent && a.IsActive() && !a.IsMount &&
+                            a.Team != agent.Team &&
+                            a.Position.Distance(agent.Position) < 12f &&
+                            Vec3.DotProduct(
+                                agent.LookDirection.NormalizedCopy(),
+                                (a.Position - agent.Position).NormalizedCopy()) > 0.5f);
+            if (coneEnemies >= 2)
+                options.Add(() => TriggerCast(agent, hero, "Blast", 20, () => AIBlast(agent)));
+
+            bool hasNearbyEnemy = Mission.Current.Agents
+                .Any(a => a != agent && a.IsActive() && !a.IsMount && !a.IsHero &&
+                          a.Team != agent.Team &&
+                          a.Position.Distance(agent.Position) < 10f);
+            if (hasNearbyEnemy)
+                options.Add(() => TriggerCast(agent, hero, "Confuse", 30, () => AIConfuse(agent)));
+
+            if ((hero.MapFaction as Kingdom)?.StringId?.ToLower() == "aserai")
+                options.Add(() => TriggerCast(agent, hero, "Severe Life", 45, () => AISevereLife(agent)));
+
+            if (TryHasVisibleEnemyFormations(agent, out bool hasMounted, out bool hasRanged))
+            {
+                options.Add(() => TriggerCast(agent, hero, "Halt", 30,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Halt,
+                        "{0} enemy formation{1} ordered to halt.")));
+                options.Add(() => TriggerCast(agent, hero, "Enrage", 35,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Enrage,
+                        "{0} enemy formation{1} driven into a charge.")));
+                if (hasMounted)
+                    options.Add(() => TriggerCast(agent, hero, "Dismount", 30,
+                        () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Dismount,
+                            "{0} enemy formation{1} forced to dismount.")));
+                if (hasRanged)
+                    options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 60,
+                        () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.StopArrows,
+                            "{0} enemy formation{1} told to stop shooting.")));
+            }
+
+            if (options.Count == 0) return false;
+            options[MBRandom.RandomInt(options.Count)].Invoke();
+            return true;
+        }
+
+        private static bool TryCastCommandSpell(Agent agent, Hero hero)
+        {
+            if (!TryHasVisibleEnemyFormations(agent, out bool hasMounted, out bool hasRanged))
+                return false;
+
+            var options = new List<Action>
+            {
+                () => TriggerCast(agent, hero, "Halt", 30,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Halt,
+                        "{0} enemy formation{1} ordered to halt.")),
+                () => TriggerCast(agent, hero, "Enrage", 35,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Enrage,
+                        "{0} enemy formation{1} driven into a charge."))
+            };
+
+            if (hasMounted)
+                options.Add(() => TriggerCast(agent, hero, "Dismount", 30,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Dismount,
+                        "{0} enemy formation{1} forced to dismount.")));
+
+            if (hasRanged)
+                options.Add(() => TriggerCast(agent, hero, "Stop Arrows", 60,
+                    () => SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.StopArrows,
+                        "{0} enemy formation{1} told to stop shooting.")));
+
+            options[MBRandom.RandomInt(options.Count)].Invoke();
+            return true;
+        }
+
+        private static bool TryHasVisibleEnemyFormations(Agent agent, out bool hasMounted, out bool hasRanged)
+        {
+            hasMounted = false;
+            hasRanged = false;
+            if (Mission.Current == null || Mission.Current.Scene == null) return false;
+
+            var scene = Mission.Current.Scene;
+            var formations = new HashSet<Formation>();
+
+            foreach (Agent enemy in Mission.Current.Agents.ToList())
+            {
+                if (enemy == agent || enemy.IsMount || !enemy.IsActive()) continue;
+                if (enemy.Team == agent.Team || enemy.Formation == null) continue;
+                if (enemy.Position.Distance(agent.Position) > 500f) continue;
+
+                bool visible = false;
+                try { visible = scene.CheckPointCanSeePoint(agent.Position, enemy.Position, 500f); }
+                catch { }
+                if (!visible) continue;
+
+                formations.Add(enemy.Formation);
+            }
+
+            foreach (Formation formation in formations)
+            {
+                try
+                {
+                    if (formation.HasAnyMountedUnit)
+                        hasMounted = true;
+                    if (formation.GetCountOfUnitsBelongingToLogicalClass(TaleWorlds.Core.FormationClass.Ranged) > 0 ||
+                        formation.GetCountOfUnitsBelongingToLogicalClass(TaleWorlds.Core.FormationClass.HorseArcher) > 0)
+                        hasRanged = true;
+                }
+                catch { }
+            }
+
+            return formations.Count > 0;
         }
 
         private static void TriggerCast(Agent agent, Hero hero,
@@ -4117,16 +4305,17 @@ namespace TheWitheringArt
             }
         }
 
-        private static void AIDetonate(Agent caster)
+        private static void AISevereLife(Agent caster)
         {
             if (Mission.Current == null) return;
-            Agent target = Mission.Current.Agents
+            var targets = Mission.Current.Agents
                 .Where(a => a != caster && a.IsActive() && !a.IsMount &&
-                            a.Team != caster.Team &&
-                            a.Position.Distance(caster.Position) <= 15f)
-                .OrderBy(a => a.Position.Distance(caster.Position))
-                .FirstOrDefault();
-            if (target != null) SpellEffects.KillAgent(target);
+                            a.Team != caster.Team && !a.IsHero)
+                .ToList();
+            if (targets.Count == 0) return;
+
+            Agent target = targets[_rng.Next(targets.Count)];
+            SpellEffects.KillAgent(target);
         }
 
         public static void ClearCooldowns() => _cooldowns.Clear();
@@ -4270,4 +4459,10 @@ namespace TheWitheringArt
         public static void ClearTimers() => _castTimers.Clear();
     }
 }
+
+
+
+
+
+
 
