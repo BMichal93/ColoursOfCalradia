@@ -337,13 +337,6 @@ namespace TheWitheringArt
                 Flavour="Weight is a contract. You void it for everyone nearby, including your allies. Choose carefully." },
 
             // ── MAGE LORD (faction-specific) ──────────────────────────────
-            // Battania lords
-            new SpellEntry { Name="Levitate",     Combo="UUUR",    DayCost=20, BookTag="LEVITATE",
-                Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.MageLord, LordFaction="battania",
-                LearnHint="Kill or befriend a Battanian Mage Lord",
-                Flavour="The ground was always optional. You simply forgot to ask permission to leave it." },
-
             // Aserai lords
             new SpellEntry { Name="Devour",       Combo="UULR",    DayCost=0,  BookTag="DEVOUR",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
@@ -511,11 +504,6 @@ namespace TheWitheringArt
         public static bool HasUsedPush7InBattle { get; private set; }
         public static bool HasFoughtAlone10   { get; private set; }
 
-        public static bool HasUsedLevitate     { get; private set; }
-        public static void TriggerUsedLevitate()
-        {
-            if (!HasUsedLevitate) { HasUsedLevitate = true; CheckEventSpells(); }
-        }
         public static void TriggerPush7InBattle()    { if (!HasUsedPush7InBattle) { HasUsedPush7InBattle = true; CheckEventSpells(); } }
         public static void TriggerVisitedSturgia()   { if (!HasVisitedSturgia)  { HasVisitedSturgia  = true; CheckEventSpells(); CheckTravelSpells(); } }
         public static void TriggerVisitedVlandia()   { if (!HasVisitedVlandia)  { HasVisitedVlandia  = true; CheckTravelSpells(); } }
@@ -1069,7 +1057,6 @@ namespace TheWitheringArt
             bool hr70 = HasReachedAge70;
             bool ho3 = HasWonOutnumbered3to1;
             bool hbm = HasWonWhileMoraleBroken;
-            bool hlev = HasUsedLevitate;
 
             store.SyncData("TWA_HasGift",               ref _hasGift);
             store.SyncData("TWA_RitualKnown",           ref _ritualKnown);
@@ -1114,7 +1101,6 @@ namespace TheWitheringArt
             store.SyncData("TWA_HasReachedAge70",       ref hr70);
             store.SyncData("TWA_HasWonOutnumbered",     ref ho3);
             store.SyncData("TWA_HasWonWhileMoraleBroken", ref hbm);
-            store.SyncData("TWA_HasUsedLevitate",       ref hlev);
             store.SyncData("TWA_RazedVillagesCount",    ref _razedVillagesCount);
             store.SyncData("TWA_HasVisitedKhuzait",     ref hvk);
             store.SyncData("TWA_HasVisitedEmpire",      ref hve);
@@ -1137,7 +1123,6 @@ namespace TheWitheringArt
             if (hr70) HasReachedAge70       = true;
             if (ho3)  HasWonOutnumbered3to1 = true;
             if (hbm)  HasWonWhileMoraleBroken = true;
-            if (hlev) HasUsedLevitate       = true;
             HasRazedAtLeast5Villages = _razedVillagesCount >= 5;
 
             _notifiedTags.Clear();
@@ -2113,7 +2098,6 @@ namespace TheWitheringArt
                 case "LRRUL":   Unname();       break;
                 case "RUUR":    HollowName();   break;
                 case "LRLU":    LongRoad();     break;
-                case "UUUR":    Levitate();     break;
                 case "LUUL":    Featherfall();  break;
                 case "LLUU":    Weightless();   break;
                 case "UULRLU":  Calling();      break;
@@ -2973,43 +2957,6 @@ namespace TheWitheringArt
                 Color.FromUint(0xFF880000)));
         }
 
-        private static void Levitate()
-        {
-            if (Player == null) return;
-            if (ActiveEffectManager.Has("Levitate")) { Fizzle("Already levitating."); return; }
-
-            // Track for Featherfall unlock
-            SpellKnowledge.TriggerUsedLevitate();
-
-            float targetZ = Player.Position.z + 8f;
-
-            ActiveEffectManager.Add(new ActiveEffect
-            {
-                Name            = "Levitate",
-                Duration        = 15f,
-                IsMissionEffect = true,
-                OnTick = _ =>
-                {
-                    if (Player == null || !Player.IsActive()) return;
-                    // Re-lift if dropped more than 1m below target
-                    if (Player.Position.z < targetZ - 1f)
-                    {
-                        Vec3 lifted = Player.Position;
-                        lifted.z = targetZ;
-                        try { Player.TeleportToPosition(lifted); } catch { }
-                    }
-                }
-            });
-
-            Vec3 dest = Player.Position;
-            dest.z += 8f;
-            Player.TeleportToPosition(dest);
-
-            InformationManager.DisplayMessage(new InformationMessage(
-                "You rise. The battle continues beneath you.",
-                new Color(0.5f, 0.7f, 1f)));
-        }
-
         private static void Featherfall()
         {
             if (Player == null) return;
@@ -3389,7 +3336,6 @@ namespace TheWitheringArt
                 case "MENDING":
                 case "ACCELERATE":
                 case "LONG_ROAD":
-                case "LEVITATE":
                 case "CLAIRVOYANCE":
                 case "RELOCATE":
                     return SpellGlowColor.Healing;
