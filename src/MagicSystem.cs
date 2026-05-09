@@ -1636,8 +1636,23 @@ namespace TheWitheringArt
                                   KillCharacterAction.KillCharacterActionDetail detail,
                                   bool showNotification)
         {
-            if (MageLordRegistry.IsMageLord(victim))
-                MageLordRegistry.OnMageLordDied(victim);
+            if (!MageLordRegistry.IsMageLord(victim)) return;
+
+            bool killedFightingPlayer = false;
+            try
+            {
+                var ev = MapEvent.PlayerMapEvent;
+                if (ev != null && detail == KillCharacterAction.KillCharacterActionDetail.DiedInBattle)
+                {
+                    BattleSideEnum playerSide = ev.PlayerSide;
+                    PartyBase victimParty = victim.PartyBelongedTo?.Party;
+                    killedFightingPlayer = victimParty != null && ev.InvolvedParties.Any(p =>
+                        p.Side != playerSide && p.Party == victimParty);
+                }
+            }
+            catch { }
+
+            MageLordRegistry.OnMageLordDied(victim, killedFightingPlayer);
         }
 
         // ── Clean up mission effects and AI cooldowns when a battle ends ──
@@ -4136,7 +4151,7 @@ namespace TheWitheringArt
             Hero.AllAliveHeroes.Count(h => h.MapFaction == faction && IsMageLord(h));
 
         // ── Called by OnHeroKilled when a Mage Lord dies ──────────────────
-        public static void OnMageLordDied(Hero hero)
+        public static void OnMageLordDied(Hero hero, bool killedFightingPlayer = false)
         {
             _mageLordIds.Remove(hero.StringId);
 
@@ -4150,8 +4165,8 @@ namespace TheWitheringArt
                 $"The Gift of {hero.Name} is extinguished. It will seek a new vessel in one week.",
                 Color.FromUint(0xFFCC4444)));
 
-            // Player learns a faction-specific spell from the dying lord
-            if (SpellKnowledge.HasGift)
+            // Player learns a faction-specific spell only if the lord died fighting their party
+            if (SpellKnowledge.HasGift && killedFightingPlayer)
             {
                 string lordFactionId = (hero.MapFaction as Kingdom)?.StringId?.ToLower() ?? "";
                 RevealRandomUnknownSpell(hero.Name.ToString(), lordFactionId);
