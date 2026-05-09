@@ -1647,7 +1647,7 @@ namespace TheWitheringArt
                     BattleSideEnum playerSide = ev.PlayerSide;
                     PartyBase victimParty = victim.PartyBelongedTo?.Party;
                     killedFightingPlayer = victimParty != null && ev.InvolvedParties.Any(p =>
-                        p.Side != playerSide && p.Party == victimParty);
+                        p.Side != playerSide && p == victimParty);
                 }
             }
             catch { }
