@@ -2997,30 +2997,36 @@ namespace TheWitheringArt
                 new Color(0.6f, 0.8f, 1f)));
         }
 
-        private static void Weightless()
+       private static void Weightless()
         {
-            if (Player == null) return;
+            if (Player == null || Mission.Current == null) return;
 
-            // Lift ALL agents within 10m — friend and foe alike
-            var targets = Mission.Current?.Agents
-                .Where(a => a != Player && a.IsActive() && !a.IsMount &&
+            var targets = Mission.Current.Agents
+                .Where(a => a != null && a != Player && a.IsActive() && !a.IsMount &&
                             a.Position.Distance(Player.Position) <= 10f)
-                .ToList() ?? new List<Agent>();
+                .ToList();
 
             if (targets.Count == 0) { Fizzle("No agents within range."); return; }
 
             foreach (Agent a in targets)
             {
-                Vec3 lifted = a.Position;
-                lifted.z += 3f;
-                try { a.TeleportToPosition(lifted); } catch { }
+                try 
+                { 
+                    Vec3 newPos = a.Position;
+                    newPos.z += 1.5f; 
+                    a.TeleportToPosition(newPos);
+
+                    a.SetActionChannel(0, ActionIndexCache.Create("act_strike_fall_back"), true);
+
+                } 
+                catch { }
             }
 
             int enemies = targets.Count(a => a.Team != Player.Team);
             int allies  = targets.Count(a => a.Team == Player.Team);
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"Weight leaves the area. {enemies} {(enemies == 1 ? "enemy" : "enemies")} and {allies} {(allies == 1 ? "ally" : "allies")} lifted.",
+                $"Gravity fails. {enemies} enemies and {allies} allies are cast upward.",
                 new Color(0.7f, 0.5f, 1f)));
         }
 
