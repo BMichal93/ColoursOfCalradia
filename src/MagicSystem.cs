@@ -179,7 +179,7 @@ namespace TheWitheringArt
                 LearnHint="Become Munificent",
                 Flavour="The same force, turned inward. You become the heaviest thing on the field." },
 
-            new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=75, BookTag="BLAST",
+            new SpellEntry { Name="Detonate",     Combo="UURR",    DayCost=50, BookTag="BLAST",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Travel, LordFaction="sturgia",
                 LearnHint="Visit the Sturgian settlement while friendly",
@@ -1915,13 +1915,13 @@ namespace TheWitheringArt
                 if      (Input.IsKeyPressed(InputKey.W)) Append("U");
                 else if (Input.IsKeyPressed(InputKey.A)) Append("L");
                 else if (Input.IsKeyPressed(InputKey.D)) Append("R");
-                else if (Input.IsKeyPressed(InputKey.LeftAlt)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z S na Space
+                else if (Input.IsKeyPressed(InputKey.S)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z S na Space
 
                 // Pad — Przyciski geometryczne dla kombo, RB (ControllerRUpper) dla księgi
                 else if (Input.IsKeyPressed(InputKey.ControllerRUp))    Append("U");
                 else if (Input.IsKeyPressed(InputKey.ControllerRLeft))  Append("L");
                 else if (Input.IsKeyPressed(InputKey.ControllerRDown))  Append("R");
-                else if (Input.IsKeyPressed(InputKey.ControllerLTrigger)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z LThumb na RB
+                else if (Input.IsKeyPressed(InputKey.ControllerLThumb)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z LThumb na RB
 
                 if (_buffer.Length > 0 && _buffer != _lastDisplayedBuffer)
                 {
@@ -2244,8 +2244,8 @@ namespace TheWitheringArt
             if (Player == null || Mission.Current == null) return;
 
             var targets = Mission.Current.Agents
-                .Where(a => a != null && a.IsActive() &&
-                            a.Position.Distance(Player.Position) <= 5f)
+                .Where(a => a != null && a.IsActive() && a != Player &&
+                            a.Position.Distance(Player.Position) <= 10f)
                 .ToList();
 
             if (targets.Count == 0)
