@@ -216,13 +216,13 @@ namespace TheWitheringArt
                 LearnHint="Visit the Aserai city while allied",
                 Flavour="A shadow settles over the roads and camps around you. Enemy scouts forget their purpose." },
 
-            new SpellEntry { Name="Enrage",      Combo="URUR",    DayCost=35, BookTag="ENRAGE",
+            new SpellEntry { Name="Enrage",      Combo="URUR",    DayCost=20, BookTag="ENRAGE",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
                 LearnHow=LearnHow.Travel, LordFaction="sturgia",
                 LearnHint="Visit the Sturgian settlement while friendly",
                 Flavour="The order reaches the enemy before their caution does. They surge forward in a murderous rush." },
 
-            new SpellEntry { Name="Dismount",    Combo="RRUUL",   DayCost=30, BookTag="DISMOUNT",
+            new SpellEntry { Name="Dismount",    Combo="RRUUL",   DayCost=25, BookTag="DISMOUNT",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.Travel, LordFaction="vlandia",
                 LearnHint="Visit the Vlandian settlement while friendly",
@@ -382,7 +382,7 @@ namespace TheWitheringArt
                 LearnHint="Reach age 70 through spell use",
                 Flavour="You are less. But so are they. The void does not play favourites — it only takes." },
 
-            new SpellEntry { Name="Break Spirits", Combo="LRUR",   DayCost=35, BookTag="BREAK_SPIRITS",
+            new SpellEntry { Name="Break Spirits", Combo="LRUR",   DayCost=40, BookTag="BREAK_SPIRITS",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.Event, LordFaction="",
                 LearnHint="Win a battle while your warband is on the verge of breaking",
@@ -2901,51 +2901,35 @@ namespace TheWitheringArt
 
         private static void BreakSpirits()
         {
-            if (Player == null || Mission.Current == null) return;
+            if (Agent.Main == null || Mission.Current == null) return;
 
-            var targets = Enemies()
-                .Where(a => a.Position.Distance(Player.Position) <= 14f)
+
+            var targets = Mission.Current.Agents
+                .Where(a => a.IsEnemyOf(Agent.Main) && a.Position.Distance(Agent.Main.Position) <= 14f)
                 .ToList();
 
-            if (targets.Count == 0)
-            {
-                Fizzle("No enemies are close enough to break.");
-                return;
-            }
+            if (targets.Count == 0) return;
 
-            ActionIndexCache freeze = ActionIndexCache.Create("act_stand_1");
             int shaken = 0;
-
             foreach (Agent a in targets)
             {
-                int idx = a.Index;
-                ActiveEffectManager.Add(new ActiveEffect
+                if (a.IsActive())
                 {
-                    Name            = $"_break_spirits_{idx}",
-                    Duration        = 6f,
-                    IsMissionEffect = true,
-                    OnTick = _ =>
-                    {
-                        Agent t = Mission.Current?.Agents.FirstOrDefault(x => x.Index == idx);
-                        if (t == null || !t.IsActive()) return;
-                        try { t.SetActionChannel(0, freeze, true); } catch { }
 
-                        Vec3 away = t.Position - Player.Position;
-                        if (away.Length > 0.1f)
-                        {
-                            Vec3 step = t.Position + away.NormalizedCopy() * 0.75f;
-                            step.z = t.Position.z;
-                            try { t.TeleportToPosition(step); } catch { }
-                        }
-                    }
-                });
-                shaken++;
+                    a.SetMorale(0f);
+                    a.Retreat(true);
+                    a.InvalidateTargetAgent();
+
+                    shaken++;
+                }
             }
 
+            // 5. Visual/Audio feedback
             InformationManager.DisplayMessage(new InformationMessage(
-                $"{shaken} {(shaken == 1 ? "enemy loses" : "enemies lose")} their nerve.",
-                new Color(0.3f, 0.5f, 1f)));
+                $"{shaken} enemies are overcome with terror and flee!", 
+                new Color(0.3f, 0.6f, 1f)));
         }
+
 
         private static void Devour()
         {
@@ -3994,7 +3978,7 @@ namespace TheWitheringArt
                     pool.Add(new MapSpellEntry { SpellName="Clairvoyance", DayCost=3, Action=() =>
                         {
                             ChangeClanInfluenceAction.Apply(lord.Clan, 5f);
-                            return $"{lord.Name} watches the roads. Nothing moves unseen."
+                            return $"{lord.Name} watches the roads. Nothing moves unseen.";
                         }
                     });
                     // Calling — summon Imperial recruits to own party
