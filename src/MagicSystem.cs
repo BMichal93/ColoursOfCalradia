@@ -1894,8 +1894,8 @@ namespace TheWitheringArt
             if (!SpellKnowledge.HasGift) { InputSuppressed = false; return; }
 
             // Focus key: Left Alt (KB) or Left Trigger / LT (Gamepad)
-            bool focusing = Input.IsKeyDown(InputKey.Space)
-                         || Input.IsKeyDown(InputKey.ControllerRBumper);
+            bool focusing = Input.IsKeyDown(InputKey.LeftAlt)
+                        || Input.IsKeyDown(InputKey.ControllerLTrigger);
 
             InputSuppressed = focusing;
 
@@ -1903,18 +1903,25 @@ namespace TheWitheringArt
             {
                 _wasFocusing = true;
 
-                // Keyboard — W/A/D only (no S: D direction removed from all combos)
-                // D key is the spellbook shortcut — opens grimoire immediately
+                // Jeśli jesteśmy na mapie, odblokuj upływ czasu (Prędkość x1)
+                if (!inMission && Campaign.Current != null)
+                {
+                    // Używamy bezpośredniego przypisania, aby uniknąć błędu CS1061
+                    // Używamy UnstoppablePlay, aby uniknąć błędu CS0117
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
+                }
+
+                // Klawiatura — W/A/D dla kombo, Spacja dla księgi
                 if      (Input.IsKeyPressed(InputKey.W)) Append("U");
                 else if (Input.IsKeyPressed(InputKey.A)) Append("L");
                 else if (Input.IsKeyPressed(InputKey.D)) Append("R");
-                else if (Input.IsKeyPressed(InputKey.S)) { SpellKnowledge.ShowGrimoire(); }
-                // Gamepad — face buttons while LT held
-                //   Y=U  X=L  A=R  L3=spellbook (instant)
+                else if (Input.IsKeyPressed(InputKey.LeftAlt)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z S na Space
+
+                // Pad — Przyciski geometryczne dla kombo, RB (ControllerRUpper) dla księgi
                 else if (Input.IsKeyPressed(InputKey.ControllerRUp))    Append("U");
                 else if (Input.IsKeyPressed(InputKey.ControllerRLeft))  Append("L");
                 else if (Input.IsKeyPressed(InputKey.ControllerRDown))  Append("R");
-                else if (Input.IsKeyPressed(InputKey.ControllerLThumb)) { SpellKnowledge.ShowGrimoire(); }
+                else if (Input.IsKeyPressed(InputKey.ControllerLTrigger)) { SpellKnowledge.ShowGrimoire(); } // Zmienione z LThumb na RB
 
                 if (_buffer.Length > 0 && _buffer != _lastDisplayedBuffer)
                 {
@@ -1926,6 +1933,13 @@ namespace TheWitheringArt
             else if (_wasFocusing)
             {
                 _wasFocusing = false;
+
+                // Opcjonalnie: Zatrzymaj czas po puszczeniu skupienia na mapie
+                if (!inMission && Campaign.Current != null)
+                {
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+                }
+
                 _lastDisplayedBuffer = "";
 
                 if (_buffer.Length >= 3)
