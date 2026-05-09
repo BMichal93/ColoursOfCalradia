@@ -1894,8 +1894,8 @@ namespace TheWitheringArt
             if (!SpellKnowledge.HasGift) { InputSuppressed = false; return; }
 
             // Focus key: Left Alt (KB) or Left Trigger / LT (Gamepad)
-            bool focusing = Input.IsKeyDown(InputKey.LeftAlt)
-                         || Input.IsKeyDown(InputKey.ControllerLTrigger);
+            bool focusing = Input.IsKeyDown(InputKey.Space)
+                         || Input.IsKeyDown(InputKey.ControllerRBumper);
 
             InputSuppressed = focusing;
 
