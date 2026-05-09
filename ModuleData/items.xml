@@ -100,7 +100,7 @@
 
     <Item id="twa_book_charm" name="A Kindly Lie" mesh="book_a" value="4300" weight="0.7" type="Goods">
         <ItemComponent><Armor body_armor="0"/></ItemComponent>
-        <Description text="[CHARM] Right-Left-Left-Right. Twenty-five days of life. Place warmth where suspicion used to be."/>
+        <Description text="[CHARM] Right-Left-Left-Right. Twelve days of life. Place warmth where suspicion used to be, and let the coin follow."/>
     </Item>
 
     <Item id="twa_book_sinister_will" name="The Smile With Teeth" mesh="book_b" value="4300" weight="0.9" type="Goods">
@@ -165,7 +165,7 @@
 
     <Item id="twa_book_calling" name="The Empty Muster" mesh="book_c" value="9000" weight="1.2" type="Goods">
         <ItemComponent><Armor body_armor="0"/></ItemComponent>
-        <Description text="[CALLING] Up-Up-Left-Right-Left-Up. Fifty days of life. Call hollow aid from where no soldier should be."/>
+        <Description text="[CALLING] Up-Up-Left-Right-Left-Up. Ninety days of life. Call hollow aid from where no soldier should be."/>
     </Item>
 
     <Item id="twa_book_aura_of_hate" name="The Black Banner" mesh="book_c" value="7800" weight="1.1" type="Goods">

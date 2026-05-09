@@ -285,7 +285,7 @@ namespace TheWitheringArt
                 Flavour="The body knows how to be whole. The Gift tells it to hurry." },
 
             // Aserai — manipulation, dark arts
-            new SpellEntry { Name="Charm",        Combo="RLLR",    DayCost=25, BookTag="CHARM",
+            new SpellEntry { Name="Charm",        Combo="RLLR",    DayCost=12, BookTag="CHARM",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.Travel, LordFaction="aserai",
                 LearnHint="Visit the Aserai village while friendly",
@@ -371,7 +371,7 @@ namespace TheWitheringArt
                 LearnHint="Kill or befriend an Empire Mage Lord",
                 Flavour="You are there. They are here. Neither of you chose this." },
 
-            new SpellEntry { Name="Calling",      Combo="UULRLU",  DayCost=50, BookTag="CALLING",
+            new SpellEntry { Name="Calling",      Combo="UULRLU",  DayCost=90, BookTag="CALLING",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.MageLord, LordFaction="empire",
                 LearnHint="Kill or befriend an Empire Mage Lord",
@@ -589,6 +589,17 @@ namespace TheWitheringArt
         {
             foreach (SpellEntry s in SpellDatabase.All.Where(s => s.LearnHow == LearnHow.Starting))
                 _notifiedTags.Add(s.BookTag);
+        }
+
+        public static void GrantAwakeningBonusSpell()
+        {
+            var candidates = SpellDatabase.All
+                .Where(s => s.LearnHow != LearnHow.Starting && !IsKnown(s.BookTag))
+                .ToList();
+            if (candidates.Count == 0) return;
+
+            SpellEntry learned = candidates[MBRandom.RandomInt(candidates.Count)];
+            RevealSpell(learned, "The Gift opens violently. One formula comes with it, unearned and undeniable.");
         }
 
         // Learn random spells from raw Intelligence, and reserve companion and
@@ -1428,6 +1439,7 @@ namespace TheWitheringArt
         {
             SpellKnowledge.GrantGift();
             SpellKnowledge.GrantStartingSpells();
+            SpellKnowledge.GrantAwakeningBonusSpell();
             // Immediately reveal any intellect or personality spells the player already qualifies for
             SpellKnowledge.CheckIntellectSpells();
             SpellKnowledge.CheckPersonalitySpells();
@@ -1454,6 +1466,10 @@ namespace TheWitheringArt
             if (MobileParty.MainParty?.ItemRoster?.FindIndexOfItem(markItem) >= 0)
             {
                 SpellKnowledge.GrantGift();
+                SpellKnowledge.GrantStartingSpells();
+                SpellKnowledge.GrantAwakeningBonusSpell();
+                SpellKnowledge.CheckIntellectSpells();
+                SpellKnowledge.CheckPersonalitySpells();
                 ApplyBirthPenalty();
             }
         }
@@ -2630,10 +2646,10 @@ namespace TheWitheringArt
         private static void Charm()
         {
             // Gold bonus representing better trading circumstances
-            Hero.MainHero.Gold += 300;
-            try { Hero.MainHero.Clan?.AddRenown(-2f); } catch { }
+            Hero.MainHero.Gold += 1500;
+            try { Hero.MainHero.Clan?.AddRenown(-1f); } catch { }
             InformationManager.DisplayMessage(new InformationMessage(
-                "Persuasion flows from you. +300 gold. Your reputation costs a little. (-2 renown)",
+                "Persuasion flows from you. +1500 gold. Your reputation costs a little. (-1 renown)",
                 new Color(0.9f, 0.8f, 0.3f)));
         }
 
@@ -2816,20 +2832,21 @@ namespace TheWitheringArt
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
             ActionIndexCache stagger = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
             int crushed = 0;
+            int killed = 0;
             foreach (Agent a in Enemies().ToList())
             {
                 Vec3 toAgent = (a.Position - Player.Position);
-                if (toAgent.Length > 10f) continue;
+                if (toAgent.Length > 14f) continue;
                 float dot = Vec3.DotProduct(fwd, toAgent.NormalizedCopy());
-                if (dot < 0.3f) continue;
-                a.Health = Math.Max(0f, a.Health - 20f);
-                if (a.Health <= 0f) { KillAgent(a); }
+                if (dot < 0.2f) continue;
+                a.Health = Math.Max(0f, a.Health - 120f);
+                if (a.Health <= 0f) { KillAgent(a); killed++; }
                 else if (stagger.Index >= 0) { try { a.SetActionChannel(0, stagger, false); } catch { } }
                 crushed++;
             }
             InformationManager.DisplayMessage(new InformationMessage(
-                crushed > 0 ? $"{crushed} {(crushed==1?"enemy":"enemies")} crushed."
-                            : "No enemies in forward cone.",
+                crushed > 0 ? $"{crushed} {(crushed==1?"enemy":"enemies")} crushed; {killed} killed outright."
+                            : "No enemies in crushing range.",
                 new Color(1f, 0.3f, 0.1f)));
         }
 
@@ -3915,10 +3932,10 @@ namespace TheWitheringArt
 
                 case "aserai":
                     // Charm � give the lord's party some gold
-                    pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
+                    pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=12, Action=() =>
                     {
-                        lord.Gold += 200;
-                        try { lord.Clan?.AddRenown(-2f); } catch { }
+                        lord.Gold += 1000;
+                        try { lord.Clan?.AddRenown(-1f); } catch { }
                         return $"{lord.Name}'s dealings grow unusually profitable.";
                     }});
                     // Sinister Will � drain the nearest enemy village of hearth
@@ -3975,9 +3992,9 @@ namespace TheWitheringArt
                     if (_rng.Next(100) < 8)
                         pool.Add(new MapSpellEntry { SpellName="Dark Bargain", DayCost=0, Action=() =>
                             MageLordRegistry.PerformAseraiDarkBargain(lord) });
-                    if (pool.Count == 0) pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
+                    if (pool.Count == 0) pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=12, Action=() =>
                     {
-                        lord.Gold += 200;
+                        lord.Gold += 1000;
                         return $"{lord.Name}'s dealings grow unusually profitable.";
                     }});
                     break;
@@ -4012,14 +4029,14 @@ namespace TheWitheringArt
                     pool.Add(new MapSpellEntry { SpellName="Clairvoyance", DayCost=10, Action=() =>
                         $"{lord.Name} watches the roads. Nothing moves unseen."});
                     // Calling — summon Imperial recruits to own party
-                    if (lord.PartyBelongedTo != null)
-                        pool.Add(new MapSpellEntry { SpellName="Calling", DayCost=50, Action=() =>
+                    if (lord.PartyBelongedTo != null && _rng.Next(100) < 35)
+                        pool.Add(new MapSpellEntry { SpellName="Calling", DayCost=90, Action=() =>
                         {
                             CharacterObject recruit =
                                 MBObjectManager.Instance.GetObject<CharacterObject>("imperial_recruit")
                              ?? MBObjectManager.Instance.GetObject<CharacterObject>("imperial_levy_infantryman");
                             if (recruit == null) return null;
-                            int count = 10 + _rng.Next(16); // 10-25 for lords (balanced vs player 20-60)
+                            int count = 8 + _rng.Next(13); // 8-20 for lords; powerful, but no longer cheap
                             try { lord.PartyBelongedTo.MemberRoster.AddToCounts(recruit, count); }
                             catch { return null; }
                             return $"{count} soldiers answer {lord.Name}'s call and march to join them.";
