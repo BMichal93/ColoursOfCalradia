@@ -13,7 +13,7 @@
 //   Those spells still apply their age cost and display flavour text — they are
 //   placeholders, not crashes.
 // !! TODO Refactor spells to different classes; remove unused parts of code !!
-// !! TODO: Using magic during tournament should give 75% chances for disqualification (50% if Cunning >5, 25% if Cunning >8)
+// !! TODO: Using magic during tournament should disqualify the caster immediately
 // =============================================================================
 
 using System;
@@ -140,6 +140,7 @@ namespace TheWitheringArt
     // 2. SPELL DATABASE  —  single source of truth for all 28 spells
     // =========================================================================
     public enum SpellContext   { Mission, Map, Both }
+    // Combat = red offensive magic, Healing = green support/healing, Support = blue control/manipulation
     public enum SpellGlowColor { Combat, Healing, Support }
     public enum LearnHow       { Starting, Companion, Event, Travel, MageLord, Condition, Personality }
 
@@ -388,6 +389,12 @@ namespace TheWitheringArt
                 LearnHint="Reach age 70 through spell use",
                 Flavour="You are less. But so are they. The void does not play favourites — it only takes." },
 
+            new SpellEntry { Name="Break Spirits", Combo="LRUR",   DayCost=35, BookTag="BREAK_SPIRITS",
+                Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
+                LearnHow=LearnHow.Event, LordFaction="",
+                LearnHint="Win a battle while your warband is on the verge of breaking",
+                Flavour="The last thread of courage snaps. Men remember fear faster than they remember orders." },
+
             new SpellEntry { Name="Long Road",    Combo="LRLU",    DayCost=25, BookTag="LONG_ROAD",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
                 LearnHow=LearnHow.MageLord, LordFaction="vlandia",
@@ -519,6 +526,7 @@ namespace TheWitheringArt
         public static bool HasReachedAge50     { get; private set; }
         public static bool HasReachedAge70     { get; private set; }
         public static bool HasWonOutnumbered3to1 { get; private set; }
+        public static bool HasWonWhileMoraleBroken { get; private set; }
 
         public static void TriggerReachedAge50()
         {
@@ -537,6 +545,14 @@ namespace TheWitheringArt
             if (!HasWonOutnumbered3to1)
             {
                 HasWonOutnumbered3to1 = true;
+                CheckEventSpells();
+            }
+        }
+        public static void TriggerWonWhileMoraleBroken()
+        {
+            if (!HasWonWhileMoraleBroken)
+            {
+                HasWonWhileMoraleBroken = true;
                 CheckEventSpells();
             }
         }
@@ -725,6 +741,7 @@ namespace TheWitheringArt
                 else if (s.BookTag == "SCATTER")       conditionMet = HasWonOutnumbered3to1;
                 else if (s.BookTag == "DARK_BARGAIN")  conditionMet = HasExecutedLord;
                 else if (s.BookTag == "HOLLOW_NAME")   conditionMet = HasReachedAge70;
+                else if (s.BookTag == "BREAK_SPIRITS") conditionMet = HasWonWhileMoraleBroken;
                 else                                   conditionMet = false;
 
                 if (conditionMet)
@@ -1032,6 +1049,7 @@ namespace TheWitheringArt
             bool hfa = HasFoughtAlone10;  bool hr50 = HasReachedAge50;
             bool hr70 = HasReachedAge70;
             bool ho3 = HasWonOutnumbered3to1;
+            bool hbm = HasWonWhileMoraleBroken;
             bool hlev = HasUsedLevitate;
 
             store.SyncData("TWA_HasGift",               ref _hasGift);
@@ -1075,6 +1093,7 @@ namespace TheWitheringArt
             store.SyncData("TWA_HasReachedAge50",       ref hr50);
             store.SyncData("TWA_HasReachedAge70",       ref hr70);
             store.SyncData("TWA_HasWonOutnumbered",     ref ho3);
+            store.SyncData("TWA_HasWonWhileMoraleBroken", ref hbm);
             store.SyncData("TWA_HasUsedLevitate",       ref hlev);
             store.SyncData("TWA_RazedVillagesCount",    ref _razedVillagesCount);
             store.SyncData("TWA_HasVisitedKhuzait",     ref hvk);
@@ -1097,6 +1116,7 @@ namespace TheWitheringArt
             if (hr50) HasReachedAge50       = true;
             if (hr70) HasReachedAge70       = true;
             if (ho3)  HasWonOutnumbered3to1 = true;
+            if (hbm)  HasWonWhileMoraleBroken = true;
             if (hlev) HasUsedLevitate       = true;
             HasRazedAtLeast5Villages = _razedVillagesCount >= 5;
 
@@ -1331,6 +1351,7 @@ namespace TheWitheringArt
             }
 
             MageLordRegistry.SeedInitialMageLords();
+            MageLordRegistry.DailyAgeDrift();
             MageLordRegistry.DailyMapCast();
             MageLordRegistry.MaintainMageArmies();
             SpellEffects.TickLongRoad();
@@ -1660,6 +1681,14 @@ namespace TheWitheringArt
                         SpellKnowledge.TriggerOutnumbered3to1();
                 }
                 catch { }
+
+                try
+                {
+                    float morale = MobileParty.MainParty?.RecentEventsMorale ?? 100f;
+                    if (morale <= 25f)
+                        SpellKnowledge.TriggerWonWhileMoraleBroken();
+                }
+                catch { }
             }
             catch { }
         }
@@ -1958,11 +1987,17 @@ namespace TheWitheringArt
                 $"You unleash {spell.Name}. Life withers... (-{cost}) | Age: {(int)Hero.MainHero.Age}{batteryNote}",
                 Color.FromUint(0xFFFFAA00)));
 
-            SpellEffects.Execute(combo);
+            bool successfulCast = SpellEffects.Execute(combo);
 
             // Visual — coloured point light glow at caster
             if (inMission && Agent.Main != null)
-                SpellEffects.CastGlow(Agent.Main, spell.GlowColor);
+                SpellEffects.CastGlow(Agent.Main, SpellEffects.ResolveGlowColor(spell));
+
+            if (successfulCast && inMission && SpellEffects.IsTournamentMission())
+            {
+                SpellEffects.DisqualifyTournamentCaster(Agent.Main, Hero.MainHero, spell.Name);
+                return;
+            }
         }
 
         private static void Fizzle(string msg) =>
@@ -1987,6 +2022,7 @@ namespace TheWitheringArt
 
         // Push counter — Repel unlocks after 7 Pushes in one combat
         private static int _pushCastCount = 0;
+        private static bool _lastCastFizzled = false;
         public static void ResetPushCounter() => _pushCastCount = 0;
         public static void ClearMark()        => _markAnchor = null;
 
@@ -1996,8 +2032,9 @@ namespace TheWitheringArt
                 MagicSuppressedSeconds = Math.Max(0f, MagicSuppressedSeconds - dt);
         }
 
-        public static void Execute(string combo)
+        public static bool Execute(string combo)
         {
+            _lastCastFizzled = false;
             switch (combo)
             {
                 // STARTING
@@ -2030,6 +2067,7 @@ namespace TheWitheringArt
                 case "RULR":    Scatter();      break;
                 case "UULR":    Devour();       break;
                 case "ULR":     Mark();         break;
+                case "LRUR":    BreakSpirits(); break;
                 case "LRRUL":   Unname();       break;
                 case "RUUR":    HollowName();   break;
                 case "LRLU":    LongRoad();     break;
@@ -2043,6 +2081,8 @@ namespace TheWitheringArt
                 case "RRUUL":   Dismount();    break;
                 case "LURLUR":  StopArrows();  break;
             }
+
+            return !_lastCastFizzled;
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
@@ -2823,6 +2863,54 @@ namespace TheWitheringArt
                 new Color(0.8f, 0.4f, 0.1f)));
         }
 
+        private static void BreakSpirits()
+        {
+            if (Player == null || Mission.Current == null) return;
+
+            var targets = Enemies()
+                .Where(a => a.Position.Distance(Player.Position) <= 14f)
+                .ToList();
+
+            if (targets.Count == 0)
+            {
+                Fizzle("No enemies are close enough to break.");
+                return;
+            }
+
+            ActionIndexCache freeze = ActionIndexCache.Create("act_stand_1");
+            int shaken = 0;
+
+            foreach (Agent a in targets)
+            {
+                int idx = a.Index;
+                ActiveEffectManager.Add(new ActiveEffect
+                {
+                    Name            = $"_break_spirits_{idx}",
+                    Duration        = 6f,
+                    IsMissionEffect = true,
+                    OnTick = _ =>
+                    {
+                        Agent t = Mission.Current?.Agents.FirstOrDefault(x => x.Index == idx);
+                        if (t == null || !t.IsActive()) return;
+                        try { t.SetActionChannel(0, freeze, true); } catch { }
+
+                        Vec3 away = t.Position - Player.Position;
+                        if (away.Length > 0.1f)
+                        {
+                            Vec3 step = t.Position + away.NormalizedCopy() * 0.75f;
+                            step.z = t.Position.z;
+                            try { t.TeleportToPosition(step); } catch { }
+                        }
+                    }
+                });
+                shaken++;
+            }
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"{shaken} {(shaken == 1 ? "enemy loses" : "enemies lose")} their nerve.",
+                new Color(0.3f, 0.5f, 1f)));
+        }
+
         private static void Devour()
         {
             if (Player == null || MobileParty.MainParty == null) return;
@@ -3222,7 +3310,7 @@ namespace TheWitheringArt
             {
                 uint col = color == SpellGlowColor.Combat  ? 0xFFFF4400u
                          : color == SpellGlowColor.Healing ? 0xFF44FF88u
-                         :                                   0xFF9944FFu;
+                         :                                   0xFF4A83FFu;
                 agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
                 _glowTimers.Add((agent, 1.5f));
             }
@@ -3239,6 +3327,87 @@ namespace TheWitheringArt
                 TrySpawnCastParticle(caster.Position, glowColor);
                 FlinchAgentsNear(caster, glowColor);
                 TryCastSound(caster.Position, glowColor);
+            }
+            catch { }
+        }
+
+        public static SpellGlowColor ResolveGlowColor(SpellEntry spell)
+        {
+            if (spell == null) return SpellGlowColor.Combat;
+
+            switch (spell.BookTag)
+            {
+                case "MEMORY":
+                case "MARK":
+                case "REJUVENATE":
+                case "RESTORE":
+                case "FEATHERFALL":
+                case "INSPIRE":
+                case "MENDING":
+                case "ACCELERATE":
+                case "LONG_ROAD":
+                case "LEVITATE":
+                case "CLAIRVOYANCE":
+                case "RELOCATE":
+                    return SpellGlowColor.Healing;
+
+                case "CHARM":
+                case "BANE":
+                case "SUPPRESS":
+                case "HALT":
+                case "SHROUDING":
+                case "SHROUD":
+                case "DISMOUNT":
+                case "STOP_ARROWS":
+                case "PACIFY":
+                case "CONFUSE":
+                case "SWAP":
+                case "UNNAME":
+                case "CALLING":
+                case "AURA_OF_HATE":
+                case "BREAK_SPIRITS":
+                case "REPEL":
+                case "ENRAGE":
+                case "WEIGHTLESS":
+                case "HOLLOW_NAME":
+                case "SINISTER_WILL":
+                    return SpellGlowColor.Support;
+
+                default:
+                    return SpellGlowColor.Combat;
+            }
+        }
+
+        public static bool IsTournamentMission()
+        {
+            try
+            {
+                if (Mission.Current == null) return false;
+
+                var modeProp = Mission.Current.GetType().GetProperty("Mode");
+                object mode = modeProp?.GetValue(Mission.Current);
+                string modeText = mode?.ToString() ?? "";
+                return modeText.IndexOf("tournament", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+            catch { }
+
+            return false;
+        }
+
+        public static void DisqualifyTournamentCaster(Agent agent, Hero hero, string spellName)
+        {
+            try
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{hero?.Name?.ToString() ?? "A contestant"} is disqualified for casting {spellName} in the tournament.",
+                    new Color(0.95f, 0.15f, 0.15f)));
+            }
+            catch { }
+
+            try
+            {
+                if (agent != null && agent.IsActive())
+                    agent.Health = 0f;
             }
             catch { }
         }
@@ -3264,7 +3433,7 @@ namespace TheWitheringArt
                         "act_struck_from_front_light"             // confirmed
                     };
                     break;
-                default: // Support
+                default: // Support/control
                     candidates = new[]
                     {
                         "act_thrust_staff_wielder",
@@ -3540,7 +3709,112 @@ namespace TheWitheringArt
         public static bool IsMageLord(Hero hero) =>
             hero != null && _mageLordIds.Contains(hero.StringId);
 
+        public static void ApplyMageLordAgeCost(Hero lord, int dayCost)
+        {
+            if (lord == null || dayCost <= 0) return;
+
+            float multiplier = 1.4f;
+            try
+            {
+                int valor = lord.GetTraitLevel(DefaultTraits.Valor);
+                if (valor >= 2) multiplier = 1.9f;
+                else if (valor >= 1) multiplier = 1.6f;
+                else if (valor <= -2) multiplier = 1.15f;
+                else if (valor <= -1) multiplier = 1.25f;
+            }
+            catch { }
+
+            lord.SetBirthDay(lord.BirthDay - CampaignTime.Years((float)dayCost * multiplier / 252f));
+        }
+
+        public static void DailyAgeDrift()
+        {
+            foreach (string id in _mageLordIds.ToList())
+            {
+                Hero lord = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == id);
+                if (lord == null || !lord.IsAlive) continue;
+
+                float dailyDayCost = 2f;
+                try
+                {
+                    int valor = lord.GetTraitLevel(DefaultTraits.Valor);
+                    if (valor >= 2) dailyDayCost = 3.5f;
+                    else if (valor >= 1) dailyDayCost = 3.0f;
+                    else if (valor <= -2) dailyDayCost = 1.5f;
+                    else if (valor <= -1) dailyDayCost = 1.75f;
+                }
+                catch { }
+
+                lord.SetBirthDay(lord.BirthDay - CampaignTime.Years(dailyDayCost / 252f));
+            }
+        }
+
         // Called from OnDailyTick — gives each living Mage Lord a chance to cast a map spell
+        public static string PerformAseraiDarkBargain(Hero lord)
+        {
+            if (lord == null) return null;
+
+            if (lord.Age < 40f)
+            {
+                var rival = Hero.AllAliveHeroes
+                    .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.IsAlive)
+                    .OrderBy(h => _rng.Next())
+                    .FirstOrDefault();
+                if (rival == null) return null;
+
+                rival.SetBirthDay(rival.BirthDay - CampaignTime.Years(10f / 252f));
+                return $"{rival.Name} feels years settle onto their shoulders uninvited.";
+            }
+
+            MobileParty party = lord.PartyBelongedTo;
+            if (party == null) return null;
+
+            int taken = 0;
+
+            while (party.PrisonRoster.TotalManCount > 0 && lord.Age > 20f)
+            {
+                var prisoner = party.PrisonRoster.GetTroopRoster()
+                    .Where(e => e.Character != null && e.Number > 0)
+                    .FirstOrDefault();
+                if (prisoner.Character == null) break;
+
+                party.PrisonRoster.RemoveTroop(prisoner.Character, 1);
+                lord.SetBirthDay(lord.BirthDay + CampaignTime.Years(30f / 252f));
+                if (lord.Age < 20f)
+                    lord.SetBirthDay(CampaignTime.Now - CampaignTime.Years(20));
+                party.RecentEventsMorale -= 5f;
+                taken++;
+            }
+
+            while (party.MemberRoster.TotalManCount > 5 && lord.Age > 20f)
+            {
+                var wounded = party.MemberRoster.GetTroopRoster()
+                    .Where(e => e.WoundedNumber > 0)
+                    .OrderByDescending(e => e.WoundedNumber)
+                    .FirstOrDefault();
+
+                var sacrifice = wounded.Character != null
+                    ? wounded
+                    : party.MemberRoster.GetTroopRoster()
+                        .Where(e => e.Number > 0)
+                        .OrderBy(e => e.Number)
+                        .FirstOrDefault();
+
+                if (sacrifice.Character == null) break;
+
+                party.MemberRoster.RemoveTroop(sacrifice.Character, 1);
+                lord.SetBirthDay(lord.BirthDay + CampaignTime.Years(60f / 252f));
+                if (lord.Age < 20f)
+                    lord.SetBirthDay(CampaignTime.Now - CampaignTime.Years(20));
+                party.RecentEventsMorale -= 20f;
+                taken++;
+            }
+
+            if (taken == 0) return null;
+
+            return $"{lord.Name} pays in lives and drags their age down to {(int)lord.Age}.";
+        }
+
         public static void DailyMapCast()
         {
             foreach (string id in _mageLordIds.ToList())
@@ -3579,7 +3853,7 @@ namespace TheWitheringArt
             try { msg = chosen.Action(); } catch { }
             if (msg == null) return;
 
-            lord.SetBirthDay(lord.BirthDay - CampaignTime.Years((float)chosen.DayCost / 252f));
+            ApplyMageLordAgeCost(lord, chosen.DayCost);
 
             InformationManager.DisplayMessage(new InformationMessage(
                 $"✦ {lord.Name} channels {chosen.SpellName}. {msg} ✦",
@@ -3628,7 +3902,7 @@ namespace TheWitheringArt
                     }});
                     break;
 
-                                case "aserai":
+                case "aserai":
                     // Charm � give the lord's party some gold
                     pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
                     {
@@ -3686,17 +3960,10 @@ namespace TheWitheringArt
                             target.SetBirthDay(target.BirthDay - CampaignTime.Years(10f / 252f));
                             return $"{target.Name} reels as life is torn loose.";
                         }});
-                    // Dark Bargain � age an enemy (rare)
+                    // Dark Bargain � when older Aserai lords grow desperate, they spend lives to reclaim years
                     if (_rng.Next(100) < 8)
                         pool.Add(new MapSpellEntry { SpellName="Dark Bargain", DayCost=0, Action=() =>
-                        {
-                            var rival = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.IsAlive)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
-                            if (rival == null) return null;
-                            rival.SetBirthDay(rival.BirthDay - CampaignTime.Years(10f / 252f));
-                            return $"{rival.Name} feels years settle onto their shoulders uninvited.";
-                        }});
+                            MageLordRegistry.PerformAseraiDarkBargain(lord) });
                     if (pool.Count == 0) pool.Add(new MapSpellEntry { SpellName="Charm", DayCost=25, Action=() =>
                     {
                         lord.Gold += 200;
@@ -4255,7 +4522,7 @@ namespace TheWitheringArt
         private static void TriggerCast(Agent agent, Hero hero,
                                         string spellName, int dayCost, Action effect)
         {
-            hero.SetBirthDay(hero.BirthDay - CampaignTime.Years((float)dayCost / 252f));
+            MageLordRegistry.ApplyMageLordAgeCost(hero, dayCost);
             _cooldowns[hero.StringId] = CastInterval;
 
             // Distinctive cast message — visible across the battlefield
@@ -4266,10 +4533,13 @@ namespace TheWitheringArt
             // Glow on the caster agent
             SpellEntry entry = SpellDatabase.All.FirstOrDefault(s => s.Name == spellName);
             SpellEffects.CastGlow(agent,
-                entry?.GlowColor ?? SpellGlowColor.Combat);
+                SpellEffects.ResolveGlowColor(entry));
 
             try { effect(); }
             catch { }
+
+            if (SpellEffects.IsTournamentMission())
+                SpellEffects.DisqualifyTournamentCaster(agent, hero, spellName);
         }
 
         // ── AI-centric spell implementations ──────────────────────────────
