@@ -358,11 +358,6 @@ namespace TheWitheringArt
                 Flavour="The body was always capable of this. The mind simply did not believe it yet." },
 
             // Empire lords
-            new SpellEntry { Name="Swap",         Combo="LRRL",    DayCost=22, BookTag="SWAP",
-                Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.MageLord, LordFaction="empire",
-                LearnHint="Kill or befriend an Empire Mage Lord",
-                Flavour="You are there. They are here. Neither of you chose this." },
 
             new SpellEntry { Name="Calling",      Combo="UULRLU",  DayCost=90, BookTag="CALLING",
                 Context=SpellContext.Map, GlowColor=SpellGlowColor.Support,
@@ -2104,7 +2099,6 @@ namespace TheWitheringArt
                 case "UURRLL":  SevereLife();   break;
                 case "LLRRU":   Clairvoyance(); break;
                 case "UUURRRL": Crush();        break;
-                case "LRRL":    Swap();         break;
                 case "RULR":    Scatter();      break;
                 case "UULR":    Devour();       break;
                 case "ULR":     Mark();         break;
@@ -2872,25 +2866,6 @@ namespace TheWitheringArt
                 new Color(1f, 0.3f, 0.1f)));
         }
 
-        private static void Swap()
-        {
-            if (Player == null) return;
-            Agent target = Enemies()
-                .Where(a => a.Position.Distance(Player.Position) <= 20f)
-                .OrderBy(a => a.Position.Distance(Player.Position))
-                .FirstOrDefault();
-            if (target == null) { Fizzle("No enemy close enough to swap with."); return; }
-
-            Vec3 playerPos = Player.Position;
-            Vec3 targetPos = target.Position;
-            Player.TeleportToPosition(targetPos);
-            try { target.TeleportToPosition(playerPos); } catch { }
-
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"You and {target.Name} trade places. They are not pleased.",
-                new Color(0.5f, 0.3f, 0.9f)));
-        }
-
         private static void Scatter()
         {
             if (Player == null) return;
@@ -2967,28 +2942,44 @@ namespace TheWitheringArt
         private static void Featherfall()
         {
             if (Player == null) return;
-            if (ActiveEffectManager.Has("Featherfall")) { Fizzle("Featherfall already active."); return; }
+            if (ActiveEffectManager.Has("Featherfall")) 
+            { 
+                Fizzle("Featherfall already active."); 
+                return; 
+            }
 
+            // Zapamiętujemy startową wysokość
             float lastZ = Player.Position.z;
 
             ActiveEffectManager.Add(new ActiveEffect
             {
-                Name            = "Featherfall",
-                Duration        = 30f,
+                Name = "Featherfall",
+                Duration = 30f,
                 IsMissionEffect = true,
                 OnTick = dt =>
                 {
                     if (Player == null || !Player.IsActive()) return;
+
                     float currentZ = Player.Position.z;
                     float dropped = lastZ - currentZ;
-                    // If falling faster than 1.5m per tick, slow it
-                    if (dropped > 1.5f)
+
+                    if (dropped > 0.1f)
                     {
-                        Vec3 slowed = Player.Position;
-                        slowed.z = lastZ - 1.5f;
-                        try { Player.TeleportToPosition(slowed); } catch { }
+                        Vec3 slowedPos = Player.Position;
+                        slowedPos.z = lastZ - 0.1f;
+
+                        try 
+                        { 
+                            Player.TeleportToPosition(slowedPos);
+                        } 
+                        catch { }
+                        
+                        lastZ = slowedPos.z;
                     }
-                    lastZ = Player.Position.z;
+                    else
+                    {
+                        lastZ = currentZ;
+                    }
                 }
             });
 
@@ -3363,7 +3354,6 @@ namespace TheWitheringArt
                 case "STOP_ARROWS":
                 case "PACIFY":
                 case "CONFUSE":
-                case "SWAP":
                 case "UNNAME":
                 case "CALLING":
                 case "AURA_OF_HATE":
