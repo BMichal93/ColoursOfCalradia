@@ -3991,8 +3991,12 @@ namespace TheWitheringArt
                     break;
                 case "empire":
                     // Clairvoyance — flavour, no mechanical effect
-                    pool.Add(new MapSpellEntry { SpellName="Clairvoyance", DayCost=10, Action=() =>
-                        $"{lord.Name} watches the roads. Nothing moves unseen."});
+                    pool.Add(new MapSpellEntry { SpellName="Clairvoyance", DayCost=3, Action=() =>
+                        {
+                            ChangeClanInfluenceAction.Apply(lord.Clan, 5f);
+                            return $"{lord.Name} watches the roads. Nothing moves unseen."
+                        }
+                    });
                     // Calling — summon Imperial recruits to own party
                     if (lord.PartyBelongedTo != null && _rng.Next(100) < 35)
                         pool.Add(new MapSpellEntry { SpellName="Calling", DayCost=90, Action=() =>
