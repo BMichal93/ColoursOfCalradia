@@ -3318,7 +3318,7 @@ namespace TheWitheringArt
                          : color == SpellGlowColor.Healing ? 0xFFFFD700u
                          :                                   0xFF4A83FFu;
                 agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
-                _glowTimers.Add((agent, 3f));
+                _glowTimers.Add((agent, 1.5f));
             }
             catch { }
         }
@@ -3461,37 +3461,51 @@ namespace TheWitheringArt
 
         // Spawn a vanilla particle burst at the cast origin.
         // Uses reflection so the code compiles even if the engine API changes.
-        private static void TrySpawnCastParticle(Vec3 position, SpellGlowColor color)
+            private static void TrySpawnCastParticle(Vec3 position, SpellGlowColor color)
         {
             try
             {
                 var scene = Mission.Current?.Scene;
                 if (scene == null) return;
 
-                // Pick a vanilla particle that fits the spell school
-                string particleName = color == SpellGlowColor.Combat
-                    ? "psys_game_blood_burst_a"
-                    : color == SpellGlowColor.Healing
-                        ? "psys_game_dust_fall"
-                        : "psys_game_throw_stone";
+                // WYBÓR EFEKTÓW AURY (Vanilla Bannerlord)
+                string particleName;
+                switch (color)
+                {
+                    case SpellGlowColor.Combat:
+                        // Ognisty podmuch / iskry (czerwony)
+                        particleName = "psys_burning_pot_liquid"; 
+                        break;
+                    case SpellGlowColor.Healing:
+                        // Jasne, biało-złote drobiny (złoty)
+                        particleName = "psys_game_blood_white"; 
+                        break;
+                    case SpellGlowColor.Support:
+                        // Niebieskawe opary / magiczne flary (niebieski)
+                        particleName = "psys_missile_flare"; 
+                        break;
+                    default:
+                        particleName = "psys_game_dust_fall";
+                        break;
+                }
 
-                // Resolve ParticleSystemManager at runtime — avoids a hard engine API dependency
-                Type psmType = Type.GetType(
-                    "TaleWorlds.Engine.ParticleSystemManager, TaleWorlds.Engine");
+                // --- Reszta logiki refleksji pozostaje bez zmian, bo działa poprawnie ---
+                Type psmType = Type.GetType("TaleWorlds.Engine.ParticleSystemManager, TaleWorlds.Engine");
                 if (psmType == null) return;
 
-                MethodInfo getId = psmType.GetMethod("GetRuntimeIdByName",
-                    BindingFlags.Public | BindingFlags.Static);
+                MethodInfo getId = psmType.GetMethod("GetRuntimeIdByName", BindingFlags.Public | BindingFlags.Static);
                 if (getId == null) return;
 
                 object idObj = getId.Invoke(null, new object[] { particleName });
                 if (idObj == null || (int)idObj < 0) return;
 
-                MethodInfo burst = scene.GetType().GetMethod("CreateBurstParticle",
-                    BindingFlags.Public | BindingFlags.Instance);
+                // Tworzymy eksplozję cząsteczek
+                MethodInfo burst = scene.GetType().GetMethod("CreateBurstParticle", BindingFlags.Public | BindingFlags.Instance);
                 if (burst == null) return;
 
-                burst.Invoke(scene, new object[] { idObj, new MatrixFrame(Mat3.Identity, position) });
+                // Podnosimy pozycję o 0.2, żeby aura nie "tonęła" w ziemi
+                MatrixFrame frame = new MatrixFrame(Mat3.Identity, position + new Vec3(0, 0, 0.2f));
+                burst.Invoke(scene, new object[] { idObj, frame });
             }
             catch { }
         }
