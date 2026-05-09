@@ -1,6 +1,6 @@
 # The Withering Art - Installation and Mechanics Guide
 
-The Withering Art is a Bannerlord magic overhaul built around spell books, mage lords, mage units, and a dark sacrifice ritual. This README describes the current mechanics in the project, not an older spell sheet.
+The Withering Art is a Bannerlord magic overhaul built around criteria-driven spell learning, mage lords, mage units, and a dark sacrifice ritual. This README describes the current mechanics in the project, not an older spell sheet.
 
 ## What's In This Package
 
@@ -8,7 +8,8 @@ The Withering Art is a Bannerlord magic overhaul built around spell books, mage 
 TheWitheringArt/
 |-- SubModule.xml               mod manifest
 |-- ModuleData/
-|   `-- items.xml               all 39 spell books + Awakening Mark
+|   |-- items.xml               reference spell books + ritual scroll + Awakening Mark
+|   `-- troops.xml              mage troop definitions
 |-- src/
 |   |-- MagicSystem.cs          all C# logic
 |   `-- TheWitheringArt.csproj  build project
@@ -17,7 +18,7 @@ TheWitheringArt/
 
 ## Installation
 
-1. Copy `SubModule.xml` and `ModuleData/items.xml` into your Bannerlord `Modules/TheWitheringArt/` folder.
+1. Copy `SubModule.xml`, `ModuleData/items.xml`, and `ModuleData/troops.xml` into your Bannerlord `Modules/TheWitheringArt/` folder.
 2. Build `src/TheWitheringArt.csproj` with Visual Studio or `dotnet build`.
 3. Put the resulting DLL in `Modules/TheWitheringArt/bin/Win64_Shipping_Client/`.
 4. Enable the mod in the Bannerlord launcher.
@@ -36,13 +37,12 @@ campaign.give_item twa_gift_mark
 
 ## Casting Spells
 
-1. Find a spell book by buying it from merchants or looting it.
-2. Carry the book. The next daily tick reveals the spell automatically.
-3. Hold Left Alt.
-4. Type the combo with WASD.
-5. Release Left Alt to cast.
+1. Meet a spell's learning criterion: travel, personality, event, companion teaching, mage-lord contact, raw intellect, or a special condition.
+2. Once the formula is learned, hold Left Alt.
+3. Type the combo with WASD.
+4. Release Left Alt to cast.
 
-The combo is shown in the grimoire and on discovery messages. Books are for discovery and reminders; once the Gift is learned, casting is handled by the combo system.
+The combo is shown in the grimoire and on discovery messages. Books are reference/flavor items and can hint at formulas, but they do not unlock casting by themselves.
 
 Mission spells work in battles, map spells work on the campaign map, and some spells are allowed in both contexts.
 
@@ -141,7 +141,7 @@ While waiting in a settlement or camp:
 
 The current project contains 39 spells.
 
-The complete combo sheet is handled in-game through spell books and the grimoire, but the current roster is:
+The complete combo sheet is handled in-game through learned-spell discovery messages, the grimoire, and reference books, but the current roster is:
 
 - Memory
 - Vortex
@@ -198,4 +198,4 @@ cd src
 dotnet build TheWitheringArt.csproj --configuration Release
 ```
 
-The DLL is output to `Modules/TheWitheringArt/bin/Win64_Shipping_Client/`.
+The project file is configured to copy the DLL into the active Bannerlord `Modules/TheWitheringArt/bin/...` output folder for your install.

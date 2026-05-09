@@ -194,7 +194,7 @@ namespace TheWitheringArt
             // ── EVENT ────────────────────────────────────────────────────
             new SpellEntry { Name="Suppress",     Combo="RRLU",    DayCost=20, BookTag="SUPPRESS",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Support,
-                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHow=LearnHow.Event, LordFaction="",
                 LearnHint="Fight a Mage Lord or Mage Unit in battle",
                 Flavour="The art requires a channel. For sixty seconds, every channel on this field is closed." },
 
@@ -242,7 +242,7 @@ namespace TheWitheringArt
 
             new SpellEntry { Name="Scatter",      Combo="RULR",    DayCost=25, BookTag="SCATTER",
                 Context=SpellContext.Mission, GlowColor=SpellGlowColor.Combat,
-                LearnHow=LearnHow.Personality, LordFaction="",
+                LearnHow=LearnHow.Event, LordFaction="",
                 LearnHint="Win a battle while outnumbered 3 to 1",
                 Flavour="Formation is belief. The Gift ends the belief." },
 
@@ -563,6 +563,7 @@ namespace TheWitheringArt
         public static void TriggerVisitedAseraiCity() { if (!HasVisitedAseraiCity) { HasVisitedAseraiCity = true; CheckTravelSpells(); } }
 
         private static readonly HashSet<string> _notifiedTags   = new HashSet<string>();
+        private static readonly HashSet<string> _bookReminderTags = new HashSet<string>();
         private static readonly HashSet<string> _taughtByLords  = new HashSet<string>();
         private static readonly HashSet<string> _intellectLearnedTags = new HashSet<string>();
         private static readonly HashSet<string> _giftedChildIds = new HashSet<string>();
@@ -681,6 +682,11 @@ namespace TheWitheringArt
                         traitLabel = "Cerebral";
                     }
                     else if (s.BookTag == "RESTORE")
+                    {
+                        conditionMet = h.GetTraitLevel(DefaultTraits.Generosity) >= 2;
+                        traitLabel = "Munificent";
+                    }
+                    else if (s.BookTag == "VORTEX")
                     {
                         conditionMet = h.GetTraitLevel(DefaultTraits.Generosity) >= 2;
                         traitLabel = "Munificent";
@@ -952,8 +958,8 @@ namespace TheWitheringArt
         }
 
         /// <summary>
-        /// Called on daily tick: shows a one-time notification for each new book
-        /// found in inventory. Does NOT lock or unlock any spells.
+        /// Called on daily tick: shows a one-time reminder for each spell book
+        /// found in inventory. Books do not unlock spells; criteria do.
         /// </summary>
         public static void ScanInventoryForBooks(Hero hero)
         {
@@ -962,6 +968,7 @@ namespace TheWitheringArt
             foreach (SpellEntry spell in SpellDatabase.All)
             {
                 if (_notifiedTags.Contains(spell.BookTag)) continue;
+                if (_bookReminderTags.Contains(spell.BookTag)) continue;
 
                 foreach (ItemRosterElement element in hero.PartyBelongedTo.ItemRoster)
                 {
@@ -972,7 +979,7 @@ namespace TheWitheringArt
                     string itemId = item.StringId ?? string.Empty;
                     if (!itemId.Contains(spell.BookTag.ToLower())) continue;
 
-                    _notifiedTags.Add(spell.BookTag);
+                    _bookReminderTags.Add(spell.BookTag);
                     InformationManager.DisplayMessage(new InformationMessage(
                         $"You study the scroll. {spell.Name} — combo: {spell.Combo}.",
                         new Color(0.7f, 0.2f, 1f)));
@@ -1037,6 +1044,7 @@ namespace TheWitheringArt
         public static void Save(IDataStore store)
         {
             var tagList    = _notifiedTags.ToList();
+            var bookReminderList = _bookReminderTags.ToList();
             var taughtList = _taughtByLords.ToList();
             var intellectList = _intellectLearnedTags.ToList();
             bool hfm = HasFoughtMage;      bool hdk = HasDefeatedKhuzait;
@@ -1057,6 +1065,7 @@ namespace TheWitheringArt
             store.SyncData("TWA_ScrollDaysCarried",     ref _scrollDaysCarried);
             store.SyncData("TWA_FirstSoldierSacrifice", ref _firstSoldierSacrifice);
             store.SyncData("TWA_NotifiedTags",    ref tagList);
+            store.SyncData("TWA_BookReminderTags", ref bookReminderList);
             store.SyncData("TWA_TaughtByLords",   ref taughtList);
             store.SyncData("TWA_IntellectLearnedTags", ref intellectList);
 
@@ -1122,6 +1131,8 @@ namespace TheWitheringArt
 
             _notifiedTags.Clear();
             if (tagList    != null) foreach (var t in tagList)    _notifiedTags.Add(t);
+            _bookReminderTags.Clear();
+            if (bookReminderList != null) foreach (var t in bookReminderList) _bookReminderTags.Add(t);
             _taughtByLords.Clear();
             if (taughtList != null) foreach (var t in taughtList) _taughtByLords.Add(t);
             _intellectLearnedTags.Clear();
