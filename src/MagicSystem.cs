@@ -3362,21 +3362,16 @@ namespace TheWitheringArt
             try
             {
                 uint col;
-                if (isCaster)
-                {
-                    // KOLORY DLA RZUCAJĄCEGO (Jaśniejsze, wywołujące mocniejszy efekt Bloom)
-                    col = color == SpellGlowColor.Combat  ? 0xFFFFFFFFu   // Biało-czerwony żar
-                        : color == SpellGlowColor.Healing ? 0xFFFFFFCCu   // Jaskrawe białe złoto
-                        :                                   0xFFDDEEFFu;  // Lodowy błękit
-                }
-                else
-                {
+
                     // KOLORY DLA CELÓW (Standardowe)
                     col = color == SpellGlowColor.Combat  ? 0xFFFF4400u   // Czerwony
                         : color == SpellGlowColor.Healing ? 0xFFFFD700u   // Złoty
                         :                                   0xFF4A83FFu;  // Niebieski
-                }
+                    if(isCaster)
+                    {
 
+                        agent.AgentVisuals?.GetEntity()?.SetAlpha(2.5f);
+                    }
                 agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
 
                 // Zapobieganie nakładaniu się timerów na tego samego agenta
@@ -3531,49 +3526,41 @@ private static void TrySpawnCastParticle(Vec3 position, SpellGlowColor color)
     try
     {
         var mission = Mission.Current;
-        if (mission == null || mission.Scene == null) return;
+        if (mission == null) return;
 
-        // DOBÓR EFEKTÓW - Te systemy mają silne kolory i są dobrze widoczne
-        string particleName;
-        switch (color)
-        {
-            case SpellGlowColor.Combat:
-                particleName = "psys_fire_field_1m"; // Ogień (Czerwony)
-                break;
-            case SpellGlowColor.Healing:
-                particleName = "psys_spark_shimmer"; // Złote iskry (Złoty)
-                break;
-            case SpellGlowColor.Support:
-                particleName = "psys_env_ghost_dust"; // Duchowa mgła (Niebieski)
-                break;
-            default:
-                particleName = "psys_game_dust_fall";
-                break;
-        }
+        // DOBÓR EFEKTU - Używamy nazw, które są zawsze w pamięci
+        string particleName = color == SpellGlowColor.Combat ? "psys_fire_field_1m" 
+                            : color == SpellGlowColor.Healing ? "psys_spark_shimmer" 
+                            : "psys_env_ghost_dust";
 
-        // 1. Pobranie ID systemu przez refleksję
+        // 1. Pobranie ID systemu
         Type psmType = Type.GetType("TaleWorlds.Engine.ParticleSystemManager, TaleWorlds.Engine");
         MethodInfo getId = psmType?.GetMethod("GetRuntimeIdByName", BindingFlags.Public | BindingFlags.Static);
         object idObj = getId?.Invoke(null, new object[] { particleName });
 
         if (idObj == null || (int)idObj < 0) return;
 
-        // 2. Szukamy metody AddParticleEffectAtEdge na obiekcie Mission
-        // To najbezpieczniejsza metoda w Bannerlordzie
-        MethodInfo addParticle = typeof(Mission).GetMethod("AddParticleEffectAtEdge", 
-            new Type[] { typeof(int), typeof(MatrixFrame), typeof(Vec3) });
+        // 2. Szukamy metody AddParticleEffectAtFrame na klasie Mission
+        // Sygnatura: AddParticleEffectAtFrame(ParticleSystem childParticleSystem, MatrixFrame frame)
+        // Uwaga: Niektóre wersje przyjmują ID (int), inne obiekt. Sprawdzimy oba.
+        
+        MethodInfo addEffect = typeof(Mission).GetMethod("AddParticleEffectAtFrame", 
+            new Type[] { typeof(int), typeof(MatrixFrame) });
 
-        if (addParticle != null)
+        if (addEffect != null)
         {
-            // Przygotowanie pozycji (1.0f nad ziemią, czyli klatka piersiowa)
+            // Pozycja: klatka piersiowa
             MatrixFrame frame = MatrixFrame.Identity;
-            frame.origin = position + new Vec3(0f, 0f, 1.0f);
+            frame.origin = position + new Vec3(0, 0, 1.0f);
 
-            // Wywołanie: (ID, Pozycja, Prędkość początkowa)
-            addParticle.Invoke(mission, new object[] { idObj, frame, Vec3.Zero });
+            // Wywołanie
+            addEffect.Invoke(mission, new object[] { idObj, frame });
         }
     }
-    catch { }
+    catch (Exception ex)
+    {
+
+    }
 }
 
         // Bloom flash that fades over 0.4 s.  Uses reflection so we handle both
