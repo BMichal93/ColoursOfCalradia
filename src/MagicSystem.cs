@@ -60,7 +60,6 @@ namespace ColoursOfCalradia
             ActiveEffectManager.MissionTick(dt);
             ColourLordAI.MissionTick(dt);
             ColourUnitRegistry.MissionTick(dt);
-            SpellEffects.TickGlows(dt);
             SpellEffects.TickSteadyFreeze(dt);
             SpellEffects.TickRepel(dt);
             SpellEffects.TickRandomUnitMagic(dt);
@@ -255,7 +254,7 @@ namespace ColoursOfCalradia
                 Flavour="The call carries further than a voice. Those who hear it do not know why they march." },
             new SpellEntry { Name="March",       Combo="RRLLUU", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="The road opens ahead. Your steps are light as the wind." },
+                Flavour="The road opens ahead — in a single breath, you are already there." },
 
             // ── YELLOW ─────────────────────────────────────────────────────────
             new SpellEntry { Name="Hold Arrows", Combo="LURLUR", School=ColorSchool.Yellow,
@@ -288,7 +287,7 @@ namespace ColoursOfCalradia
                 Flavour="The enemy line remembers what it was doing and decides to stop." },
             new SpellEntry { Name="Stun",        Combo="RULRUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
-                Flavour="One point of contact. Every mind on the field staggers." },
+                Flavour="The cold reaches the mind before the blade does. Their nerve simply goes." },
 
             // ── PURPLE ─────────────────────────────────────────────────────────
             new SpellEntry { Name="Severe Life", Combo="UURRLL", School=ColorSchool.Purple,
@@ -665,7 +664,6 @@ namespace ColoursOfCalradia
             ActiveEffectManager.ClearMissionEffects();
             ColourLordAI.ClearCooldowns();
             SpellEffects.ClearShieldHp();
-            SpellEffects.ClearGlows();
             ColourUnitRegistry.OnMissionEnded();
         }
 
@@ -1289,24 +1287,23 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            ActionIndexCache stagger = ActionIndexCache.Create("act_struck_from_back_medium_left_staff");
-            int count = 0;
-            foreach (Agent a in Enemies().ToList())
-            {
-                Vec3 toAgent = a.Position - Player.Position;
-                if (toAgent.Length > 14f) continue;
-                float dot = Vec3.DotProduct(fwd, toAgent.NormalizedCopy());
-                if (dot < 0.25f) continue;
+            var inCone = Enemies()
+                .Where(a => {
+                    Vec3 toAgent = a.Position - Player.Position;
+                    return toAgent.Length <= 14f &&
+                           Vec3.DotProduct(fwd, toAgent.NormalizedCopy()) >= 0.25f;
+                })
+                .ToList();
+            if (inCone.Count == 0) { Msg("No enemies in range.", ColorSchool.Red); return; }
 
-                float dmg = 80f * MageUnitBattery(Player);
-                a.Health = Math.Max(0f, a.Health - dmg);
-                if (a.Health <= 0f) KillAgent(a);
-                else { try { a.SetActionChannel(0, stagger, false); } catch { } }
-                count++;
-                BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+            int kills = Math.Min(_rng.Next(1, 4), inCone.Count);
+            var targets = inCone.OrderBy(_ => _rng.Next()).Take(kills).ToList();
+            foreach (Agent t in targets)
+            {
+                BeginAgentGlow(t, ColorSchool.Red, 1.5f);
+                KillAgent(t);
             }
-            Msg(count > 0 ? $"Crush tears through {count} {(count==1?"enemy":"enemies")} in the cone."
-                          : "No enemies in range.", ColorSchool.Red);
+            Msg($"Crush tears through {kills} {(kills == 1 ? "enemy" : "enemies")} in the cone.", ColorSchool.Red);
         }
 
         private static void SpellVortex()
@@ -1433,45 +1430,29 @@ namespace ColoursOfCalradia
         private static void SpellMarch()
         {
             if (Player == null || !Player.IsActive()) return;
-            if (ActiveEffectManager.Has("_march")) { Msg("Already marching.", ColorSchool.Orange); return; }
 
-            const float SpeedMult = 2.5f;
-            const float Duration  = 90f;
+            // Surge: teleport the player (and mount if riding) 12 m forward.
+            // Speed-multiplier overrides don't survive the engine's per-frame
+            // stat recalculation, so an instant positional leap is used instead.
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            fwd.z = 0f;
+            if (fwd.Length < 0.01f) fwd = new Vec3(1f, 0f, 0f);
+            else fwd = fwd.NormalizedCopy();
 
-            ActiveEffectManager.Add(new ActiveEffect
+            Vec3 dest = Player.Position + fwd * 12f;
+            dest.z = Player.Position.z;
+
+            try
             {
-                Name = "_march", Duration = Duration, IsMissionEffect = true,
-                OnTick = _ =>
-                {
-                    if (Player == null || !Player.IsActive()) return;
-                    try
-                    {
-                        // Set both multipliers — combat uses CombatMaxSpeedMultiplier,
-                        // general movement uses MaxSpeedMultiplier.
-                        // We set every tick because UpdateAgentStats() resets them.
-                        Player.AgentDrivenProperties.MaxSpeedMultiplier       = SpeedMult;
-                        Player.AgentDrivenProperties.CombatMaxSpeedMultiplier = SpeedMult;
-                        if (Player.MountAgent != null)
-                        {
-                            Player.MountAgent.AgentDrivenProperties.MaxSpeedMultiplier       = SpeedMult;
-                            Player.MountAgent.AgentDrivenProperties.CombatMaxSpeedMultiplier = SpeedMult;
-                        }
-                    }
-                    catch { }
-                },
-                OnExpire = () =>
-                {
-                    try
-                    {
-                        if (Player != null && Player.IsActive()) Player.UpdateAgentStats();
-                        if (Player?.MountAgent != null) Player.MountAgent.UpdateAgentStats();
-                        Msg("March fades. Your pace returns to normal.", ColorSchool.Orange);
-                    }
-                    catch { }
-                }
-            });
-            BeginAgentGlow(Player, ColorSchool.Orange, Duration);
-            Msg("Your strides lengthen — speed doubled for 90 seconds.", ColorSchool.Orange);
+                Agent root = Player.MountAgent ?? Player;
+                root.TeleportToPosition(dest);
+                if (Player.MountAgent != null)
+                    Player.TeleportToPosition(dest);
+            }
+            catch { Msg("The surge falters.", ColorSchool.Orange); return; }
+
+            BeginAgentGlow(Player, ColorSchool.Orange, 1.5f);
+            Msg("You surge forward — 12 metres in a heartbeat.", ColorSchool.Orange);
         }
 
         // =================================================================
@@ -1596,13 +1577,13 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    a.Health = Math.Max(1f, a.Health - 15f);
+                    a.SetMorale(0f);
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     count++;
                 }
                 catch { }
             }
-            Msg($"{count} {(count == 1 ? "enemy" : "enemies")} within {StunRadius}m stunned for 15 damage.", ColorSchool.Blue);
+            Msg($"{count} {(count == 1 ? "enemy" : "enemies")} within {StunRadius}m lose their nerve.", ColorSchool.Blue);
         }
 
         // =================================================================
@@ -1623,18 +1604,19 @@ namespace ColoursOfCalradia
         private static void SpellWither()
         {
             if (Player == null || Mission.Current == null) return;
-            float radius = 10f;
+            const float Radius = 10f;
             int count = 0;
-            foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= radius).ToList())
+            foreach (Agent a in Mission.Current.Agents
+                .Where(a => a.IsActive() && !a.IsMount && a != Player &&
+                            a.Position.Distance(Player.Position) <= Radius)
+                .ToList())
             {
-                float dmg = 60f * MageUnitBattery(Player);
-                a.Health = Math.Max(0f, a.Health - dmg);
-                if (a.Health <= 0f) KillAgent(a);
                 BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
+                KillAgent(a);
                 count++;
             }
-            Msg(count > 0 ? $"Wither tears through {count} {(count==1?"enemy":"enemies")} around you."
-                          : "No enemies nearby.", ColorSchool.Purple);
+            Msg(count > 0 ? $"Everything within {Radius}m is destroyed. {count} {(count == 1 ? "soul" : "souls")} consumed."
+                          : "Nothing nearby to consume.", ColorSchool.Purple);
         }
 
         private static void SpellSubjugate()
@@ -1712,48 +1694,16 @@ namespace ColoursOfCalradia
         }
 
         // =================================================================
-        // VISUAL SYSTEM  — per-school coloured glow
+        // VISUAL SYSTEM  — per-school coloured glow (fire-and-forget)
         // =================================================================
-        private static readonly List<(Agent agent, float remaining, uint color)> _glowTimers
-            = new List<(Agent, float, uint)>();
 
-        public static void TickGlows(float dt)
-        {
-            for (int i = _glowTimers.Count - 1; i >= 0; i--)
-            {
-                float t = _glowTimers[i].remaining - dt;
-                if (t <= 0f)
-                {
-                    try { _glowTimers[i].agent?.AgentVisuals?.GetEntity()
-                              ?.SetContourColor(null, false); } catch { }
-                    _glowTimers.RemoveAt(i);
-                }
-                else
-                {
-                    // Re-apply every tick so the engine can't silently clear our colour
-                    try { _glowTimers[i].agent?.AgentVisuals?.GetEntity()
-                              ?.SetContourColor(_glowTimers[i].color, true); } catch { }
-                    _glowTimers[i] = (_glowTimers[i].agent, t, _glowTimers[i].color);
-                }
-            }
-        }
-
-        public static void ClearGlows() => _glowTimers.Clear();
-
+        // duration kept in signature for call-site compat but is no longer used;
+        // the engine clears contours naturally on hit/animation events.
         public static void BeginAgentGlow(Agent agent, ColorSchool school, float duration)
         {
             if (agent == null) return;
-            try
-            {
-                uint col = ColorSchoolData.GetGlowColor(school);
-                // Never let a shorter transient glow (hit flash) overwrite a longer duration glow
-                int idx = _glowTimers.FindIndex(x => x.agent == agent);
-                if (idx >= 0 && _glowTimers[idx].remaining > duration)
-                    return;
-                agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
-                if (idx >= 0) _glowTimers.RemoveAt(idx);
-                _glowTimers.Add((agent, duration, col));
-            }
+            try { agent.AgentVisuals?.GetEntity()
+                      ?.SetContourColor(ColorSchoolData.GetGlowColor(school), true); }
             catch { }
         }
 

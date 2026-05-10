@@ -55,7 +55,7 @@ Press **S** (or **L3**) while holding Alt to cycle through your spellbook.
 ### Red — Violent
 | Combo | Spell | Effect |
 |-------|-------|--------|
-| UUURRR | Crush | Cone damage burst |
+| UUURRR | Crush | Instantly kill one random enemy in the forward cone |
 | LRLRLU | Vortex | Pull enemies toward you |
 | URUURR | Fury | Issue charge to all friendly formations |
 
@@ -64,7 +64,7 @@ Press **S** (or **L3**) while holding Alt to cycle through your spellbook.
 |-------|-------|--------|
 | RLLRLL | Encourage | Boost nearby ally morale |
 | UULRLU | Calling | Add imperial recruits to your party (join after battle) |
-| RRLLUU | March | 2.5× movement speed for 90 s |
+| RRLLUU | March | Surge 12 m forward instantly |
 
 ### Yellow — Strategic
 | Combo | Spell | Effect |
@@ -85,13 +85,13 @@ Press **S** (or **L3**) while holding Alt to cycle through your spellbook.
 |-------|-------|--------|
 | LULURU | Shield | 8 s invulnerability ward |
 | LLRRLU | Stasis | Halt all enemy formations |
-| RULRUL | Stun | 15 damage to all enemies within 30 m |
+| RULRUL | Stun | Drain the nerve of all enemies within 30 m (morale collapse) |
 
 ### Purple — Sinister
 | Combo | Spell | Effect |
 |-------|-------|--------|
 | UURRLL | Severe Life | Instantly kill one random enemy (non-hero) |
-| RLLURR | Wither | 60 damage to all enemies within 10 m |
+| RLLURR | Wither | Kill every agent (allies included) within 10 m — player is spared |
 | LURRUL | Subjugate | Shatter a nearby enemy's will — they flee |
 
 ## Personality Drift
