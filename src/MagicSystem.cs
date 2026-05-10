@@ -951,7 +951,7 @@ namespace ColoursOfCalradia
 
             bool success = SpellEffects.Execute(combo);
 
-            // Visual: caster glow + charge animation + particles + sound
+            // Visual: caster glow + charge animation + sound
             if (inMission && Agent.Main != null)
                 SpellEffects.CastGlow(Agent.Main, spell.School);
 
@@ -1284,7 +1284,7 @@ namespace ColoursOfCalradia
                 .ToList();
             if (inCone.Count == 0) { Msg("No enemies in range.", ColorSchool.Red); return; }
 
-            int kills = Math.Min(_rng.Next(1, 4), inCone.Count);
+            int kills = Math.Min(_rng.Next(1, 3), inCone.Count);
             var targets = inCone.OrderBy(_ => _rng.Next()).Take(kills).ToList();
             foreach (Agent t in targets)
             {
@@ -1477,8 +1477,8 @@ namespace ColoursOfCalradia
         private static void SpellRestore()
         {
             if (Player == null) return;
-            float heal = Math.Min(40f, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 40f, Player.HealthLimit);
+            float heal = Math.Min(20f, Player.HealthLimit - Player.Health);
+            Player.Health = Math.Min(Player.Health + 20f, Player.HealthLimit);
             Msg($"You restore yourself. +{heal:F0} HP.", ColorSchool.Green);
         }
 
@@ -1734,34 +1734,17 @@ namespace ColoursOfCalradia
             try
             {
                 BeginAgentGlow(caster, school, 3.0f);
-                PlayChargeAnimation(caster);
                 TryCastSound(caster.Position, school);
+                // Short arm-raise gesture — no camera effects attached to these actions.
+                foreach (string name in new[] { "act_release_arrow", "act_equip_unequip_items_begin" })
+                {
+                    ActionIndexCache a = ActionIndexCache.Create(name);
+                    if (a.Index < 0) continue;
+                    caster.SetActionChannel(0, a, false);
+                    break;
+                }
             }
             catch { }
-        }
-
-        private static void PlayChargeAnimation(Agent caster)
-        {
-            // Charge gesture on spellcast
-            string[] candidates =
-            {
-                "act_start_general_charge_infantry",
-                "act_general_charge_cavalry",
-                "act_yield_hard",
-                "act_pickup_boulder_begin",
-                "act_struck_from_back_medium_left_staff" // confirmed working fallback
-            };
-            foreach (string name in candidates)
-            {
-                try
-                {
-                    ActionIndexCache cache = ActionIndexCache.Create(name);
-                    if (cache.Index < 0) continue;
-                    caster.SetActionChannel(0, cache, false);
-                    return;
-                }
-                catch { }
-            }
         }
 
         // Sound event cache
@@ -2345,7 +2328,7 @@ namespace ColoursOfCalradia
                 if (!CanUseGreen(agent)) goto SkipGreen;
                 CastWithGlow(agent, hero, ColorSchool.Green, "Restore", () =>
                 {
-                    agent.Health = Math.Min(agent.Health + 40f, agent.HealthLimit);
+                    agent.Health = Math.Min(agent.Health + 20f, agent.HealthLimit);
                 });
                 return;
                 SkipGreen:;
