@@ -62,6 +62,7 @@ namespace ColoursOfCalradia
             ColourUnitRegistry.MissionTick(dt);
             SpellEffects.TickGlows(dt);
             SpellEffects.TickSteadyFreeze(dt);
+            SpellEffects.TickShieldAbsorb(dt);
             SpellEffects.TickRepel(dt);
             SpellEffects.TickRandomUnitMagic(dt);
         }
@@ -491,7 +492,6 @@ namespace ColoursOfCalradia
     {
         private bool _selectionDone;
 
-        private static readonly List<ColorSchool> _pendingSchools = new List<ColorSchool>();
         private static readonly ColorSchool[] _allSchoolsOrdered =
         {
             ColorSchool.Red, ColorSchool.Orange, ColorSchool.Yellow,
@@ -519,63 +519,45 @@ namespace ColoursOfCalradia
         // ── New game: present colour selection ───────────────────────────────
         private void OnNewGameCreated()
         {
-            _pendingSchools.Clear();
-            AskAboutColor(0);
-        }
-
-        private void AskAboutColor(int index)
-        {
-            if (index >= _allSchoolsOrdered.Length)
+            var elements = _allSchoolsOrdered.Select(school =>
             {
-                FinishColorSelection();
-                return;
-            }
+                var info = ColorSchoolData.Info[school];
+                string hint = $"{info.FlavorText}\n\nPenalty: {info.AttributePenalty}\n{info.LimitationA}\n{info.LimitationB}";
+                return new InquiryElement(school, info.Name, null, true, hint);
+            }).ToList();
 
-            ColorSchool school = _allSchoolsOrdered[index];
-            var info = ColorSchoolData.Info[school];
-
-            InformationManager.ShowInquiry(new InquiryData(
-                titleText: $"The Colour of {info.Name}",
-                text: $"{info.FlavorText}\n\n" +
-                      $"Attribute penalty: {info.AttributePenalty}\n" +
-                      $"Personality: {info.PersonalityEffect}\n\n" +
-                      $"Limitation I — {info.LimitationA}\n" +
-                      $"Limitation II — {info.LimitationB}",
-                isAffirmativeOptionShown: true,
-                isNegativeOptionShown:    true,
-                affirmativeText: $"{info.Name} calls to me.",
-                negativeText:    "Not this colour.",
-                affirmativeAction: () =>
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                "The Colours of Calradia",
+                "Magic flows through the world in colours. Choose which colours call to you — or choose none to walk an uncoloured path. Hover each colour to read its penalties.",
+                elements,
+                false, 0, 6,
+                "These colours call to me.",
+                "No colour calls to me.",
+                chosen =>
                 {
-                    _pendingSchools.Add(school);
-                    AskAboutColor(index + 1);
+                    var schools = chosen?.Select(e => (ColorSchool)e.Identifier).ToList()
+                                  ?? new List<ColorSchool>();
+                    if (schools.Count == 0)
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
+                    else
+                    {
+                        foreach (var s in schools) ColourKnowledge.AddSchool(s);
+                        ApplySchoolPenalties(schools);
+                        ShowStartingSpells(schools);
+                    }
+                    _selectionDone = true;
+                    ColourLordRegistry.SeedInitialLords();
                 },
-                negativeAction: () => AskAboutColor(index + 1),
-                soundEventPath: ""
-            ));
-        }
-
-        private void FinishColorSelection()
-        {
-            _selectionDone = true;
-
-            if (_pendingSchools.Count == 0)
-            {
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "No colour calls to you. You walk an uncoloured path.",
-                    Color.FromUint(0xFFAAAAAA)));
-                _pendingSchools.Clear();
-                return;
-            }
-
-            foreach (ColorSchool school in _pendingSchools)
-                ColourKnowledge.AddSchool(school);
-
-            ApplySchoolPenalties(_pendingSchools);
-            ShowStartingSpells(_pendingSchools);
-
-            _pendingSchools.Clear();
-            ColourLordRegistry.SeedInitialLords();
+                _ =>
+                {
+                    _selectionDone = true;
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
+                    ColourLordRegistry.SeedInitialLords();
+                },
+                "", false
+            ), false, true);
         }
 
         private void ApplySchoolPenalties(List<ColorSchool> schools)
@@ -749,60 +731,47 @@ namespace ColoursOfCalradia
             if (ColourKnowledge.AllSchools.Count() >= 6) return;
             if (_levelUpPickActive) return;
 
-            InformationManager.ShowInquiry(new InquiryData(
-                titleText: $"Level {hero.Level} — A Colour Stirs",
-                text: "Your growth opens new channels. A colour you have not learned seems within reach. Will you pursue it?",
-                isAffirmativeOptionShown: true,
-                isNegativeOptionShown:    true,
-                affirmativeText: "Show me what stirs.",
-                negativeText:    "Not now.",
-                affirmativeAction: () =>
-                {
-                    _levelUpPickActive = true;
-                    var available = ((ColorSchool[])Enum.GetValues(typeof(ColorSchool)))
-                        .Where(s => !ColourKnowledge.HasSchool(s)).ToList();
-                    AskAboutNewColour(available, 0);
-                },
-                negativeAction: () => { },
-                soundEventPath: ""
-            ));
-        }
+            var available = _allSchoolsOrdered.Where(s => !ColourKnowledge.HasSchool(s)).ToList();
+            if (available.Count == 0) return;
 
-        private void AskAboutNewColour(List<ColorSchool> available, int index)
-        {
-            if (index >= available.Count)
+            _levelUpPickActive = true;
+
+            var elements = available.Select(school =>
             {
-                _levelUpPickActive = false;
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "The colour recedes. No new school learned.",
-                    Color.FromUint(0xFFAAAAAA)));
-                return;
-            }
+                var info = ColorSchoolData.Info[school];
+                string hint = $"{info.FlavorText}\n\nPenalty: {info.AttributePenalty}\n{info.LimitationA}\n{info.LimitationB}";
+                return new InquiryElement(school, info.Name, null, true, hint);
+            }).ToList();
 
-            ColorSchool school = available[index];
-            var info = ColorSchoolData.Info[school];
-
-            InformationManager.ShowInquiry(new InquiryData(
-                titleText: $"The Colour of {info.Name}",
-                text: $"{info.FlavorText}\n\n" +
-                      $"Attribute penalty: {info.AttributePenalty}\n" +
-                      $"Personality: {info.PersonalityEffect}\n\n" +
-                      $"Limitation I — {info.LimitationA}\n" +
-                      $"Limitation II — {info.LimitationB}",
-                isAffirmativeOptionShown: true,
-                isNegativeOptionShown:    true,
-                affirmativeText: $"{info.Name} calls to me.",
-                negativeText:    "Show me the next colour.",
-                affirmativeAction: () =>
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                $"Level {hero.Level} — A Colour Stirs",
+                "Your growth opens new channels. Choose one colour to learn — or decline. Hover each colour to read its penalties.",
+                elements,
+                false, 0, 1,
+                "This colour calls to me.",
+                "Not now.",
+                chosen =>
                 {
                     _levelUpPickActive = false;
-                    ColourKnowledge.AddSchool(school);
-                    ApplySchoolPenalties(new List<ColorSchool> { school });
-                    ShowStartingSpells(new List<ColorSchool> { school });
+                    if (chosen?.Count > 0)
+                    {
+                        ColorSchool school = (ColorSchool)chosen[0].Identifier;
+                        ColourKnowledge.AddSchool(school);
+                        ApplySchoolPenalties(new List<ColorSchool> { school });
+                        ShowStartingSpells(new List<ColorSchool> { school });
+                    }
+                    else
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "The colour recedes. No new school learned.", Color.FromUint(0xFFAAAAAA)));
                 },
-                negativeAction: () => AskAboutNewColour(available, index + 1),
-                soundEventPath: ""
-            ));
+                _ =>
+                {
+                    _levelUpPickActive = false;
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        "The colour recedes. No new school learned.", Color.FromUint(0xFFAAAAAA)));
+                },
+                "", false
+            ), false, true);
         }
 
         // ── Companions may have colours ──────────────────────────────────────
@@ -1059,16 +1028,25 @@ namespace ColoursOfCalradia
         // Set by Orange Calling so Calling's effect knows how many coins were spent
         public static int LastOrangeCoinCost { get; set; } = 0;
 
-        // Shield HP bonus tracking (removed on mission end)
-        private static float _shieldBonusHp = 0f;
-        public static void ClearShieldHp()
+        // Shield absorb pool (Blue E1)
+        private static float _shieldPool   = 0f;
+        private static float _shieldLastHp = 0f;
+
+        public static void ClearShieldHp() { _shieldPool = 0f; }
+
+        public static void TickShieldAbsorb(float dt)
         {
-            if (_shieldBonusHp > 0f && Agent.Main != null && Agent.Main.IsActive())
+            if (_shieldPool <= 0f || Player == null || !Player.IsActive()) return;
+            float current = Player.Health;
+            if (current < _shieldLastHp)
             {
-                try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - _shieldBonusHp); }
-                catch { }
+                float absorbed = Math.Min(_shieldLastHp - current, _shieldPool);
+                try { Player.Health = current + absorbed; } catch { }
+                _shieldPool -= absorbed;
+                if (_shieldPool <= 0f)
+                    Msg("The blue ward is spent.", ColorSchool.Blue);
             }
-            _shieldBonusHp = 0f;
+            _shieldLastHp = Player.Health;
         }
 
         // Repel state
@@ -1107,20 +1085,23 @@ namespace ColoursOfCalradia
 
         // Steady freeze (Green D2)
         private static float _steadyFreezeRemaining = 0f;
-        private static ActionIndexCache _freezeCache = ActionIndexCache.Create("act_stand_1");
 
         public static void TickSteadyFreeze(float dt)
         {
             if (_steadyFreezeRemaining <= 0f) return;
-            _steadyFreezeRemaining -= dt;
             if (Player == null || !Player.IsActive()) { _steadyFreezeRemaining = 0f; return; }
-            try { Player.SetActionChannel(0, _freezeCache, true); } catch { }
+            _steadyFreezeRemaining -= dt;
+            try { Player.AgentDrivenProperties.MaxSpeedMultiplier = 0f; }
+            catch { }
+            if (_steadyFreezeRemaining <= 0f)
+                try { Player.UpdateAgentStats(); } catch { }
         }
 
         public static void ApplySteadyFreeze(Agent caster, float duration)
         {
             if (caster == null || !caster.IsActive()) return;
             _steadyFreezeRemaining = duration;
+            BeginAgentGlow(caster, ColorSchool.Green, duration);
         }
 
         // Sacrifice (Purple F2)
@@ -1468,12 +1449,8 @@ namespace ColoursOfCalradia
                     try
                     {
                         Player.AgentDrivenProperties.MaxSpeedMultiplier = SpeedMult;
-                        Player.UpdateAgentStats();
                         if (Player.MountAgent != null)
-                        {
                             Player.MountAgent.AgentDrivenProperties.MaxSpeedMultiplier = SpeedMult;
-                            Player.MountAgent.UpdateAgentStats();
-                        }
                     }
                     catch { }
                 },
@@ -1494,6 +1471,7 @@ namespace ColoursOfCalradia
                     catch { }
                 }
             });
+            BeginAgentGlow(Player, ColorSchool.Orange, Duration);
             Msg("Your strides lengthen. Speed increased for 90 seconds.", ColorSchool.Orange);
         }
 
@@ -1513,6 +1491,7 @@ namespace ColoursOfCalradia
             _repelActive  = true;
             _repelElapsed = 0f;
             _repelTimer   = 0f;
+            BeginAgentGlow(Player, ColorSchool.Yellow, RepelDuration);
             Msg($"A repelling pulse surrounds you — every {(int)RepelInterval} seconds for {(int)RepelDuration}s.",
                 ColorSchool.Yellow);
         }
@@ -1581,10 +1560,10 @@ namespace ColoursOfCalradia
         private static void SpellShield()
         {
             if (Player == null) return;
-            const float BonusHp = 80f;
-            _shieldBonusHp += BonusHp;
-            Player.Health = Math.Min(Player.Health + BonusHp, Player.HealthLimit + BonusHp);
-            Msg("A shield of blue light forms around you, absorbing injury. (+80 HP)", ColorSchool.Blue);
+            _shieldPool   = 80f;
+            _shieldLastHp = Player.Health;
+            BeginAgentGlow(Player, ColorSchool.Blue, 10f);
+            Msg("A blue ward crystallises around you — the next 80 damage will be absorbed.", ColorSchool.Blue);
         }
 
         private static void SpellStasis()
@@ -2606,15 +2585,21 @@ namespace ColoursOfCalradia
         private static void ApplyGreenD2(Agent agent)
         {
             if (agent == null) return;
-            var freeze = ActionIndexCache.Create("act_stand_1");
             int idx = agent.Index;
+            SpellEffects.BeginAgentGlow(agent, ColorSchool.Green, 3f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = $"_steady_npc_{idx}", Duration = 3f, IsMissionEffect = true,
                 OnTick = _ =>
                 {
                     Agent a = Mission.Current?.Agents.FirstOrDefault(x => x.Index == idx);
-                    if (a != null && a.IsActive()) try { a.SetActionChannel(0, freeze, true); } catch { }
+                    if (a != null && a.IsActive())
+                        try { a.AgentDrivenProperties.MaxSpeedMultiplier = 0f; } catch { }
+                },
+                OnExpire = () =>
+                {
+                    Agent a = Mission.Current?.Agents.FirstOrDefault(x => x.Index == idx);
+                    if (a != null && a.IsActive()) try { a.UpdateAgentStats(); } catch { }
                 }
             });
         }
