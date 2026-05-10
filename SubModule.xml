@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Module>
-    <Name value="The Withering Art"/>
-    <Id value="TheWitheringArt"/>
-    <Version value="v1.2.0"/>
+    <Name value="Colours of Calradia"/>
+    <Id value="ColoursOfCalradia"/>
+    <Version value="v2.0.0"/>
     <SingleplayerModule value="true"/>
     <MultiplayerModule value="false"/>
     <DependedModules>
@@ -13,9 +13,9 @@
     </DependedModules>
     <SubModules>
         <SubModule>
-            <Name value="TheWitheringArt"/>
+            <Name value="ColoursOfCalradia"/>
             <DLLName value="TheWitheringArt.dll"/>
-            <SubModuleClassType value="TheWitheringArt.MainSubModule"/>
+            <SubModuleClassType value="ColoursOfCalradia.MainSubModule"/>
             <Tags>
                 <Tag key="DedicatedServerType" value="none"/>
             </Tags>

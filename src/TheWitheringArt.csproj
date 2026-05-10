@@ -9,11 +9,6 @@
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 
-    <!--
-      OUTPUT: Copy the compiled DLL directly into the mod's bin folder.
-      Adjust the path to match your actual Bannerlord Modules directory.
-    -->
-    <OutputPath>C:\XboxGames\C5E01182-C50B-4253-8B15-A3376314D4DD\Content\Modules\TheWitheringArt\bin\Gaming.Desktop.x64_Shipping_Client\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>

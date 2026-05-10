@@ -1,45 +1,19 @@
-.dotnet-home/.dotnet/.workloadAdvertisingManifestSentinel10.0.200-preview.0
-.dotnet-home/.dotnet/10.0.200-preview.0.26103.119_IsDockerContainer.dotnetUserLevelCache
-.dotnet-home/.dotnet/10.0.200-preview.0.26103.119_MachineId.dotnetUserLevelCache
-.dotnet-home/.dotnet/10.0.200-preview.0.26103.119.aspNetCertificateSentinel
-.dotnet-home/.dotnet/10.0.200-preview.0.26103.119.dotnetFirstUseSentinel
-.dotnet-home/.dotnet/10.0.200-preview.0.26103.119.toolpath.sentinel
-.dotnet-home/.dotnet/MachineId.v1.dotnetUserLevelCache
-.dotnet-home/.dotnet/TelemetryStorageService/0fe192dfb47b4a51b59196ac16c5e014
-.dotnet-home/.dotnet/TelemetryStorageService/20260507192920_5e97517a3759480e90a35a52498596c3.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507192920_8fa55d7a3f1e4f0cb6f6fb62def5ab3e.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507192920_750c22de27dd4c1891d730d99b90c278.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507192920_deeec24678794fcf97aed76770a315dd.trn
-.dotnet-home/.dotnet/TelemetryStorageService/06dcf5fa93504350af1dc585ad5b76d7
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201623_17cba70b4f7645108582b49fe4aff1dc.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201623_ba2b77322c1d4ebebd3ee96692792d4b.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201623_c2d1a07cac9143978cee27a5785d7ffe.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201623_d2a74171f15b49a19f3fdda489cf1b10.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201623_ff6e6d081de9485fbfd2996a7e793d5f.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201624_36ea2ed206494e4eacd903d1cf9b2e6c.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201624_7750a86d3ffd4c71a48c3c211ff5cc24.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201624_2224512b6c44406ebb18a93c05baf414.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507201624_d080dc3a3aef40e98ce16506ca4397f8.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202938_5bc969f17b594e5d9f72245da43c4ba3.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202938_9db271948e4d4e71bf2e90f11fc4b508.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202938_47efc40d45a1479e8eb466ce0d1ec4e7.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202938_04152528b0104aeb88f7dae8486a9781.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202939_465da351f01e4415a6a41bd46b2d18a9.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202939_a0c1baed03d444688293031fd2b0d492.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202941_5f7b3225b8ab44d1adda4ea74fec9e6a.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202941_37b8a18568f341208030b7d454ed6008.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202941_a88ef42f73a44216a254fa0595cf49db.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507202941_fce558d6f5734150bc7ae9e134c8c886.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507203542_166c58e42b6547949c343aa2294bb8ad.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507203542_8265a5d08fcd4990ab30abbc191e51da.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507203542_cf3e02e27efd4461ba71f1408798011b.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507203542_f629c18e386944e9b13c4a2737d43584.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507204957_4c323ee0b0fa49fa830001cf8dcb6a46.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507204957_599dc8623b16460fb6a9cb743541a8fd.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507204957_a766fefadb8e4a818cd1b3cc19023cdd.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507204957_aa03fc11bbe34ff18b7ce843996c3abd.trn
-.dotnet-home/.dotnet/TelemetryStorageService/c6be7dacc046498aa1e055677c649e55
-.dotnet-home/.dotnet/TelemetryStorageService/20260507210205_4421142dfa824dc58e2dc9159d7c2811.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507210207_2d152e7a24254cf7b28e585a49b78ce3.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507210207_4ce7e481930e4bdf9a71367eb5b1d5e3.trn
-.dotnet-home/.dotnet/TelemetryStorageService/20260507210207_e334f87e2a064c3e9ba4946219ab2496.trn
+# Build outputs
+src/bin/
+src/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Claude memory (local only)
+.claude/
+.dotnet-home/
