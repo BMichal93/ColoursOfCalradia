@@ -60,6 +60,7 @@ namespace ColoursOfCalradia
             ActiveEffectManager.MissionTick(dt);
             ColourLordAI.MissionTick(dt);
             ColourUnitRegistry.MissionTick(dt);
+            SpellEffects.TickGlows(dt);
             SpellEffects.TickSteadyFreeze(dt);
             SpellEffects.TickRepel(dt);
             SpellEffects.TickRandomUnitMagic(dt);
@@ -664,6 +665,7 @@ namespace ColoursOfCalradia
             ActiveEffectManager.ClearMissionEffects();
             ColourLordAI.ClearCooldowns();
             SpellEffects.ClearShieldHp();
+            SpellEffects.ClearGlows();
             ColourUnitRegistry.OnMissionEnded();
         }
 
@@ -1439,7 +1441,7 @@ namespace ColoursOfCalradia
             if (fwd.Length < 0.01f) fwd = new Vec3(1f, 0f, 0f);
             else fwd = fwd.NormalizedCopy();
 
-            Vec3 dest = Player.Position + fwd * 12f;
+            Vec3 dest = Player.Position + fwd * 24f;
             dest.z = Player.Position.z;
 
             try
@@ -1694,16 +1696,48 @@ namespace ColoursOfCalradia
         }
 
         // =================================================================
-        // VISUAL SYSTEM  — per-school coloured glow (fire-and-forget)
+        // VISUAL SYSTEM  — per-school coloured glow
         // =================================================================
+        private static readonly List<(Agent agent, float remaining)> _glowTimers
+            = new List<(Agent, float)>();
 
-        // duration kept in signature for call-site compat but is no longer used;
-        // the engine clears contours naturally on hit/animation events.
+        // Called every mission tick — only clears expired timers, never re-applies colour.
+        public static void TickGlows(float dt)
+        {
+            for (int i = _glowTimers.Count - 1; i >= 0; i--)
+            {
+                float t = _glowTimers[i].remaining - dt;
+                if (t <= 0f)
+                {
+                    try { _glowTimers[i].agent?.AgentVisuals?.GetEntity()
+                              ?.SetContourColor(null, false); } catch { }
+                    _glowTimers.RemoveAt(i);
+                }
+                else
+                {
+                    _glowTimers[i] = (_glowTimers[i].agent, t);
+                }
+            }
+        }
+
+        public static void ClearGlows()
+        {
+            foreach (var (agent, _) in _glowTimers)
+                try { agent?.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
+            _glowTimers.Clear();
+        }
+
         public static void BeginAgentGlow(Agent agent, ColorSchool school, float duration)
         {
             if (agent == null) return;
-            try { agent.AgentVisuals?.GetEntity()
-                      ?.SetContourColor(ColorSchoolData.GetGlowColor(school), true); }
+            try
+            {
+                agent.AgentVisuals?.GetEntity()
+                    ?.SetContourColor(ColorSchoolData.GetGlowColor(school), true);
+                int idx = _glowTimers.FindIndex(x => x.agent == agent);
+                if (idx >= 0) _glowTimers.RemoveAt(idx);
+                _glowTimers.Add((agent, 2f)); // always clear after 2 seconds
+            }
             catch { }
         }
 
