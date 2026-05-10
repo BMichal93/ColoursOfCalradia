@@ -55,22 +55,22 @@ Press **S** (or **L3**) while holding Alt to cycle through your spellbook.
 ### Red — Violent
 | Combo | Spell | Effect |
 |-------|-------|--------|
-| RRUULL | Crush | Cone damage burst |
-| LLRRUU | Vortex | Pull enemies toward you |
-| UURRLL | Fury | Issue charge to all friendly formations |
+| UUURRR | Crush | Cone damage burst |
+| LRLRLU | Vortex | Pull enemies toward you |
+| URUURR | Fury | Issue charge to all friendly formations |
 
 ### Orange — Generous
 | Combo | Spell | Effect |
 |-------|-------|--------|
 | RLLRLL | Encourage | Boost nearby ally morale |
-| UULRLU | Calling | Summon imperial recruits |
+| UULRLU | Calling | Add imperial recruits to your party (join after battle) |
 | RRLLUU | March | 2.5× movement speed for 90 s |
 
 ### Yellow — Strategic
 | Combo | Spell | Effect |
 |-------|-------|--------|
-| UURLLU | Hold Arrows | Order enemy formations to cease fire |
-| LLUURR | Repel | Periodic knockback pulse for 60 s |
+| LURLUR | Hold Arrows | Order enemy formations to cease fire |
+| ULUURR | Repel | Periodic knockback pulse for 60 s |
 | RRUULL | Dismount | Force enemy riders off their horses |
 
 ### Green — Healing
@@ -90,9 +90,9 @@ Press **S** (or **L3**) while holding Alt to cycle through your spellbook.
 ### Purple — Sinister
 | Combo | Spell | Effect |
 |-------|-------|--------|
-| RLLULL | Severe Life | Instantly kill one random enemy (non-hero) |
-| LLRRUU | Wither | 60 damage to all enemies within 10 m |
-| UURRLL | Devour | Drain HP from nearby enemies to yourself |
+| UURRLL | Severe Life | Instantly kill one random enemy (non-hero) |
+| RLLURR | Wither | 60 damage to all enemies within 10 m |
+| LURRUL | Subjugate | Shatter a nearby enemy's will — they flee |
 
 ## Personality Drift
 

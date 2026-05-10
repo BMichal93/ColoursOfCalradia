@@ -1339,27 +1339,29 @@ namespace ColoursOfCalradia
         {
             if (Player == null || Mission.Current == null) return;
             int count = 0;
-            // Issue Charge to ALL formations on the battlefield (both sides)
             foreach (Team team in Mission.Current.Teams)
             {
+                bool isAlly = team == Player.Team;
                 foreach (Formation f in team.FormationsIncludingSpecialAndEmpty)
                 {
                     if (f.CountOfUnits <= 0) continue;
                     try
                     {
-                        f.SetMovementOrder(MovementOrder.MovementOrderCharge);
-                        count++;
+                        if (isAlly)
+                        {
+                            f.SetMovementOrder(MovementOrder.MovementOrderCharge);
+                            count++;
+                        }
                     }
                     catch { }
                 }
-                // Glow nearby agents
                 foreach (Agent a in team.ActiveAgents.ToList())
                 {
                     if (!a.IsMount && a.Position.Distance(Player.Position) <= 50f)
                         BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                 }
             }
-            Msg($"Fury ripples across the field. {count} formation{(count==1?"":"s")} surge to charge.",
+            Msg($"Fury ignites your host. {count} friendly formation{(count==1?"":"s")} surge to charge.",
                 ColorSchool.Red);
         }
 
@@ -1404,7 +1406,12 @@ namespace ColoursOfCalradia
             try
             {
                 MobileParty.MainParty?.MemberRoster.AddToCounts(recruit, recruits);
-                Msg($"{recruits} Imperial soldier{(recruits==1?"":"s")} answer your call — {cost} gold spent.",
+                // In an active battle the roster addition is a campaign-level effect:
+                // the recruits join the party and will fight from the next battle onward.
+                string timing = Mission.Current != null
+                    ? " — they will march with you after this battle"
+                    : "";
+                Msg($"{recruits} Imperial soldier{(recruits==1?"":"s")} answer your call{timing}. {cost} gold spent.",
                     ColorSchool.Orange);
             }
             catch { Msg("The call was heard but none came.", ColorSchool.Orange); }
@@ -1431,14 +1438,6 @@ namespace ColoursOfCalradia
             const float SpeedMult = 2.5f;
             const float Duration  = 90f;
 
-            // Raise the hard speed cap once — this persists until we restore it
-            try
-            {
-                Player.SetMaximumSpeedLimit(SpeedMult, true);
-                if (Player.MountAgent != null) Player.MountAgent.SetMaximumSpeedLimit(SpeedMult, true);
-            }
-            catch { }
-
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_march", Duration = Duration, IsMissionEffect = true,
@@ -1447,11 +1446,16 @@ namespace ColoursOfCalradia
                     if (Player == null || !Player.IsActive()) return;
                     try
                     {
-                        // Drive toward the higher speed each frame (UpdateAgentStats may reset this,
-                        // so we set it again immediately after every tick)
-                        Player.AgentDrivenProperties.MaxSpeedMultiplier = SpeedMult;
+                        // Set both multipliers — combat uses CombatMaxSpeedMultiplier,
+                        // general movement uses MaxSpeedMultiplier.
+                        // We set every tick because UpdateAgentStats() resets them.
+                        Player.AgentDrivenProperties.MaxSpeedMultiplier       = SpeedMult;
+                        Player.AgentDrivenProperties.CombatMaxSpeedMultiplier = SpeedMult;
                         if (Player.MountAgent != null)
-                            Player.MountAgent.AgentDrivenProperties.MaxSpeedMultiplier = SpeedMult;
+                        {
+                            Player.MountAgent.AgentDrivenProperties.MaxSpeedMultiplier       = SpeedMult;
+                            Player.MountAgent.AgentDrivenProperties.CombatMaxSpeedMultiplier = SpeedMult;
+                        }
                     }
                     catch { }
                 },
@@ -1459,16 +1463,8 @@ namespace ColoursOfCalradia
                 {
                     try
                     {
-                        if (Player != null && Player.IsActive())
-                        {
-                            Player.SetMaximumSpeedLimit(1f, true);
-                            Player.UpdateAgentStats();
-                        }
-                        if (Player?.MountAgent != null)
-                        {
-                            Player.MountAgent.SetMaximumSpeedLimit(1f, true);
-                            Player.MountAgent.UpdateAgentStats();
-                        }
+                        if (Player != null && Player.IsActive()) Player.UpdateAgentStats();
+                        if (Player?.MountAgent != null) Player.MountAgent.UpdateAgentStats();
                         Msg("March fades. Your pace returns to normal.", ColorSchool.Orange);
                     }
                     catch { }
@@ -1653,8 +1649,8 @@ namespace ColoursOfCalradia
             if (target == null) { Msg("No target in forward cone.", ColorSchool.Purple); return; }
 
             BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-            try { target.SetMorale(0f); target.Retreat(true); }
-            catch { }
+            try { target.SetMorale(0f); } catch { }
+            try { target.Retreat(); } catch { }
             Msg($"You shatter {target.Name}'s will. They flee.", ColorSchool.Purple);
         }
 
@@ -1750,8 +1746,12 @@ namespace ColoursOfCalradia
             try
             {
                 uint col = ColorSchoolData.GetGlowColor(school);
+                // Never let a shorter transient glow (hit flash) overwrite a longer duration glow
+                int idx = _glowTimers.FindIndex(x => x.agent == agent);
+                if (idx >= 0 && _glowTimers[idx].remaining > duration)
+                    return;
                 agent.AgentVisuals?.GetEntity()?.SetContourColor(col, true);
-                _glowTimers.RemoveAll(x => x.agent == agent);
+                if (idx >= 0) _glowTimers.RemoveAt(idx);
                 _glowTimers.Add((agent, duration, col));
             }
             catch { }
