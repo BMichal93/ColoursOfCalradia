@@ -61,7 +61,9 @@ namespace ColoursOfCalradia
             ColourLordAI.MissionTick(dt);
             ColourUnitRegistry.MissionTick(dt);
             SpellEffects.TickGlows(dt);
-            SpellEffects.TickRepel(dt);
+            SpellEffects.TickMoves(dt);
+            SpellEffects.TickAreaEffects(dt);
+            SpellEffects.TickHollowGaze(dt);
             SpellEffects.TickRandomUnitMagic(dt);
         }
 
@@ -95,62 +97,61 @@ namespace ColoursOfCalradia
             [ColorSchool.Red] = new SchoolInfo
             {
                 Name             = "Red",
-                FlavorText       = "Angry, fiery magic of war and destruction. Red mages channel rage into devastating bursts of power. " +
-                                   "Their spells tear through formations and drag enemies into blade range. " +
-                                   "But the fire burns both ways — each working scorches the caster.",
+                FlavorText       = "Blood Price — Violent, fiery magic of war and ruin. Red mages channel rage into devastating waves and burning bursts. " +
+                                   "The art demands payment in pain: each working scorches the caster, and every cast drives your soldiers into a frenzy.",
                 PersonalityEffect= "Repeated casting makes you less Calculating — more instinctive, more impulsive.",
-                LimitationA      = "Furious: Each Red spell cast automatically issues a Charge order to your formations.",
-                LimitationB      = "Fiery: Each Red spell deals a small wound to the caster.",
+                LimitationA      = "Furious: Each Red spell automatically issues a Charge order to your formations.",
+                LimitationB      = "Blood Price: Each Red spell opens a wound on the caster — magic always takes its due.",
                 AttributePenalty = "-1 Control"
             },
             [ColorSchool.Orange] = new SchoolInfo
             {
                 Name             = "Orange",
-                FlavorText       = "Joyful, jolly magic of generosity and camaraderie. Orange mages inspire those around them and conjure " +
-                                   "allies from nothing. Their indulgent nature, however, drains resources at an alarming rate.",
+                FlavorText       = "Generous Hunger — Joyful, generous magic of warmth and plenty. Orange mages inspire and conjure allies from nothing. " +
+                                   "Their indulgent nature, however, devours resources and scatters their senses with each casting.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
-                LimitationA      = "Overindulgent: Your party consumes food 50% faster.",
-                LimitationB      = "Lighthearted: Each Orange spell costs gold (5% of total or 50 coins, whichever is higher). Cannot cast without coins.",
+                LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
+                LimitationB      = "Lighthearted: Each Orange spell costs gold (5% of total, min 50). Cannot cast without coins.",
                 AttributePenalty = "-1 Intellect"
             },
             [ColorSchool.Yellow] = new SchoolInfo
             {
                 Name             = "Yellow",
-                FlavorText       = "Careful, melancholic magic of caution and battlefield control. Yellow mages bend armies to their will — " +
-                                   "grounding cavalry, silencing archers — but their cautious nature drains those around them of hope.",
-                PersonalityEffect= "Repeated casting diminishes your Valor — careful where others are bold.",
-                LimitationA      = "Uncharismatic: Your effective party size limit is always 3 lower.",
-                LimitationB      = "Hopeless: Each Yellow spell causes your party to lose morale.",
-                AttributePenalty = "-1 Vigor"
+                FlavorText       = "The Fearful Eye — Visceral, stomach-turning magic of dread and revulsion. Yellow mages poison courage and stir the deep animal panic beneath every soldier's composure. " +
+                                   "The cost is insidious: those who spread fear begin to feel it — their judgment frays and their nerve hollows from within.",
+                PersonalityEffect= "Repeated casting erodes your Valor — the dread you sow takes root in you as well.",
+                LimitationA      = "Paranoia: Each Yellow spell costs party morale — the fear bleeds inward as well as outward.",
+                LimitationB      = "Blurred Judgment: Yellow magic clouds the caster's mind — each cast increases your criminal rating as you begin to see threats everywhere.",
+                AttributePenalty = "-1 Social"
             },
             [ColorSchool.Green] = new SchoolInfo
             {
                 Name             = "Green",
-                FlavorText       = "Kind, caring magic of healing and restoration. Green mages sustain their companions through battle " +
-                                   "and hardship. Their pacifist heart, however, cannot act while holding a blade.",
+                FlavorText       = "Gentle Burden — Kind, mending magic of life and restoration. Green mages sustain their companions through battle. " +
+                                   "Their pacifist heart cannot act while holding a blade, and the weight of nearby violence seeps back into their body.",
                 PersonalityEffect= "Repeated casting increases your Mercy — slow to strike, quick to spare.",
-                LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon in hand.",
-                LimitationB      = "Sunwalker: You cannot cast Green magic at night — it feeds on sunlight.",
+                LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon.",
+                LimitationB      = "Gentle Burden: Casting while enemies are in melee reach is painful — Green magic recoils against violence.",
                 AttributePenalty = "-1 Endurance"
             },
             [ColorSchool.Blue] = new SchoolInfo
             {
                 Name             = "Blue",
-                FlavorText       = "Cold, distanced magic of order and stillness. Blue mages freeze formations, conjure spectral protection, " +
-                                   "and shock entire battlefields. But their scholarly nature exacts a toll in years.",
+                FlavorText       = "Scholar's Weight — Cold, distanced magic of order and stillness. Blue mages freeze formations and conjure spectral shields. " +
+                                   "But knowledge is heavy — each casting strains the body, adding invisible weight to armour and limb.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
-                LimitationA      = "Grounded: You cannot use Blue magic while on horseback.",
-                LimitationB      = "Scholar: Each Blue spell costs a few days of your life.",
-                AttributePenalty = "-1 Social"
+                LimitationA      = "Scholar's Fatigue: Each Blue spell tires the body — a bruising cost paid in flesh.",
+                LimitationB      = "Heavy Knowledge: Blue magic accumulates in the flesh — you move and strike with slightly less vigour as it settles.",
+                AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
             {
                 Name             = "Purple",
-                FlavorText       = "Lordly, cruel magic of dominance and sacrifice. Purple mages tear lives from the field, wither " +
-                                   "entire groups, and bend unwilling minds. But their pride demands a retinue — and their power feeds on allies.",
-                PersonalityEffect= "Repeated casting decreases your Mercy — lordly, proud, and unmoved.",
-                LimitationA      = "Proud: You cannot cast without allied soldiers in your party.",
-                LimitationB      = "Sacrifice: Each Purple spell deals significant damage to one of your allied units.",
+                FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
+                                   "The grey does not take violently — it takes slowly, steadily. Each working bleeds away a little of the mage's time, presence, and will to be.",
+                PersonalityEffect= "Repeated casting deepens indifference — your Mercy erodes as caring grows too heavy to carry.",
+                LimitationA      = "Waning Cost: Each Purple spell ages the caster — the grey draws time inward, silently.",
+                LimitationB      = "The Slow Unravelling: Purple magic does not announce itself. It simply continues until there is less of you.",
                 AttributePenalty = "-1 Cunning"
             }
         };
@@ -177,9 +178,9 @@ namespace ColoursOfCalradia
             {
                 case ColorSchool.Red:    return DefaultCharacterAttributes.Control;
                 case ColorSchool.Orange: return DefaultCharacterAttributes.Intelligence;
-                case ColorSchool.Yellow: return DefaultCharacterAttributes.Vigor;
+                case ColorSchool.Yellow: return DefaultCharacterAttributes.Social;
                 case ColorSchool.Green:  return DefaultCharacterAttributes.Endurance;
-                case ColorSchool.Blue:   return DefaultCharacterAttributes.Social;
+                case ColorSchool.Blue:   return DefaultCharacterAttributes.Vigor;
                 case ColorSchool.Purple: return DefaultCharacterAttributes.Cunning;
                 default:                 return DefaultCharacterAttributes.Vigor;
             }
@@ -232,73 +233,70 @@ namespace ColoursOfCalradia
 
     public static class SpellDatabase
     {
+        // Combos follow a strict structure: first 2 chars = Form, last 4 chars = Colour.
+        // Forms: UU = Blast (cone), DD = Self (aura), LR = Create (area effect)
+        // Colours: UURR = Red, LLRR = Orange, LRLU = Yellow, RRLL = Green, LLUU = Blue, RRLU = Purple
         public static readonly IReadOnlyList<SpellEntry> All = new List<SpellEntry>
         {
-            // ── RED ────────────────────────────────────────────────────────────
-            new SpellEntry { Name="Crush",       Combo="UUURRR", School=ColorSchool.Red,
+            // ── BLAST (UU prefix) — medium cone in front of the caster ──────────
+            new SpellEntry { Name="Crimson Torrent",  Combo="UUUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
-                Flavour="Anger made manifest. Everything in the cone bends." },
-            new SpellEntry { Name="Vortex",      Combo="LRLRLU", School=ColorSchool.Red,
+                Flavour="The rage of a thousand battles channelled into a single, devastating wave." },
+            new SpellEntry { Name="Golden Tide",      Combo="UULLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="You become the heaviest thing on the field." },
-            new SpellEntry { Name="Fury",        Combo="URUURR", School=ColorSchool.Red,
+                Flavour="Wash over your foes with jubilant force; even enemies cannot resist the urge to advance." },
+            new SpellEntry { Name="Tide of Dread",    Combo="UULRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
-                Flavour="The urge to fight reaches everyone before their caution does." },
+                Flavour="A wave of creeping, nameless wrongness — it strips the nerve from all it touches and leaves behind only the urge to run." },
+            new SpellEntry { Name="Verdant Surge",    Combo="UURRLL", School=ColorSchool.Green,
+                Context=SpellContext.Mission,
+                Flavour="A tide of living energy that mends all it touches — friend and foe alike." },
+            new SpellEntry { Name="Azure Arrest",     Combo="UULLUU", School=ColorSchool.Blue,
+                Context=SpellContext.Mission,
+                Flavour="A freezing wave of scholarly force. All before you halt; riders are unseated." },
+            new SpellEntry { Name="Grey Harvest",     Combo="UURRLU", School=ColorSchool.Purple,
+                Context=SpellContext.Mission,
+                Flavour="The grey settles over one soul in the cone. They simply stop. The body follows the spirit out like a slow tide." },
 
-            // ── ORANGE ─────────────────────────────────────────────────────────
-            new SpellEntry { Name="Bound Together", Combo="RLLRLL", School=ColorSchool.Orange,
+            // ── SELF (DD prefix) — creates a glowing aura around the caster ─────
+            new SpellEntry { Name="Scarlet Ward",     Combo="DDUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
-                Flavour="A golden tether. Allies snap to your side; enemies are hurled beyond reach." },
-            new SpellEntry { Name="Calling",     Combo="UULRLU", School=ColorSchool.Orange,
+                Flavour="The next blow lands on iron. Your body becomes briefly unbreakable." },
+            new SpellEntry { Name="Warm Beacon",      Combo="DDLLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="The call carries further than a voice. Those who hear it do not know why they march." },
-            new SpellEntry { Name="March",       Combo="RRLLUU", School=ColorSchool.Orange,
+                Flavour="A golden light calls your companions from across the field to your side." },
+            new SpellEntry { Name="Nausea Bloom",     Combo="DDLRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
-                Flavour="The road opens ahead — in a single breath, you are already there." },
+                Flavour="Something deeply wrong radiates from you. All who linger nearby feel it in their stomach before they know it in their mind." },
+            new SpellEntry { Name="Verdant Touch",    Combo="DDRRLL", School=ColorSchool.Green,
+                Context=SpellContext.Mission,
+                Flavour="You lay hands upon yourself. The wounds knit closed." },
+            new SpellEntry { Name="Cerulean Mirror",  Combo="DDLLUU", School=ColorSchool.Blue,
+                Context=SpellContext.Mission,
+                Flavour="Your body becomes a perfect reflector. For a time, no harm finds purchase." },
+            new SpellEntry { Name="Grief's Veil",     Combo="DDRRLU", School=ColorSchool.Purple,
+                Context=SpellContext.Mission,
+                Flavour="A heavy grey settles over the field. Enemies lose the will to see you — the grief of their own losses washes through them instead." },
 
-            // ── YELLOW ─────────────────────────────────────────────────────────
-            new SpellEntry { Name="Hold Arrows", Combo="LURLUR", School=ColorSchool.Yellow,
+            // ── CREATE (LR prefix) — special area effect, specific to each colour ─
+            new SpellEntry { Name="Cinder Burst",     Combo="LRUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
-                Flavour="The bowstrings slacken. The enemy remembers steel exists." },
-            new SpellEntry { Name="Repel",       Combo="ULUURR", School=ColorSchool.Yellow,
+                Flavour="The world around you ignites. All nearby pay the price of your fury." },
+            new SpellEntry { Name="Gilded Ground",    Combo="LRLLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="A pulse, every three seconds. The first time is a warning. The rest are a statement." },
-            new SpellEntry { Name="Dismount",    Combo="RRUULL", School=ColorSchool.Yellow,
+                Flavour="A treacherous patch of joyful earth — horses enter gladly and regret it." },
+            new SpellEntry { Name="Creeping Dread",   Combo="LRLRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
-                Flavour="Horses are told to be elsewhere. Riders comply the hard way." },
-
-            // ── GREEN ──────────────────────────────────────────────────────────
-            new SpellEntry { Name="Restore",     Combo="UULLUR", School=ColorSchool.Green,
+                Flavour="A cloud of formless revulsion drifts across the field. Those it passes through feel their skin crawl and their courage hollow out. Cast again to dismiss." },
+            new SpellEntry { Name="Emerald Font",     Combo="LRRRLL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
-                Flavour="The body knows how to be whole. The Gift tells it to hurry." },
-            new SpellEntry { Name="Aid",         Combo="ULLRUU", School=ColorSchool.Green,
+                Flavour="A blessed circle of earth. All who stand within are slowly mended — friend and foe alike. Cast again to dismiss." },
+            new SpellEntry { Name="Sapphire Bastion", Combo="LRLLUU", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
-                Flavour="Life flows from you into them. Brief, but enough." },
-            new SpellEntry { Name="Nurture",     Combo="UURLUL", School=ColorSchool.Green,
+                Flavour="A wall of solid blue force rises from the earth, repelling all who approach. Fades after three minutes." },
+            new SpellEntry { Name="Hollow Gaze",      Combo="LRRRLU", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
-                Flavour="Weariness lifts. The earth remembers how to give." },
-
-            // ── BLUE ───────────────────────────────────────────────────────────
-            new SpellEntry { Name="Shield",      Combo="LULURU", School=ColorSchool.Blue,
-                Context=SpellContext.Mission,
-                Flavour="Something cold and bright settles around you. Wounds feel far away." },
-            new SpellEntry { Name="Stasis",      Combo="LLRRLU", School=ColorSchool.Blue,
-                Context=SpellContext.Mission,
-                Flavour="The enemy line remembers what it was doing and decides to stop." },
-            new SpellEntry { Name="Stun",        Combo="RULRUL", School=ColorSchool.Blue,
-                Context=SpellContext.Mission,
-                Flavour="The cold reaches the mind before the blade does. Their nerve simply goes." },
-
-            // ── PURPLE ─────────────────────────────────────────────────────────
-            new SpellEntry { Name="Severe Life", Combo="UURRLL", School=ColorSchool.Purple,
-                Context=SpellContext.Mission,
-                Flavour="Somewhere on the field, someone stops. You did not choose who." },
-            new SpellEntry { Name="Wither",      Combo="RLLURR", School=ColorSchool.Purple,
-                Context=SpellContext.Mission,
-                Flavour="Everything around you breaks. You are the still point." },
-            new SpellEntry { Name="Subjugate",   Combo="LURRUL", School=ColorSchool.Purple,
-                Context=SpellContext.Mission,
-                Flavour="The will tears loose. They run — not from you, but from themselves." },
+                Flavour="One nearby enemy empties out. They stand. They do not move. They wait for nothing. Cast again to release them." },
         };
 
         public static SpellEntry Find(string combo) =>
@@ -314,7 +312,7 @@ namespace ColoursOfCalradia
     public static class ColourKnowledge
     {
         private static readonly HashSet<ColorSchool> _chosenSchools = new HashSet<ColorSchool>();
-        // Accumulated casts per school — every 10 casts shifts the associated trait
+        // Accumulated casts per school — every 25 casts shifts the associated trait
         private static readonly Dictionary<ColorSchool, int> _castCounters =
             new Dictionary<ColorSchool, int>
             {
@@ -348,7 +346,7 @@ namespace ColoursOfCalradia
             if (!_castCounters.ContainsKey(school)) return;
             _castCounters[school]++;
 
-            if (_castCounters[school] % 10 != 0) return;
+            if (_castCounters[school] % 25 != 0) return;
 
             // Shift personality trait
             try
@@ -566,7 +564,6 @@ namespace ColoursOfCalradia
             foreach (ColorSchool school in schools)
             {
                 var info = ColorSchoolData.Info[school];
-                // Attempt actual attribute reduction
                 try
                 {
                     CharacterAttribute attr = ColorSchoolData.GetPenaltyAttribute(school);
@@ -577,6 +574,65 @@ namespace ColoursOfCalradia
                 InformationManager.DisplayMessage(new InformationMessage(
                     $"{info.Name} — {info.AttributePenalty}. The mark your gift left on your body.",
                     ColorSchoolData.GetMessageColor(school)));
+            }
+
+            // Madness — colours that are not adjacent on the ring (Red-Orange-Yellow-Green-Blue-Purple)
+            // create an internal conflict that fractures the mage's personality.
+            if (schools.Count >= 2 && !AreColoursContiguous(schools))
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "Madness: The colours you wield are incompatible — their conflicting natures fracture your sense of self.",
+                    Color.FromUint(0xFFCC44FF)));
+                ApplyMadness(player);
+            }
+        }
+
+        // Returns true if the chosen schools form a contiguous arc on the colour ring.
+        // Ring order: Red(0)-Orange(1)-Yellow(2)-Green(3)-Blue(4)-Purple(5), wraps around.
+        private bool AreColoursContiguous(List<ColorSchool> schools)
+        {
+            var positions = schools.Select(s => (int)s).ToHashSet();
+            int n = 6;
+            // Try each chosen colour as arc start; walk forward checking all are present
+            foreach (int start in positions)
+            {
+                bool allPresent = true;
+                for (int step = 0; step < positions.Count; step++)
+                {
+                    if (!positions.Contains((start + step) % n)) { allPresent = false; break; }
+                }
+                if (allPresent) return true;
+            }
+            return false;
+        }
+
+        private static readonly TraitObject[] MadnessTraits =
+        {
+            DefaultTraits.Mercy, DefaultTraits.Valor, DefaultTraits.Honor,
+            DefaultTraits.Generosity, DefaultTraits.Calculating
+        };
+
+        private void ApplyMadness(Hero player)
+        {
+            var rng = new Random();
+            var shuffled = MadnessTraits.OrderBy(_ => rng.Next()).Take(2).ToList();
+            foreach (TraitObject trait in shuffled)
+            {
+                try
+                {
+                    int current = player.GetTraitLevel(trait);
+                    int shift   = rng.Next(2) == 0 ? 1 : -1;
+                    int next    = Math.Max(-2, Math.Min(2, current + shift));
+                    if (next != current)
+                    {
+                        player.SetTraitLevel(trait, next);
+                        string dir = shift > 0 ? "increased" : "decreased";
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"Madness: Your {trait.StringId} trait has {dir} ({next:+0;-0}).",
+                            Color.FromUint(0xFFCC44FF)));
+                    }
+                }
+                catch { }
             }
         }
 
@@ -663,7 +719,7 @@ namespace ColoursOfCalradia
         {
             ActiveEffectManager.ClearMissionEffects();
             ColourLordAI.ClearCooldowns();
-            SpellEffects.ClearShieldHp();
+            SpellEffects.ClearSelfEffects();
             SpellEffects.ClearGlows();
             ColourUnitRegistry.OnMissionEnded();
         }
@@ -816,14 +872,21 @@ namespace ColoursOfCalradia
                 if (!inMission && Campaign.Current != null)
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
 
+                // Keyboard: W=Up, A=Left, D=Right, S=Down-or-Grimoire
+                // S opens grimoire when buffer is empty; otherwise it appends "D" (down direction)
                 if      (Input.IsKeyPressed(InputKey.W)) Append("U");
                 else if (Input.IsKeyPressed(InputKey.A)) Append("L");
                 else if (Input.IsKeyPressed(InputKey.D)) Append("R");
-                else if (Input.IsKeyPressed(InputKey.S)) ColourKnowledge.ShowGrimoire();
-
+                else if (Input.IsKeyPressed(InputKey.S))
+                {
+                    if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
+                    else Append("D");
+                }
+                // Gamepad: R3 stick directions map to U/D/L/R; L3 opens grimoire
                 else if (Input.IsKeyPressed(InputKey.ControllerRUp))    Append("U");
+                else if (Input.IsKeyPressed(InputKey.ControllerRDown))  Append("D");
                 else if (Input.IsKeyPressed(InputKey.ControllerRLeft))  Append("L");
-                else if (Input.IsKeyPressed(InputKey.ControllerRDown))  Append("R");
+                else if (Input.IsKeyPressed(InputKey.ControllerRRight)) Append("R");
                 else if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
 
                 if (_buffer.Length > 0 && _buffer != _lastDisplayedBuffer)
@@ -876,7 +939,14 @@ namespace ColoursOfCalradia
 
             // ── Pre-cast limitation checks ────────────────────────────────────
 
-            // B2 Lighthearted (Orange) — coin cost
+            // Global: all magic requires sunlight — the mage acts as a prism
+            if (!SpellEffects.IsDaytime())
+            {
+                Fizzle("The colours require sunlight. Magic cannot be cast at night or underground.");
+                return;
+            }
+
+            // Orange — Lighthearted: coin cost
             if (spell.School == ColorSchool.Orange)
             {
                 Hero player = Hero.MainHero;
@@ -888,14 +958,13 @@ namespace ColoursOfCalradia
                         Fizzle($"Lighthearted: You need at least {cost} gold to cast an Orange spell.");
                         return;
                     }
-                    // Deduct coins and remember for Calling
                     try { GiveGoldAction.ApplyBetweenCharacters(player, null, cost, true); }
                     catch { }
                     SpellEffects.LastOrangeCoinCost = cost;
                 }
             }
 
-            // D1 Pacifist (Green) — no weapon in hand
+            // Green — Pacifist: no weapon in hand
             if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
             {
                 try
@@ -911,27 +980,6 @@ namespace ColoursOfCalradia
                     }
                 }
                 catch { }
-            }
-
-            // D2 Sunwalker (Green) — cannot cast at night
-            if (spell.School == ColorSchool.Green && !SpellEffects.IsDaytime())
-            {
-                Fizzle("Sunwalker: Green magic feeds on sunlight. Wait for dawn.");
-                return;
-            }
-
-            // E1 Grounded (Blue) — no horseback
-            if (spell.School == ColorSchool.Blue && inMission && Agent.Main?.MountAgent != null)
-            {
-                Fizzle("Grounded: Dismount before casting Blue magic.");
-                return;
-            }
-
-            // F1 Delicate Art (Purple) — cannot cast in daylight
-            if (spell.School == ColorSchool.Purple && SpellEffects.IsDaytime())
-            {
-                Fizzle("Delicate Art: Sunlight shatters the structure. Wait for darkness.");
-                return;
             }
 
             // ── Tournament guard ──────────────────────────────────────────────
@@ -959,43 +1007,83 @@ namespace ColoursOfCalradia
 
             // ── Post-cast limitation side effects ─────────────────────────────
 
-            // A1 Furious (Red) — issue Charge to own formations
+            // Red A1 — Furious: issue Charge to own formations
             if (spell.School == ColorSchool.Red && inMission && Agent.Main != null)
-            {
                 SpellEffects.IssueChargeToOwnFormations(Agent.Main);
-            }
 
-            // A2 Fiery (Red) — small damage to caster
+            // Red A2 — Blood Price: small self-damage
             if (spell.School == ColorSchool.Red && inMission && Agent.Main != null)
             {
                 try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 8f); }
                 catch { }
             }
 
-            // C2 Hopeless (Yellow) — party morale loss
+            // Yellow — Suspicious: party morale loss + criminal rating increase
             if (spell.School == ColorSchool.Yellow)
             {
                 try { if (MobileParty.MainParty != null) MobileParty.MainParty.RecentEventsMorale -= 8f; }
                 catch { }
-            }
-
-            // E2 Scholar (Blue) — age caster
-            if (spell.School == ColorSchool.Blue)
-            {
+                // Increase criminal rating in the kingdom where the spell is used
                 try
                 {
-                    Hero.MainHero?.SetBirthDay(
-                        Hero.MainHero.BirthDay - CampaignTime.Years(1f / 12f)); // ~30 days per cast
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        $"Scholar: The working ages you. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
-                        ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+                    Kingdom crimKingdom = null;
+                    if (inMission && Mission.Current != null)
+                    {
+                        foreach (Agent a in Mission.Current.Agents)
+                        {
+                            if (a.Character is CharacterObject co && co.IsHero && co.HeroObject != null
+                                && a.Team != Mission.Current.PlayerTeam)
+                            {
+                                crimKingdom = co.HeroObject.Clan?.Kingdom;
+                                if (crimKingdom != null) break;
+                            }
+                        }
+                    }
+                    crimKingdom = crimKingdom ?? Hero.MainHero?.Clan?.Kingdom;
+                    if (crimKingdom != null)
+                        ChangeCrimeRatingAction.Apply(crimKingdom, 3f, true);
                 }
                 catch { }
             }
 
-            // F2 Sacrifice (Purple) — damage one allied unit
-            if (spell.School == ColorSchool.Purple && inMission && Agent.Main != null)
-                SpellEffects.ApplySacrifice(Agent.Main);
+            // Green — Gentle Burden: recoil if enemies are in melee reach
+            if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
+            {
+                try
+                {
+                    bool meleeRange = Mission.Current?.Agents.Any(a =>
+                        a.IsActive() && !a.IsMount && a.Team != Agent.Main.Team &&
+                        a.Position.Distance(Agent.Main.Position) <= 4f) ?? false;
+                    if (meleeRange)
+                    {
+                        Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 5f);
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "Gentle Burden: Violence is close. Your magic recoils.",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Green)));
+                    }
+                }
+                catch { }
+            }
+
+            // Blue — Scholar's Fatigue: small self-damage from mental strain
+            if (spell.School == ColorSchool.Blue && inMission && Agent.Main != null)
+            {
+                try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 5f); }
+                catch { }
+            }
+
+            // Purple — Consuming Art: ages the caster by ~7 days
+            if (spell.School == ColorSchool.Purple)
+            {
+                try
+                {
+                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(7f / 365f));
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"Consuming Art: The void takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
+                        ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
+                }
+                catch { }
+            }
 
             // Personality drift
             ColourKnowledge.RecordCast(spell.School);
@@ -1035,75 +1123,240 @@ namespace ColoursOfCalradia
             catch { return true; }
         }
 
-        // Shield invulnerability state (Blue E1)
-        private static bool _shieldInvulnActive = false;
-
-        public static void ClearShieldHp()
+        // ── Smooth movement system ────────────────────────────────────────────
+        // Moves agents gradually toward a target over a set duration (lerp).
+        // Used by push/pull spells for fluid visual movement.
+        private struct PendingMove
         {
-            if (_shieldInvulnActive)
+            public Agent Agent; public Vec3 Start; public Vec3 Target;
+            public float Duration; public float Elapsed;
+        }
+        private static readonly List<PendingMove> _pendingMoves = new List<PendingMove>();
+
+        public static void QueueMove(Agent a, Vec3 target, float duration)
+        {
+            if (a == null) return;
+            for (int i = _pendingMoves.Count - 1; i >= 0; i--)
+                if (_pendingMoves[i].Agent == a) _pendingMoves.RemoveAt(i);
+            _pendingMoves.Add(new PendingMove { Agent = a, Start = a.Position, Target = target, Duration = duration, Elapsed = 0f });
+        }
+
+        public static void TickMoves(float dt)
+        {
+            for (int i = _pendingMoves.Count - 1; i >= 0; i--)
             {
-                try { if (Player != null && Player.IsActive()) Player.ToggleInvulnerable(); } catch { }
-                _shieldInvulnActive = false;
+                var m = _pendingMoves[i];
+                if (m.Agent == null || !m.Agent.IsActive()) { _pendingMoves.RemoveAt(i); continue; }
+                float elapsed = m.Elapsed + dt;
+                float t = Math.Min(elapsed / m.Duration, 1f);
+                float smooth = t * t * (3f - 2f * t); // smoothstep
+                Vec3 pos = m.Start + (m.Target - m.Start) * smooth;
+                pos.z = m.Agent.Position.z;
+                try { m.Agent.TeleportToPosition(pos); } catch { }
+                if (elapsed >= m.Duration) _pendingMoves.RemoveAt(i);
+                else _pendingMoves[i] = new PendingMove { Agent = m.Agent, Start = m.Start, Target = m.Target, Duration = m.Duration, Elapsed = elapsed };
             }
         }
 
-        // Repel state
-        private static bool  _repelActive  = false;
-        private static float _repelTimer   = 0f;
-        private static float _repelElapsed = 0f;
-        private const  float RepelInterval = 3f;
-        private const  float RepelDuration = 60f;
-
-        public static void TickRepel(float dt)
+        public static void ClearMoves()
         {
-            if (!_repelActive) return;
-            _repelElapsed += dt;
-            if (_repelElapsed >= RepelDuration)
-            {
-                _repelActive = false;
-                _repelElapsed = 0f;
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "Repel fades.", new Color(0.5f, 0.5f, 0.7f)));
-                return;
-            }
-            _repelTimer += dt;
-            if (_repelTimer < RepelInterval) return;
-            _repelTimer -= RepelInterval;
+            _pendingMoves.Clear();
+        }
 
-            if (Player == null || Mission.Current == null) return;
-            foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= 5f).ToList())
+        // ── Persistent area effects ────────────────────────────────────────────
+        // Create spells place lasting effects on the field; each ticks on its own interval.
+        internal class AreaEffect
+        {
+            public string Id;           // Unique ID for toggling (e.g. "create_orange")
+            public Vec3   Position;
+            public Vec3   Velocity;     // For moving effects (Create Yellow)
+            public float  Radius;
+            public ColorSchool School;
+            public float  TickInterval;
+            public float  TickTimer;
+            public float  Remaining;    // negative = no expiry (toggle-only)
+            public float  DirTimer;     // Create Yellow direction-change timer
+        }
+        private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
+
+        // If an effect with this id exists, remove it. Otherwise add newEffect (if not null).
+        internal static void ToggleAreaEffect(string id, AreaEffect newEffect)
+        {
+            int idx = _areaEffects.FindIndex(e => e.Id == id);
+            if (idx >= 0) { _areaEffects.RemoveAt(idx); return; }
+            if (newEffect != null) _areaEffects.Add(newEffect);
+        }
+
+        public static void RemoveAreaEffect(string id)
+        {
+            _areaEffects.RemoveAll(e => e.Id == id);
+        }
+
+        public static bool HasAreaEffect(string id) => _areaEffects.Any(e => e.Id == id);
+
+        public static void TickAreaEffects(float dt)
+        {
+            if (Mission.Current == null) return;
+            for (int i = _areaEffects.Count - 1; i >= 0; i--)
             {
-                Vec3 dir  = (a.Position - Player.Position).NormalizedCopy();
-                Vec3 dest = a.Position + dir * 5f;
-                dest.z = a.Position.z;
-                try { a.TeleportToPosition(dest); BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); }
-                catch { }
+                var e = _areaEffects[i];
+                if (e.Remaining >= 0f)
+                {
+                    e.Remaining -= dt;
+                    if (e.Remaining <= 0f) { _areaEffects.RemoveAt(i); continue; }
+                }
+
+                // Create Yellow: move the cloud slowly in a random direction
+                if (e.Id == "create_yellow")
+                {
+                    e.DirTimer -= dt;
+                    if (e.DirTimer <= 0f)
+                    {
+                        float angle = (float)(_rng.NextDouble() * Math.PI * 2);
+                        e.Velocity = new Vec3((float)Math.Cos(angle) * 2f, (float)Math.Sin(angle) * 2f, 0f);
+                        e.DirTimer = 3f + (float)_rng.NextDouble() * 4f;
+                    }
+                    e.Position += e.Velocity * dt;
+                }
+
+                e.TickTimer -= dt;
+                if (e.TickTimer > 0f) continue;
+                e.TickTimer = e.TickInterval;
+
+                // Apply the area effect this tick
+                switch (e.Id)
+                {
+                    case "create_orange": // Gilded Ground — dismount horses in area
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsMount && a.IsActive() &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                Agent rider = a.RiderAgent;
+                                if (rider != null)
+                                {
+                                    // Force dismount by teleporting rider away from mount
+                                    Vec3 dest = rider.Position + new Vec3(1.5f, 0f, 0f);
+                                    dest.z = rider.Position.z;
+                                    rider.TeleportToPosition(dest);
+                                    BeginAgentGlow(rider, e.School, 1.5f);
+                                }
+                            }
+                            catch { }
+                        }
+                        // Also glow any agents in the area to show the patch
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                            try { BeginAgentGlow(a, e.School, 1.5f); } catch { }
+                        break;
+
+                    case "create_yellow": // Sallow Wraith — damage agents in cloud
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                a.Health = Math.Max(0f, a.Health - 15f);
+                                if (a.Health <= 0f) KillAgent(a);
+                                else BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
+                        break;
+
+                    case "create_green": // Emerald Font — heal all agents in area
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                float h = Math.Min(8f, a.HealthLimit - a.Health);
+                                if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
+                            }
+                            catch { }
+                        }
+                        break;
+
+                    case "create_blue": // Sapphire Bastion — push agents out of radius
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                Vec3 dir = (a.Position - e.Position);
+                                if (dir.Length < 0.01f) dir = new Vec3(1f, 0f, 0f);
+                                else dir = dir.NormalizedCopy();
+                                Vec3 dest = e.Position + dir * (e.Radius + 1f);
+                                dest.z = a.Position.z;
+                                QueueMove(a, dest, 0.3f);
+                                BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
+                        break;
+
+                    case "self_yellow": // Pale Halo — damage all non-player agents near player
+                        if (Player == null || !Player.IsActive()) { _areaEffects.RemoveAt(i); continue; }
+                        e.Position = Player.Position; // follows caster
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount && a != Player &&
+                                        a.Position.Distance(Player.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                a.Health = Math.Max(0f, a.Health - 5f);
+                                if (a.Health <= 0f) KillAgent(a);
+                                else BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
+                        // Re-glow player to show active aura
+                        try { BeginAgentGlow(Player, e.School, 1.5f); } catch { }
+                        break;
+                }
             }
         }
 
-        // Sacrifice (Purple F2)
-        public static void ApplySacrifice(Agent caster)
+        public static void ClearAreaEffects()
         {
-            if (caster == null || Mission.Current == null) return;
-            var ally = Mission.Current.Agents
-                .Where(a => a.IsActive() && !a.IsMount && a != caster &&
-                            caster.Team != null && a.Team == caster.Team)
-                .OrderBy(a => _rng.Next())
-                .FirstOrDefault();
-            if (ally == null) return;
-            try
-            {
-                ally.Health = Math.Max(0f, ally.Health - 60f);
-                if (ally.Health <= 0f) KillAgent(ally);
-                else BeginAgentGlow(ally, ColorSchool.Purple, 1.5f);
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"Sacrifice: {ally.Name} pays the price of your working.",
-                    ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
-            }
-            catch { }
+            _areaEffects.Clear();
         }
 
-        // Issue Charge to own formations (Red A1)
+        // ── Duration self-effects ────────────────────────────────────────────
+        // Invulnerability states for Self Red (Scarlet Ward) and Self Blue (Cerulean Mirror)
+        private static bool  _scarletWardActive   = false;
+        private static bool  _ceruleanMirrorActive = false;
+        private static bool  _shadowVeilActive     = false;
+        private static Agent _hollowGazeTarget     = null;
+        private static float _hollowGazeTimer      = 0f;
+        private const  float HollowGazeInterval    = 0.3f;
+
+        public static void TickHollowGaze(float dt)
+        {
+            if (_hollowGazeTarget == null) return;
+            if (!_hollowGazeTarget.IsActive()) { _hollowGazeTarget = null; return; }
+            _hollowGazeTimer -= dt;
+            if (_hollowGazeTimer > 0f) return;
+            _hollowGazeTimer = HollowGazeInterval;
+            Vec3 pos = _hollowGazeTarget.Position;
+            try { _hollowGazeTarget.TeleportToPosition(pos); } catch { }
+            try { _hollowGazeTarget.SetMorale(0f); } catch { }
+        }
+
+        public static void ClearSelfEffects()
+        {
+            if (_scarletWardActive)   { try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { } _scarletWardActive = false; }
+            if (_ceruleanMirrorActive){ try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { } _ceruleanMirrorActive = false; }
+            _shadowVeilActive  = false;
+            _hollowGazeTarget  = null;
+        }
+
+        // Issue Charge to own formations (Red post-cast limitation)
         public static void IssueChargeToOwnFormations(Agent caster)
         {
             if (caster == null || Mission.Current == null || caster.Team == null) return;
@@ -1235,240 +1488,480 @@ namespace ColoursOfCalradia
         }
 
         // ── Execute switch ───────────────────────────────────────────────────
+        // Combos: first 2 chars = form (UU=Blast, DD=Self, LR=Create),
+        //         last 4 chars = colour (UURR=Red, LLRR=Orange, LRLU=Yellow,
+        //                                RRLL=Green, LLUU=Blue, RRLU=Purple)
         public static bool Execute(string combo)
         {
             switch (combo)
             {
-                // Red
-                case "UUURRR": SpellCrush();     break;
-                case "LRLRLU": SpellVortex();    break;
-                case "URUURR": SpellFury();      break;
-                // Orange
-                case "RLLRLL": SpellBoundTogether(); break;
-                case "UULRLU": SpellCalling();   break;
-                case "RRLLUU": SpellMarch();     break;
-                // Yellow
-                case "LURLUR": SpellHoldArrows();break;
-                case "ULUURR": SpellRepel();     break;
-                case "RRUULL": SpellDismount();  break;
-                // Green
-                case "UULLUR": SpellRestore();   break;
-                case "ULLRUU": SpellAid();       break;
-                case "UURLUL": SpellNurture();   break;
-                // Blue
-                case "LULURU": SpellShield();    break;
-                case "LLRRLU": SpellStasis();    break;
-                case "RULRUL": SpellStun();      break;
-                // Purple
-                case "UURRLL": SpellSevereLife();break;
-                case "RLLURR": SpellWither();    break;
-                case "LURRUL": SpellSubjugate(); break;
+                // BLAST (UU)
+                case "UUUURR": SpellBlastRed();    break;
+                case "UULLRR": SpellBlastOrange(); break;
+                case "UULRLU": SpellBlastYellow(); break;
+                case "UURRLL": SpellBlastGreen();  break;
+                case "UULLUU": SpellBlastBlue();   break;
+                case "UURRLU": SpellBlastPurple(); break;
+                // SELF (DD)
+                case "DDUURR": SpellSelfRed();     break;
+                case "DDLLRR": SpellSelfOrange();  break;
+                case "DDLRLU": SpellSelfYellow();  break;
+                case "DDRRLL": SpellSelfGreen();   break;
+                case "DDLLUU": SpellSelfBlue();    break;
+                case "DDRRLU": SpellSelfPurple();  break;
+                // CREATE (LR)
+                case "LRUURR": SpellCreateRed();    break;
+                case "LRLLRR": SpellCreateOrange(); break;
+                case "LRLRLU": SpellCreateYellow(); break;
+                case "LRRRLL": SpellCreateGreen();  break;
+                case "LRLLUU": SpellCreateBlue();   break;
+                case "LRRRLU": SpellCreatePurple(); break;
                 default: return false;
             }
             return true;
         }
 
         // =================================================================
-        // RED SPELLS
+        // BLAST SPELLS — medium cone in front of the caster
+        // Cone: 15m range, dot >= 0.6 (≈53° half-angle)
+        // Glow applied to all affected agents to show the area of effect.
         // =================================================================
 
-        private static void SpellCrush()
+        // Crimson Torrent — moderate damage + pushback in cone
+        private static void SpellBlastRed()
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = Enemies()
-                .Where(a => {
-                    Vec3 toAgent = a.Position - Player.Position;
-                    return toAgent.Length <= 10f &&
-                           Vec3.DotProduct(fwd, toAgent.NormalizedCopy()) >= 0.5f;
-                })
-                .ToList();
-            if (inCone.Count == 0) { Msg("No enemies in range.", ColorSchool.Red); return; }
-
-            int kills = Math.Min(_rng.Next(1, 3), inCone.Count);
-            var targets = inCone.OrderBy(_ => _rng.Next()).Take(kills).ToList();
-            foreach (Agent t in targets)
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Red); return; }
+            int affected = 0;
+            foreach (Agent a in inCone)
             {
-                BeginAgentGlow(t, ColorSchool.Red, 1.5f);
-                KillAgent(t);
-            }
-            Msg($"Crush tears through {kills} {(kills == 1 ? "enemy" : "enemies")} in the cone.", ColorSchool.Red);
-        }
-
-        private static void SpellVortex()
-        {
-            if (Player == null) return;
-            ActionIndexCache trip = ActionIndexCache.Create("act_fall_back_on_ground");
-            int count = 0;
-            foreach (Agent a in Enemies().ToList())
-            {
-                float dist = a.Position.Distance(Player.Position);
-                if (dist > 20f || dist < 0.5f) continue;
-                Vec3 dir  = (Player.Position - a.Position).NormalizedCopy();
-                float pull = Math.Min(dist - 0.5f, 8f);
-                Vec3 dest  = a.Position + dir * pull;
-                dest.z = a.Position.z;
                 try
                 {
-                    a.TeleportToPosition(dest);
-                    if (trip.Index >= 0) a.SetActionChannel(0, trip, true, (ulong)0);
-                    count++;
+                    a.Health = Math.Max(0f, a.Health - 40f);
+                    if (a.Health <= 0f) { KillAgent(a); }
+                    else
+                    {
+                        // Smooth pushback: queue a gradual move outward
+                        Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
+                        Vec3 dest = a.Position + dir * 6f; dest.z = a.Position.z;
+                        QueueMove(a, dest, 0.4f);
+                    }
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                    affected++;
                 }
                 catch { }
             }
-            Msg(count > 0 ? $"{count} {(count==1?"enemy":"enemies")} dragged toward you."
-                          : "No enemies within 20m.", ColorSchool.Red);
+            Msg($"Crimson Torrent tears through {affected} {(affected == 1 ? "creature" : "creatures")}.", ColorSchool.Red);
         }
 
-        private static void SpellFury()
+        // Golden Tide — tiny damage + force enemies in cone to charge
+        private static void SpellBlastOrange()
         {
-            if (Player == null || Mission.Current == null) return;
-            int count = 0;
-            foreach (Team team in Mission.Current.Teams)
+            if (Player == null) return;
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Orange); return; }
+            var formations = new HashSet<Formation>();
+            foreach (Agent a in inCone)
             {
-                bool isAlly = team == Player.Team;
-                foreach (Formation f in team.FormationsIncludingSpecialAndEmpty)
+                try
                 {
-                    if (f.CountOfUnits <= 0) continue;
-                    try
-                    {
-                        if (isAlly)
-                        {
-                            f.SetMovementOrder(MovementOrder.MovementOrderCharge);
-                            count++;
-                        }
-                    }
-                    catch { }
+                    a.Health = Math.Max(1f, a.Health - 8f);
+                    BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
+                    if (a.Formation != null) formations.Add(a.Formation);
                 }
-                foreach (Agent a in team.ActiveAgents.ToList())
-                {
-                    if (!a.IsMount && a.Position.Distance(Player.Position) <= 50f)
-                        BeginAgentGlow(a, ColorSchool.Red, 1.5f);
-                }
+                catch { }
             }
-            Msg($"Fury ignites your host. {count} friendly formation{(count==1?"":"s")} surge to charge.",
-                ColorSchool.Red);
+            foreach (Formation f in formations)
+                try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
+            Msg($"Golden Tide washes over {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} — they surge forward!", ColorSchool.Orange);
+        }
+
+        // Tide of Dread — tiny damage + morale reduction in cone
+        private static void SpellBlastYellow()
+        {
+            if (Player == null) return;
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Yellow); return; }
+            foreach (Agent a in inCone)
+            {
+                try
+                {
+                    a.Health = Math.Max(1f, a.Health - 8f);
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); } catch { }
+                    BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
+                }
+                catch { }
+            }
+            Msg($"Tide of Dread — {inCone.Count} {(inCone.Count == 1 ? "creature loses" : "creatures lose")} their nerve.", ColorSchool.Yellow);
+        }
+
+        // Verdant Surge — heal all creatures in cone (allies AND enemies — indiscriminate)
+        private static void SpellBlastGreen()
+        {
+            if (Player == null) return;
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            // Include the player herself in the cone heal
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            inCone.Add(Player);
+            int healed = 0;
+            foreach (Agent a in inCone)
+            {
+                try
+                {
+                    float h = Math.Min(15f, a.HealthLimit - a.Health);
+                    if (h > 0f) { a.Health += h; healed++; }
+                    BeginAgentGlow(a, ColorSchool.Green, 1.5f);
+                }
+                catch { }
+            }
+            Msg($"Verdant Surge mends {healed} {(healed == 1 ? "creature" : "creatures")} in the cone.", ColorSchool.Green);
+        }
+
+        // Azure Arrest — tiny damage + halt formations + dismount riders in cone
+        private static void SpellBlastBlue()
+        {
+            if (Player == null) return;
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Blue); return; }
+            var formations = new HashSet<Formation>();
+            foreach (Agent a in inCone)
+            {
+                try
+                {
+                    a.Health = Math.Max(1f, a.Health - 8f);
+                    BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                    if (a.Formation != null) formations.Add(a.Formation);
+                }
+                catch { }
+            }
+            foreach (Formation f in formations)
+            {
+                try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
+            }
+            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} and unseats riders.", ColorSchool.Blue);
+        }
+
+        // Grey Harvest — one random creature in cone fades and dies
+        private static void SpellBlastPurple()
+        {
+            if (Player == null) return;
+            Vec3 fwd = Player.LookDirection.NormalizedCopy();
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            if (inCone.Count == 0) { Msg("Nothing in the cone.", ColorSchool.Purple); return; }
+            Agent target = inCone[_rng.Next(inCone.Count)];
+            BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
+            KillAgent(target);
+            Msg($"Grey Harvest — {target.Name} fades. The grey was always going to take them.", ColorSchool.Purple);
         }
 
         // =================================================================
-        // ORANGE SPELLS
+        // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        private static void SpellBoundTogether()
+        // Scarlet Ward — 5-second invulnerability (absorbs next hit, approximated as timed ward)
+        private static void SpellSelfRed()
+        {
+            if (Player == null || !Player.IsActive()) return;
+            if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
+            const float Duration = 5f;
+            try { Player.ToggleInvulnerable(); } catch { return; }
+            _scarletWardActive = true;
+            BeginAgentGlow(Player, ColorSchool.Red, Duration);
+            ActiveEffectManager.Add(new ActiveEffect
+            {
+                Name = "_scarlet_ward", Duration = Duration, IsMissionEffect = true,
+                OnExpire = () =>
+                {
+                    if (_scarletWardActive)
+                    {
+                        try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
+                        _scarletWardActive = false;
+                    }
+                    Msg("The Scarlet Ward shatters. You are exposed again.", ColorSchool.Red);
+                }
+            });
+            Msg("Scarlet Ward — the next blow will find iron, not flesh. 5 seconds.", ColorSchool.Red);
+        }
+
+        // Warm Beacon — teleport all nearby allies to your side
+        private static void SpellSelfOrange()
         {
             if (Mission.Current == null || Player == null) return;
-            const float Radius = 20f;
-            const float PullDist = 3f;   // allies land this far from caster
-            const float PushDist = 23f;  // enemies land this far from caster
-
-            int alliesMoved = 0, enemiesPushed = 0;
-
-            // Pull allies within Radius to a ring around the caster
-            var nearAllies = Allies()
-                .Where(a => a.Position.Distance(Player.Position) <= Radius && a != Player)
-                .ToList();
-            float allyAngle = 0f;
-            float allyStep = nearAllies.Count > 0 ? (2f * (float)Math.PI / nearAllies.Count) : 0f;
+            const float Radius = 30f;
+            const float LandDist = 3f;
+            var nearAllies = Allies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList();
+            if (nearAllies.Count == 0) { Msg("No allies within range.", ColorSchool.Orange); return; }
+            float angle = 0f;
+            float step = nearAllies.Count > 0 ? (2f * (float)Math.PI / nearAllies.Count) : 0f;
             foreach (Agent a in nearAllies)
             {
                 try
                 {
-                    Vec3 offset = new Vec3((float)Math.Cos(allyAngle) * PullDist,
-                                          (float)Math.Sin(allyAngle) * PullDist, 0f);
-                    Vec3 dest = Player.Position + offset;
-                    dest.z = Player.Position.z;
-                    a.TeleportToPosition(dest);
+                    Vec3 offset = new Vec3((float)Math.Cos(angle) * LandDist, (float)Math.Sin(angle) * LandDist, 0f);
+                    Vec3 dest   = Player.Position + offset; dest.z = Player.Position.z;
+                    QueueMove(a, dest, 0.4f);
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
-                    alliesMoved++;
                 }
                 catch { }
-                allyAngle += allyStep;
+                angle += step;
             }
+            BeginAgentGlow(Player, ColorSchool.Orange, 1.5f);
+            Msg($"Warm Beacon — {nearAllies.Count} {(nearAllies.Count == 1 ? "ally slides" : "allies slide")} to your side.", ColorSchool.Orange);
+        }
 
-            // Push enemies within Radius out to PushDist in their outward direction
-            var nearEnemies = Enemies()
-                .Where(a => a.Position.Distance(Player.Position) <= Radius)
-                .ToList();
-            foreach (Agent a in nearEnemies)
+        // Nausea Bloom — 30-second aura that slowly damages everything nearby
+        private static void SpellSelfYellow()
+        {
+            if (Player == null) return;
+            if (HasAreaEffect("self_yellow")) { Msg("Nausea Bloom is already active.", ColorSchool.Yellow); return; }
+            ToggleAreaEffect("self_yellow", new AreaEffect
+            {
+                Id = "self_yellow", School = ColorSchool.Yellow,
+                Position = Player.Position, Radius = 8f,
+                TickInterval = 2f, TickTimer = 2f, Remaining = 30f
+            });
+            BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
+            ActiveEffectManager.Add(new ActiveEffect
+            {
+                Name = "_nausea_bloom", Duration = 30f, IsMissionEffect = true,
+                OnExpire = () =>
+                {
+                    RemoveAreaEffect("self_yellow");
+                    Msg("The Nausea Bloom passes. The wrongness fades.", ColorSchool.Yellow);
+                }
+            });
+            Msg("Nausea Bloom — something deeply wrong radiates from you for 30 seconds. All nearby will feel it.", ColorSchool.Yellow);
+        }
+
+        // Verdant Touch — heal self 20 HP
+        private static void SpellSelfGreen()
+        {
+            if (Player == null) return;
+            float heal = Math.Min(20f, Player.HealthLimit - Player.Health);
+            Player.Health = Math.Min(Player.Health + 20f, Player.HealthLimit);
+            BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
+            Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
+        }
+
+        // Cerulean Mirror — 30-second invulnerability (approximation of magic immunity)
+        private static void SpellSelfBlue()
+        {
+            if (Player == null || !Player.IsActive()) return;
+            if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
+            const float Duration = 30f;
+            try { Player.ToggleInvulnerable(); } catch { return; }
+            _ceruleanMirrorActive = true;
+            BeginAgentGlow(Player, ColorSchool.Blue, Duration);
+            ActiveEffectManager.Add(new ActiveEffect
+            {
+                Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
+                OnExpire = () =>
+                {
+                    if (_ceruleanMirrorActive)
+                    {
+                        try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
+                        _ceruleanMirrorActive = false;
+                    }
+                    Msg("The Cerulean Mirror dims. You are no longer untouchable.", ColorSchool.Blue);
+                }
+            });
+            Msg("Cerulean Mirror — you become a perfect reflector. Nothing harms you for 30 seconds.", ColorSchool.Blue);
+        }
+
+        // Grief's Veil — nearby enemies' morale collapses + brief player invulnerability
+        private static void SpellSelfPurple()
+        {
+            if (Player == null || Mission.Current == null) return;
+            const float Radius = 20f;
+            const float Duration = 15f;
+            // Drain nearby enemy morale so they flee / stop targeting you
+            int affected = 0;
+            foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
+            {
+                try { a.SetMorale(0f); BeginAgentGlow(a, ColorSchool.Purple, 1.5f); affected++; } catch { }
+            }
+            // Brief invulnerability while the veil holds
+            if (!_shadowVeilActive)
+            {
+                try { Player.ToggleInvulnerable(); _shadowVeilActive = true; } catch { }
+                ActiveEffectManager.Add(new ActiveEffect
+                {
+                    Name = "_griefs_veil", Duration = Duration, IsMissionEffect = true,
+                    OnExpire = () =>
+                    {
+                        if (_shadowVeilActive)
+                        {
+                            try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
+                            _shadowVeilActive = false;
+                        }
+                        Msg("Grief's Veil lifts. The grey recedes. They find you again.", ColorSchool.Purple);
+                    }
+                });
+            }
+            BeginAgentGlow(Player, ColorSchool.Purple, 2f);
+            Msg($"Grief's Veil — {affected} nearby {(affected == 1 ? "enemy loses" : "enemies lose")} the will to see. The grey holds you for {(int)Duration}s.", ColorSchool.Purple);
+        }
+
+        // =================================================================
+        // CREATE SPELLS — persistent area effects on the battlefield
+        // Casting again toggles off the existing effect (marked "Cast again to dismiss").
+        // Glow is re-applied on each effect tick (~every 2s) — no per-frame FPS cost.
+        // Visual note: particle effects not available; glow on affected agents indicates
+        //              the area. Actual ground patches cannot be rendered by this mod.
+        // =================================================================
+
+        // Cinder Burst — moderate explosion around the caster (no toggle, instant)
+        private static void SpellCreateRed()
+        {
+            if (Player == null || Mission.Current == null) return;
+            const float Radius = 10f;
+            int count = 0;
+            foreach (Agent a in Mission.Current.Agents
+                .Where(a => a.IsActive() && !a.IsMount && a != Player &&
+                            a.Position.Distance(Player.Position) <= Radius).ToList())
             {
                 try
                 {
-                    Vec3 dir = a.Position - Player.Position;
-                    if (dir.Length < 0.01f) dir = new Vec3(1f, 0f, 0f);
-                    else dir = dir.NormalizedCopy();
-                    Vec3 dest = Player.Position + dir * PushDist;
-                    dest.z = Player.Position.z;
-                    a.TeleportToPosition(dest);
-                    BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
-                    enemiesPushed++;
+                    a.Health = Math.Max(0f, a.Health - 45f);
+                    if (a.Health <= 0f) KillAgent(a);
+                    else BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                    count++;
                 }
                 catch { }
             }
-
-            string msg = "";
-            if (alliesMoved > 0) msg += $"{alliesMoved} {(alliesMoved == 1 ? "ally pulls" : "allies pull")} to your side. ";
-            if (enemiesPushed > 0) msg += $"{enemiesPushed} {(enemiesPushed == 1 ? "enemy is" : "enemies are")} hurled back.";
-            if (msg == "") msg = "No one within range.";
-            Msg(msg.Trim(), ColorSchool.Orange);
+            BeginAgentGlow(Player, ColorSchool.Red, 1.5f);
+            Msg(count > 0 ? $"Cinder Burst scorches {count} {(count == 1 ? "creature" : "creatures")} within {Radius}m."
+                          : "The burst finds nothing nearby.", ColorSchool.Red);
         }
 
-        private static void SpellCalling()
+        // Gilded Ground — persistent patch that dismounts horses entering the area
+        private static void SpellCreateOrange()
         {
-            int cost     = LastOrangeCoinCost;
-            int recruits = Math.Max(1, cost / 25);
-
-            CharacterObject recruit = FindImperialRecruit();
-            if (recruit == null) { Msg("The call finds no ears.", ColorSchool.Orange); return; }
-
-            // In battle: spawn agents directly on the map and send them charging
-            if (Mission.Current != null && Player != null)
+            if (Player == null) return;
+            if (HasAreaEffect("create_orange"))
             {
-                Vec3 back = -Player.LookDirection.NormalizedCopy();
-                back.z = 0f;
-                if (back.Length < 0.01f) back = new Vec3(-1f, 0f, 0f);
-                else back = back.NormalizedCopy();
-                Vec3 perp = new Vec3(-back.y, back.x, 0f);
-
-                int spawned = 0;
-                for (int i = 0; i < recruits; i++)
-                {
-                    try
-                    {
-                        float spread = (i - recruits / 2f) * 1.5f;
-                        Vec3 pos = Player.Position + back * 4f + perp * spread;
-                        pos.z = Player.Position.z;
-                        Vec2 facing = (-back).AsVec2;
-
-                        AgentBuildData abd = new AgentBuildData(recruit)
-                            .Team(Mission.Current.PlayerTeam)
-                            .InitialPosition(in pos)
-                            .InitialDirection(in facing);
-
-                        Agent a = Mission.Current.SpawnAgent(abd, false);
-                        if (a == null) continue;
-                        a.SetWatchState(Agent.WatchState.Alarmed);
-                        BeginAgentGlow(a, ColorSchool.Orange, 2f);
-                        spawned++;
-                    }
-                    catch { }
-                }
-
-                Msg(spawned > 0
-                    ? $"{spawned} Imperial soldier{(spawned == 1 ? "" : "s")} burst onto the field and charge!"
-                    : "The call was heard but none came.", ColorSchool.Orange);
+                ToggleAreaEffect("create_orange", null);
+                Msg("Gilded Ground dissolves.", ColorSchool.Orange);
                 return;
             }
-
-            // Campaign map: add to roster
-            try
+            ToggleAreaEffect("create_orange", new AreaEffect
             {
-                MobileParty.MainParty?.MemberRoster.AddToCounts(recruit, recruits);
-                Msg($"{recruits} Imperial soldier{(recruits == 1 ? "" : "s")} answer your call. {cost} gold spent.", ColorSchool.Orange);
-            }
-            catch { Msg("The call was heard but none came.", ColorSchool.Orange); }
+                Id = "create_orange", School = ColorSchool.Orange,
+                Position = Player.Position, Radius = 10f,
+                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+            });
+            BeginAgentGlow(Player, ColorSchool.Orange, 2f);
+            Msg("Gilded Ground spreads beneath you — horses entering this zone will throw their riders. Cast again to dismiss.", ColorSchool.Orange);
         }
 
+        // Creeping Dread — moving cloud of revulsion that damages agents it passes through
+        private static void SpellCreateYellow()
+        {
+            if (Player == null) return;
+            if (HasAreaEffect("create_yellow"))
+            {
+                ToggleAreaEffect("create_yellow", null);
+                Msg("The Creeping Dread dissipates. The air settles.", ColorSchool.Yellow);
+                return;
+            }
+            ToggleAreaEffect("create_yellow", new AreaEffect
+            {
+                Id = "create_yellow", School = ColorSchool.Yellow,
+                Position = Player.Position, Radius = 5f,
+                Velocity = new Vec3(1f, 0f, 0f),
+                DirTimer = 3f,
+                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+            });
+            BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
+            Msg("Creeping Dread takes shape — a cloud of formless revulsion drifts across the field. Cast again to dismiss.", ColorSchool.Yellow);
+        }
+
+        // Emerald Font — persistent healing patch (heals allies and enemies — indiscriminate)
+        private static void SpellCreateGreen()
+        {
+            if (Player == null) return;
+            if (HasAreaEffect("create_green"))
+            {
+                ToggleAreaEffect("create_green", null);
+                Msg("The Emerald Font closes.", ColorSchool.Green);
+                return;
+            }
+            ToggleAreaEffect("create_green", new AreaEffect
+            {
+                Id = "create_green", School = ColorSchool.Green,
+                Position = Player.Position, Radius = 12f,
+                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+            });
+            BeginAgentGlow(Player, ColorSchool.Green, 2f);
+            Msg("The Emerald Font opens — all who stand within 12m are slowly mended, friend and foe alike. Cast again to dismiss.", ColorSchool.Green);
+        }
+
+        // Sapphire Bastion — repulsion field that pushes all agents away (approximation of solid wall)
+        private static void SpellCreateBlue()
+        {
+            if (Player == null) return;
+            if (HasAreaEffect("create_blue"))
+            {
+                ToggleAreaEffect("create_blue", null);
+                Msg("The Sapphire Bastion crumbles.", ColorSchool.Blue);
+                return;
+            }
+            const float Duration = 180f; // 3 minutes
+            ToggleAreaEffect("create_blue", new AreaEffect
+            {
+                Id = "create_blue", School = ColorSchool.Blue,
+                Position = Player.Position, Radius = 6f,
+                TickInterval = 0.5f, TickTimer = 0.5f, Remaining = Duration
+            });
+            BeginAgentGlow(Player, ColorSchool.Blue, 2f);
+            Msg("Sapphire Bastion rises — a wall of force repels all who approach. Fades in 3 minutes.", ColorSchool.Blue);
+        }
+
+        // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect
+        private static void SpellCreatePurple()
+        {
+            if (Player == null || Mission.Current == null) return;
+            if (_hollowGazeTarget != null)
+            {
+                string name = _hollowGazeTarget.IsActive() ? _hollowGazeTarget.Name : "them";
+                _hollowGazeTarget = null;
+                Msg($"The Hollow Gaze releases. {name} stirs back into themselves.", ColorSchool.Purple);
+                return;
+            }
+            const float Radius = 15f;
+            var candidates = Enemies()
+                .Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(Player.Position) <= Radius)
+                .ToList();
+            if (candidates.Count == 0) { Msg("No one nearby to hollow out.", ColorSchool.Purple); return; }
+            _hollowGazeTarget = candidates[_rng.Next(candidates.Count)];
+            _hollowGazeTimer  = 0f;
+            BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, 3f);
+            Msg($"Hollow Gaze — {_hollowGazeTarget.Name} empties out. They stand and wait for nothing.", ColorSchool.Purple);
+        }
+
+        // Helper: returns all active non-mount agents in a cone (both allies and enemies)
+        private static List<Agent> ConeAgents(Vec3 origin, Vec3 fwd, float range, float dot)
+        {
+            if (Mission.Current == null) return new List<Agent>();
+            var result = new List<Agent>();
+            foreach (Agent a in Mission.Current.Agents)
+            {
+                if (!a.IsActive() || a.IsMount || a == Player) continue;
+                Vec3 to = a.Position - origin;
+                if (to.Length > range) continue;
+                if (Vec3.DotProduct(fwd, to.NormalizedCopy()) < dot) continue;
+                result.Add(a);
+            }
+            return result;
+        }
+
+        // Recruit helpers (used by Calling and NPC AI)
         private static CharacterObject FindImperialRecruit()
         {
             CharacterObject r =
@@ -1482,228 +1975,15 @@ namespace ColoursOfCalradia
             return null;
         }
 
-        // Finds a tier-1 recruit from the same culture as the given agent, falling back to any tier-1.
         public static CharacterObject FindRecruit(Agent agent)
         {
             string cultureId = agent?.Character?.Culture?.StringId;
             if (!string.IsNullOrEmpty(cultureId))
-            {
                 foreach (CharacterObject c in CharacterObject.All)
-                    if (!c.IsHero && c.Tier == 1 && c.Culture?.StringId == cultureId)
-                        return c;
-            }
+                    if (!c.IsHero && c.Tier == 1 && c.Culture?.StringId == cultureId) return c;
             foreach (CharacterObject c in CharacterObject.All)
-                if (!c.IsHero && c.Tier == 1)
-                    return c;
+                if (!c.IsHero && c.Tier == 1) return c;
             return null;
-        }
-
-        private static void SpellMarch()
-        {
-            if (Player == null || !Player.IsActive()) return;
-
-            // Surge: teleport the player (and mount if riding) 12 m forward.
-            // Speed-multiplier overrides don't survive the engine's per-frame
-            // stat recalculation, so an instant positional leap is used instead.
-            Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            fwd.z = 0f;
-            if (fwd.Length < 0.01f) fwd = new Vec3(1f, 0f, 0f);
-            else fwd = fwd.NormalizedCopy();
-
-            Vec3 dest = Player.Position + fwd * 24f;
-            dest.z = Player.Position.z;
-
-            try
-            {
-                Agent root = Player.MountAgent ?? Player;
-                root.TeleportToPosition(dest);
-                if (Player.MountAgent != null)
-                    Player.TeleportToPosition(dest);
-            }
-            catch { Msg("The surge falters.", ColorSchool.Orange); return; }
-
-            BeginAgentGlow(Player, ColorSchool.Orange, 1.5f);
-            Msg("You surge forward — 12 metres in a heartbeat.", ColorSchool.Orange);
-        }
-
-        // =================================================================
-        // YELLOW SPELLS
-        // =================================================================
-
-        private static void SpellHoldArrows()
-        {
-            IssueBattleCommand(Player, BattleCommandKind.StopArrows,
-                "{0} enemy formation{1} ordered to hold fire.", ColorSchool.Yellow);
-        }
-
-        private static void SpellRepel()
-        {
-            if (_repelActive) { Msg("Repel is already active.", ColorSchool.Yellow); return; }
-            _repelActive  = true;
-            _repelElapsed = 0f;
-            _repelTimer   = 0f;
-            BeginAgentGlow(Player, ColorSchool.Yellow, RepelDuration);
-            Msg($"A repelling pulse surrounds you — every {(int)RepelInterval} seconds for {(int)RepelDuration}s.",
-                ColorSchool.Yellow);
-        }
-
-        private static void SpellDismount()
-        {
-            IssueBattleCommand(Player, BattleCommandKind.Dismount,
-                "{0} enemy formation{1} forced from their mounts.", ColorSchool.Yellow);
-        }
-
-        // =================================================================
-        // GREEN SPELLS
-        // =================================================================
-
-        private static void SpellRestore()
-        {
-            if (Player == null) return;
-            float heal = Math.Min(10f, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 10f, Player.HealthLimit);
-            Msg($"You restore yourself. +{heal:F0} HP.", ColorSchool.Green);
-        }
-
-        private static void SpellAid()
-        {
-            if (Player == null || Mission.Current == null) return;
-            float radius = 8f;
-            var inRange = Allies().Where(a => a.Position.Distance(Player.Position) <= radius).ToList();
-            if (inRange.Count == 0) { Msg("No allies in range.", ColorSchool.Green); return; }
-            int healed = 0;
-            foreach (Agent a in inRange)
-            {
-                float h = Math.Min(25f, a.HealthLimit - a.Health);
-                if (h <= 0f) continue;
-                a.Health += h;
-                BeginAgentGlow(a, ColorSchool.Green, 1.5f);
-                healed++;
-            }
-            Msg(healed > 0 ? $"Aid heals {healed} {(healed == 1 ? "ally" : "allies")} within {radius}m."
-                           : $"{inRange.Count} allies nearby are already at full health.", ColorSchool.Green);
-        }
-
-        private static void SpellNurture()
-        {
-            if (Player == null || Mission.Current == null) return;
-            float radius = 25f;
-            int affected = 0;
-            foreach (Agent a in Allies().Where(a => a.Position.Distance(Player.Position) <= radius).ToList())
-            {
-                // Split into separate catches so a failing health setter doesn't prevent the morale boost
-                try { a.SetMorale(Math.Min(a.GetMorale() + 40f, 100f)); } catch { }
-                try { a.Health = Math.Min(a.Health + 3f, a.HealthLimit); } catch { }
-                BeginAgentGlow(a, ColorSchool.Green, 1.5f);
-                affected++;
-            }
-            try { if (MobileParty.MainParty != null) MobileParty.MainParty.RecentEventsMorale += 10f; }
-            catch { }
-            Msg(affected > 0 ? $"Nurture refreshes {affected} {(affected == 1 ? "ally" : "allies")} — weariness lifts."
-                             : "No allies nearby.", ColorSchool.Green);
-        }
-
-        // =================================================================
-        // BLUE SPELLS
-        // =================================================================
-
-        private static void SpellShield()
-        {
-            if (Player == null || !Player.IsActive()) return;
-            if (_shieldInvulnActive) { Msg("Ward already active.", ColorSchool.Blue); return; }
-            const float Duration = 8f;
-            try { Player.ToggleInvulnerable(); } catch { return; }
-            _shieldInvulnActive = true;
-            BeginAgentGlow(Player, ColorSchool.Blue, Duration);
-            ActiveEffectManager.Add(new ActiveEffect
-            {
-                Name = "_shield", Duration = Duration, IsMissionEffect = true,
-                OnExpire = () =>
-                {
-                    if (_shieldInvulnActive)
-                    {
-                        try { if (Player != null && Player.IsActive()) Player.ToggleInvulnerable(); }
-                        catch { }
-                        _shieldInvulnActive = false;
-                    }
-                    Msg("The blue ward fades — you are vulnerable again.", ColorSchool.Blue);
-                }
-            });
-            Msg("A blue ward crystallises around you — you cannot be harmed for 8 seconds.", ColorSchool.Blue);
-        }
-
-        private static void SpellStasis()
-        {
-            IssueBattleCommand(Player, BattleCommandKind.Halt,
-                "{0} enemy formation{1} frozen in place.", ColorSchool.Blue);
-        }
-
-        private static void SpellStun()
-        {
-            if (Player == null || Mission.Current == null) return;
-            const float StunRadius = 30f;
-            int count = 0;
-            foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= StunRadius).ToList())
-            {
-                try
-                {
-                    a.SetMorale(0f);
-                    BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
-                    count++;
-                }
-                catch { }
-            }
-            Msg($"{count} {(count == 1 ? "enemy" : "enemies")} within {StunRadius}m lose their nerve.", ColorSchool.Blue);
-        }
-
-        // =================================================================
-        // PURPLE SPELLS
-        // =================================================================
-
-        private static void SpellSevereLife()
-        {
-            if (Player == null) return;
-            var targets = Enemies().Where(a => !a.IsHero).ToList();
-            if (targets.Count == 0) { Msg("No valid targets.", ColorSchool.Purple); return; }
-            Agent target = targets[_rng.Next(targets.Count)];
-            BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-            KillAgent(target);
-            Msg($"Somewhere on the field, {target.Name} simply stops.", ColorSchool.Purple);
-        }
-
-        private static void SpellWither()
-        {
-            if (Player == null || Mission.Current == null) return;
-            const float Radius = 7f;
-            int count = 0;
-            foreach (Agent a in Mission.Current.Agents
-                .Where(a => a.IsActive() && !a.IsMount && a != Player &&
-                            a.Position.Distance(Player.Position) <= Radius)
-                .ToList())
-            {
-                BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                KillAgent(a);
-                count++;
-            }
-            Msg(count > 0 ? $"Everything within {Radius}m is destroyed. {count} {(count == 1 ? "soul" : "souls")} consumed."
-                          : "Nothing nearby to consume.", ColorSchool.Purple);
-        }
-
-        private static void SpellSubjugate()
-        {
-            if (Player == null || Mission.Current == null) return;
-            Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            Agent target = Enemies()
-                .Where(a => !a.IsHero && a.Position.Distance(Player.Position) <= 15f &&
-                            Vec3.DotProduct(fwd, (a.Position - Player.Position).NormalizedCopy()) >= 0.4f)
-                .OrderBy(a => _rng.Next())
-                .FirstOrDefault();
-            if (target == null) { Msg("No target in forward cone.", ColorSchool.Purple); return; }
-
-            BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-            try { target.SetMorale(0f); } catch { }
-            try { target.Retreat(); } catch { }
-            Msg($"You shatter {target.Name}'s will. They flee.", ColorSchool.Purple);
         }
 
         // =================================================================
@@ -2402,133 +2682,144 @@ namespace ColoursOfCalradia
 
         private static void DecideAndCast(Agent agent, Hero hero, IReadOnlyList<ColorSchool> colors)
         {
+            // All NPC casts require daylight (global magic restriction)
+            if (!CanCastAny(agent)) return;
+
             float hpPct = agent.Health / Math.Max(agent.HealthLimit, 1f);
 
-            // Self-heal with Green if available and hurt
-            if (hpPct < 0.35f && colors.Contains(ColorSchool.Green))
+            // Self-heal with Green (Verdant Touch) when badly hurt
+            if (hpPct < 0.35f && colors.Contains(ColorSchool.Green) && CanUseGreen(agent))
             {
-                if (!CanUseGreen(agent)) goto SkipGreen;
-                CastWithGlow(agent, hero, ColorSchool.Green, "Restore", () =>
+                CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Touch", () =>
                 {
-                    agent.Health = Math.Min(agent.Health + 10f, agent.HealthLimit);
+                    agent.Health = Math.Min(agent.Health + 20f, agent.HealthLimit);
                 });
                 return;
-                SkipGreen:;
             }
 
-            // Random 8% chance to cast something unusual
-            if (_rng.Next(100) < 8)
-            {
-                TryCastRandom(agent, hero, colors);
-                return;
-            }
+            // 8% random wild cast
+            if (_rng.Next(100) < 8) { TryCastRandom(agent, hero, colors); return; }
 
-            // Enemies swarming — Red Wither or Purple Wither
+            // Enemies swarming — Cinder Burst (Red) or Grey Harvest (Purple)
             int closeEnemies = CountEnemiesNear(agent, 8f);
             if (closeEnemies >= 3)
             {
-                if (colors.Contains(ColorSchool.Purple) && CanUsePurple(agent))
+                if (colors.Contains(ColorSchool.Purple))
                 {
-                    CastWithGlow(agent, hero, ColorSchool.Purple, "Wither", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Purple, "Cinder Burst", () =>
                     {
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                         {
-                            a.Health = Math.Max(0f, a.Health - 50f);
+                            a.Health = Math.Max(0f, a.Health - 45f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                         }
                     });
-                    ApplyPurpleF2(agent);
+                    ApplyPurpleAging(hero);
                     return;
                 }
                 if (colors.Contains(ColorSchool.Red))
                 {
-                    CastWithGlow(agent, hero, ColorSchool.Red, "Vortex", () =>
-                    {
-                        foreach (Agent a in EnemiesOf(agent).ToList())
-                        {
-                            float dist = a.Position.Distance(agent.Position);
-                            if (dist > 12f || dist < 0.5f) continue;
-                            Vec3 dir  = (agent.Position - a.Position).NormalizedCopy();
-                            Vec3 dest = a.Position + dir * Math.Min(dist - 0.5f, 6f);
-                            dest.z = a.Position.z;
-                            try { a.TeleportToPosition(dest); SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f); }
-                            catch { }
-                        }
-                    });
-                    ApplyRedA1(agent);
-                    ApplyRedA2(agent);
-                    return;
-                }
-            }
-
-            // Cone enemies — Red Crush or Blue Stun
-            int coneEnemies = CountEnemiesInCone(agent, 12f, 0.5f);
-            if (coneEnemies >= 2)
-            {
-                if (colors.Contains(ColorSchool.Red))
-                {
-                    CastWithGlow(agent, hero, ColorSchool.Red, "Crush", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Red, "Crimson Torrent", () =>
                     {
                         Vec3 fwd = agent.LookDirection.NormalizedCopy();
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 12f) continue;
-                            if (Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.4f) continue;
-                            a.Health = Math.Max(0f, a.Health - 60f);
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
                     });
-                    ApplyRedA1(agent);
-                    ApplyRedA2(agent);
+                    ApplyRedA1(agent); ApplyRedA2(agent);
                     return;
                 }
-                if (colors.Contains(ColorSchool.Blue) && CanUseBlue(agent))
+            }
+
+            // Cone enemies — Crimson Torrent (Red) or Azure Arrest (Blue)
+            int coneEnemies = CountEnemiesInCone(agent, 15f, 0.6f);
+            if (coneEnemies >= 2)
+            {
+                if (colors.Contains(ColorSchool.Red))
                 {
-                    CastWithGlow(agent, hero, ColorSchool.Blue, "Stun", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Red, "Crimson Torrent", () =>
                     {
-                        foreach (Agent a in EnemiesOf(agent)
-                            .Where(a => a.Position.Distance(agent.Position) <= 30f).ToList())
+                        Vec3 fwd = agent.LookDirection.NormalizedCopy();
+                        foreach (Agent a in EnemiesOf(agent).ToList())
                         {
+                            Vec3 to = a.Position - agent.Position;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            a.Health = Math.Max(0f, a.Health - 40f);
+                            if (a.Health <= 0f) SpellEffects.KillAgent(a);
+                            SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                        }
+                    });
+                    ApplyRedA1(agent); ApplyRedA2(agent);
+                    return;
+                }
+                if (colors.Contains(ColorSchool.Blue))
+                {
+                    CastWithGlow(agent, hero, ColorSchool.Blue, "Azure Arrest", () =>
+                    {
+                        Vec3 fwd = agent.LookDirection.NormalizedCopy();
+                        var formations = new System.Collections.Generic.HashSet<Formation>();
+                        foreach (Agent a in EnemiesOf(agent).ToList())
+                        {
+                            Vec3 to = a.Position - agent.Position;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             try { a.SetMorale(0f); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                            if (a.Formation != null) formations.Add(a.Formation);
                         }
+                        foreach (Formation f in formations)
+                            try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                     });
                     return;
                 }
             }
 
-            // Ally support — Green Aid
+            // Ally support — Verdant Surge (Green) cone heal
             if (colors.Contains(ColorSchool.Green) && CanUseGreen(agent))
             {
                 bool allyHurt = AlliesOf(agent).Any(a => a.Health < a.HealthLimit * 0.6f &&
-                                                    a.Position.Distance(agent.Position) <= 12f);
+                                                    a.Position.Distance(agent.Position) <= 15f);
                 if (allyHurt)
                 {
-                    CastWithGlow(agent, hero, ColorSchool.Green, "Aid", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
                     {
-                        foreach (Agent a in AlliesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 12f).ToList())
+                        Vec3 fwd = agent.LookDirection.NormalizedCopy();
+                        foreach (Agent a in AlliesOf(agent).ToList())
                         {
-                            a.Health = Math.Min(a.Health + 20f, a.HealthLimit);
-                            SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f);
+                            Vec3 to = a.Position - agent.Position;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            float h = Math.Min(15f, a.HealthLimit - a.Health);
+                            if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
                     });
-                        return;
+                    return;
                 }
             }
 
-            // Yellow battlefield control
+            // Yellow — Tide of Dread morale drain
             if (colors.Contains(ColorSchool.Yellow))
             {
-                SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Halt,
-                    "{0} formation{1} brought to halt.", ColorSchool.Yellow);
+                CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
+                {
+                    Vec3 fwd = agent.LookDirection.NormalizedCopy();
+                    foreach (Agent a in EnemiesOf(agent).ToList())
+                    {
+                        Vec3 to = a.Position - agent.Position;
+                        if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                        try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); } catch { }
+                        SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
+                    }
+                });
                 SetCooldown(hero);
                 return;
             }
 
-            // Orange — Calling: summon 2-3 recruits when outnumbered nearby
+            // Orange — Calling (summon) if outnumbered, else Warm Beacon (ally pull)
             if (colors.Contains(ColorSchool.Orange))
             {
                 int nearAllies  = AlliesOf(agent).Count(a => a.Position.Distance(agent.Position) <= 20f);
@@ -2539,7 +2830,7 @@ namespace ColoursOfCalradia
                     {
                         CharacterObject recruit = SpellEffects.FindRecruit(agent);
                         if (recruit == null || Mission.Current == null) return;
-                        int count = _rng.Next(2, 4); // 2 or 3
+                        int count = _rng.Next(2, 4);
                         Vec3 back = -agent.LookDirection.NormalizedCopy(); back.z = 0f;
                         if (back.Length < 0.01f) back = new Vec3(-1f, 0f, 0f); else back = back.NormalizedCopy();
                         Vec3 perp = new Vec3(-back.y, back.x, 0f);
@@ -2552,9 +2843,7 @@ namespace ColoursOfCalradia
                                 pos.z = agent.Position.z;
                                 Vec2 facing = (-back).AsVec2;
                                 AgentBuildData abd = new AgentBuildData(recruit)
-                                    .Team(agent.Team)
-                                    .InitialPosition(in pos)
-                                    .InitialDirection(in facing);
+                                    .Team(agent.Team).InitialPosition(in pos).InitialDirection(in facing);
                                 Agent spawned = Mission.Current.SpawnAgent(abd, false);
                                 if (spawned == null) continue;
                                 spawned.SetWatchState(Agent.WatchState.Alarmed);
@@ -2565,9 +2854,7 @@ namespace ColoursOfCalradia
                     });
                     return;
                 }
-
-                // Fallback — rally nearby allies
-                CastWithGlow(agent, hero, ColorSchool.Orange, "Bound Together", () =>
+                CastWithGlow(agent, hero, ColorSchool.Orange, "Warm Beacon", () =>
                 {
                     foreach (Agent a in AlliesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
                     {
@@ -2580,18 +2867,19 @@ namespace ColoursOfCalradia
 
         private static void TryCastRandom(Agent agent, Hero hero, IReadOnlyList<ColorSchool> colors)
         {
+            if (!CanCastAny(agent)) return;
             ColorSchool school = colors[_rng.Next(colors.Count)];
             switch (school)
             {
                 case ColorSchool.Red:
-                    CastWithGlow(agent, hero, ColorSchool.Red, "Crush", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Red, "Crimson Torrent", () =>
                     {
                         Vec3 fwd = agent.LookDirection.NormalizedCopy();
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 12f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.4f) continue;
-                            a.Health = Math.Max(0f, a.Health - 60f);
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
@@ -2599,7 +2887,7 @@ namespace ColoursOfCalradia
                     ApplyRedA1(agent); ApplyRedA2(agent);
                     break;
                 case ColorSchool.Orange:
-                    CastWithGlow(agent, hero, ColorSchool.Orange, "Encourage", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Orange, "Warm Beacon", () =>
                     {
                         foreach (Agent a in AlliesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
                         {
@@ -2609,51 +2897,58 @@ namespace ColoursOfCalradia
                     });
                     break;
                 case ColorSchool.Green when CanUseGreen(agent):
-                    CastWithGlow(agent, hero, ColorSchool.Green, "Aid", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
                     {
-                        foreach (Agent a in AlliesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 12f).ToList())
+                        Vec3 fwd = agent.LookDirection.NormalizedCopy();
+                        foreach (Agent a in AlliesOf(agent).ToList())
                         {
-                            a.Health = Math.Min(a.Health + 20f, a.HealthLimit);
-                            SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f);
+                            Vec3 to = a.Position - agent.Position;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            float h = Math.Min(15f, a.HealthLimit - a.Health);
+                            if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
                     });
-                        break;
-                case ColorSchool.Blue when CanUseBlue(agent):
-                    CastWithGlow(agent, hero, ColorSchool.Blue, "Stun", () =>
+                    break;
+                case ColorSchool.Blue:
+                    CastWithGlow(agent, hero, ColorSchool.Blue, "Azure Arrest", () =>
                     {
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 30f).ToList())
-                            try { a.Health = Math.Max(1f, a.Health - 15f); SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f); } catch { }
+                            try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f); } catch { }
                     });
                     break;
                 case ColorSchool.Yellow:
-                    SpellEffects.IssueBattleCommand(agent, SpellEffects.BattleCommandKind.Halt,
-                        "{0} formation{1} halted.", ColorSchool.Yellow);
+                    CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
+                    {
+                        foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                            try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); } catch { }
+                    });
                     SetCooldown(hero);
                     break;
-                case ColorSchool.Purple when CanUsePurple(agent):
-                    CastWithGlow(agent, hero, ColorSchool.Purple, "Severe Life", () =>
+                case ColorSchool.Purple:
+                    CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Harvest", () =>
                     {
                         var targets = EnemiesOf(agent).Where(a => !a.IsHero).ToList();
-                        if (targets.Count > 0) SpellEffects.KillAgent(targets[_rng.Next(targets.Count)]);
+                        if (targets.Count > 0)
+                        {
+                            Agent t = targets[_rng.Next(targets.Count)];
+                            SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 1.5f);
+                            SpellEffects.KillAgent(t);
+                        }
                     });
-                    ApplyPurpleF2(agent);
+                    ApplyPurpleAging(hero);
                     break;
             }
         }
 
         // ── Limitation checks ─────────────────────────────────────────────────
-        private static bool CanUseBlue(Agent agent)  => agent?.MountAgent == null;
+        // All magic now requires daylight (global rule); NPCs respect this too.
+        private static bool CanCastAny(Agent agent) => SpellEffects.IsDaytime();
+
         private static bool CanUseGreen(Agent agent)
         {
-            if (agent == null) return false;
-            if (!SpellEffects.IsDaytime()) return false; // Sunwalker
+            if (agent == null || !CanCastAny(agent)) return false;
             try { return agent.WieldedWeapon.IsEmpty || agent.WieldedWeapon.CurrentUsageItem?.IsShield == true; }
             catch { return true; }
-        }
-        private static bool CanUsePurple(Agent agent)
-        {
-            if (agent == null || Mission.Current == null) return false;
-            return !SpellEffects.IsDaytime(); // Delicate Art: only at night
         }
 
         // ── Post-cast limitation side effects ─────────────────────────────────
@@ -2668,13 +2963,10 @@ namespace ColoursOfCalradia
             if (agent == null) return;
             try { agent.Health = Math.Max(1f, agent.Health - 8f); } catch { }
         }
-        private static void ApplyPurpleF2(Agent agent)
+        private static void ApplyPurpleAging(Hero hero)
         {
-            if (agent == null || Mission.Current == null) return;
-            Agent ally = AlliesOf(agent).OrderBy(a => _rng.Next()).FirstOrDefault();
-            if (ally == null) return;
-            ally.Health = Math.Max(0f, ally.Health - 60f);
-            if (ally.Health <= 0f) SpellEffects.KillAgent(ally);
+            if (hero == null) return;
+            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(7f / 365f)); } catch { }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -2797,10 +3089,10 @@ namespace ColoursOfCalradia
             {
                 [ColorSchool.Red]    = new[] { "the Ember",   "Bloodhanded", "Pyremark"    },
                 [ColorSchool.Orange] = new[] { "the Bright",  "Goldenvoiced","the Warm"    },
-                [ColorSchool.Yellow] = new[] { "the Pale",    "of Quiet",    "the Fading"  },
+                [ColorSchool.Yellow] = new[] { "the Pale",    "of Dread",    "the Craven"  },
                 [ColorSchool.Green]  = new[] { "the Tender",  "Root-spoken", "the Verdant" },
                 [ColorSchool.Blue]   = new[] { "the Still",   "Coldwater",   "the Patient" },
-                [ColorSchool.Purple] = new[] { "the Hollow",  "Darkstained", "the Ashen"   },
+                [ColorSchool.Purple] = new[] { "the Hollow",  "the Grey",    "the Fading"  },
             };
 
         private static string NewId() => $"cou_{_nextId++}";
