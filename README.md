@@ -73,10 +73,10 @@ Contiguous selections (e.g. Red + Orange + Yellow, or Blue + Purple + Red wrappi
 |--------|----------|-------------------|-------------------|
 | **Red** | Blood Price — violent, fiery | Control | Calculating −1 |
 | **Orange** | Generous Hunger — joyful, open-handed | Intelligence | Generosity +1 |
-| **Yellow** | The Fearful Eye — dread, revulsion | Social | Valor −1 |
+| **Yellow** | The Fearful Eye — dread, revulsion | Social | Mercy −1 |
 | **Green** | Gentle Burden — kind, restorative | Endurance | Mercy +1 |
 | **Blue** | Scholar's Weight — cold, ordered | Vigor | Calculating +1 |
-| **Purple** | The Waning Art — melancholic, fading | Cunning | Mercy −1 |
+| **Purple** | The Waning Art — melancholic, fading | Cunning | Valor −1 |
 
 ### Limitations by School
 
@@ -88,7 +88,7 @@ Each school carries two permanent limitations. The first category (A) applies ev
 
 **Orange — Generous Hunger**
 - **(A) Overindulgent:** Your party consumes food faster and army upkeep is higher. 2 food units are drained daily.
-- **(B) Lighthearted:** Each Orange spell costs gold — 5% of your total, minimum 50 gold. You cannot cast without it.
+- **(B) Generous Flood:** Each Orange spell briefly overwhelms your senses — the world swims, the HUD blurs, and for a moment you cannot read the battlefield clearly.
 
 **Yellow — The Fearful Eye**
 - **(A) Paranoia:** Each Yellow spell costs your party 8 morale. The fear bleeds inward.
@@ -96,15 +96,15 @@ Each school carries two permanent limitations. The first category (A) applies ev
 
 **Green — Gentle Burden**
 - **(A) Pacifist:** You cannot use Green magic while wielding a weapon. Sheathe it first.
-- **(B) Gentle Burden:** If enemies are within 4 m when you cast, the magic recoils — 5 HP self-damage.
+- **(B) Gentle Burden:** Each killing blow you land costs you 8 HP — Green magic does not forgive the taking of life.
 
 **Blue — Scholar's Weight**
-- **(A) Scholar's Fatigue:** Each Blue spell tires the body — 5 HP self-damage.
-- **(B) Heavy Knowledge:** Blue magic settles in the flesh passively (flavour; the fatigue cost covers it mechanically).
+- **(A) Scholar's Weight:** Each Blue spell makes your equipment feel heavier — your maximum movement speed decreases with every cast and does not recover until the battle ends. Up to 6 stacks; at the cap you slow to a crawl.
+- **(B) Heavy Knowledge:** Cerulean Mirror shields you from spells and magic effects for 60 seconds — but steel still finds you.
 
 **Purple — The Waning Art**
-- **(A) Waning Cost:** Each Purple spell ages the caster by approximately 7 days.
-- **(B) The Slow Unravelling:** Purple magic does not announce itself. It simply continues until there is less of you.
+- **(A) Waning Cost:** Each Purple spell ages the caster by approximately 7 days — the grey draws time inward, silently.
+- **(B) The Slow Unravelling:** Each Purple cast quietly reduces the caster's fertility by 5 percentage points (minimum 1%). The current level is shown in the message log after every cast. It never reaches zero — but it never comes back. This value persists across saves.
 
 ---
 
@@ -186,11 +186,11 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Ward** | `DDUURR` | Red | 5 s invulnerability. |
+| **Scarlet Ward** | `DDUURR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 15 s if nothing hits. |
 | **Warm Beacon** | `DDLLRR` | Orange | Pulls all allies within 30 m to a ring around the caster (smooth lerp). |
 | **Nausea Bloom** | `DDLRLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 5 damage every 2 s to all nearby creatures. |
 | **Verdant Touch** | `DDRRLL` | Green | Heals the caster for 20 HP. |
-| **Cerulean Mirror** | `DDLLUU` | Blue | 30 s invulnerability (scholarly approximation of full magic immunity). |
+| **Cerulean Mirror** | `DDLLUU` | Blue | 60 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
 | **Grief's Veil** | `DDRRLU` | Purple | Drains morale of all enemies within 20 m to zero; grants the caster 15 s invulnerability while the veil holds. |
 
 ### Create Spells (LR prefix) — Persistent battlefield effects
@@ -198,7 +198,7 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
 | **Cinder Burst** | `LRUURR` | Red | Instant 45 damage to all creatures within 10 m. |
-| **Gilded Ground** | `LRLLRR` | Orange | Toggle: places a persistent dismounting zone at the caster's feet. Any horse entering the radius is separated from its rider. Cast again to dismiss. |
+| **Golden Snare** | `LRLLRR` | Orange | Places a golden patch (radius 10 m) at the caster's feet. The first enemy formation to step into it receives one random command — **Halt**, **Charge**, **Dismount**, or **Scatter** — then the trap vanishes. Expires after 60 s if untriggered; cast again to dismiss early. |
 | **Creeping Dread** | `LRLRLU` | Yellow | Toggle: releases a wandering cloud (radius 5 m) that roams the field, dealing 5 damage every 2 s to creatures it passes through. Changes direction randomly every ~3 s. Cast again to dismiss. |
 | **Emerald Font** | `LRRRLL` | Green | Toggle: creates a healing circle (radius 8 m) that restores 8 HP every 2 s to all within it — friend and foe alike. Cast again to dismiss. |
 | **Sapphire Bastion** | `LRLLUU` | Blue | Places a persistent repulsion field (radius 10 m) for 3 minutes. Any creature entering the radius is smoothly pushed outward every 0.5 s. |
@@ -238,10 +238,10 @@ Every **25 casts** of the same school shifts one personality trait — but only 
 |--------|-------|-----------|
 | Red | Calculating | −1 |
 | Orange | Generosity | +1 |
-| Yellow | Valor | −1 |
+| Yellow | Mercy | −1 |
 | Green | Mercy | +1 |
 | Blue | Calculating | +1 |
-| Purple | Mercy | −1 |
+| Purple | Valor | −1 |
 
 ---
 

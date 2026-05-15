@@ -64,13 +64,38 @@ namespace ColoursOfCalradia
             SpellEffects.TickMoves(dt);
             SpellEffects.TickAreaEffects(dt);
             SpellEffects.TickHollowGaze(dt);
+            SpellEffects.TickHUDConfusion(dt);
             SpellEffects.TickRandomUnitMagic(dt);
+        }
+
+        public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
+            in MissionWeapon affectorWeapon, in Blow blow, in AttackCollisionData attackCollisionData)
+        {
+            // Scarlet Ward: first physical blow against the player shatters the ward
+            if (affectedAgent == Agent.Main && affectorAgent != Agent.Main
+                && affectorAgent != null && SpellEffects.ScarletWardActive)
+                SpellEffects.AbsorbScarletWard();
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent,
             AgentState agentState, KillingBlow blow)
         {
             ColourUnitRegistry.OnAgentRemoved(affectedAgent);
+
+            // Green — Gentle Burden: dealing a killing blow wounds the caster
+            if (affectorAgent == Agent.Main && affectorAgent.IsActive()
+                && ColourKnowledge.HasSchool(ColorSchool.Green)
+                && affectedAgent != Agent.Main)
+            {
+                try
+                {
+                    Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 8f);
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        "Gentle Burden: A life ends by your hand. The cost falls on you.",
+                        ColorSchoolData.GetMessageColor(ColorSchool.Green)));
+                }
+                catch { }
+            }
         }
     }
 
@@ -111,7 +136,7 @@ namespace ColoursOfCalradia
                                    "Their indulgent nature, however, devours resources and scatters their senses with each casting.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
                 LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
-                LimitationB      = "Lighthearted: Each Orange spell costs gold (5% of total, min 50). Cannot cast without coins.",
+                LimitationB      = "Generous Flood: Each Orange spell briefly overwhelms your senses — the world swims, the HUD blurs, and for a moment you cannot read the battlefield clearly.",
                 AttributePenalty = "-1 Intellect"
             },
             [ColorSchool.Yellow] = new SchoolInfo
@@ -119,7 +144,7 @@ namespace ColoursOfCalradia
                 Name             = "Yellow",
                 FlavorText       = "The Fearful Eye — Visceral, stomach-turning magic of dread and revulsion. Yellow mages poison courage and stir the deep animal panic beneath every soldier's composure. " +
                                    "The cost is insidious: those who spread fear begin to feel it — their judgment frays and their nerve hollows from within.",
-                PersonalityEffect= "Repeated casting erodes your Valor — the dread you sow takes root in you as well.",
+                PersonalityEffect= "Repeated casting erodes your Mercy — disgust curdles into indifference; pity becomes revulsion.",
                 LimitationA      = "Paranoia: Each Yellow spell costs party morale — the fear bleeds inward as well as outward.",
                 LimitationB      = "Blurred Judgment: Yellow magic clouds the caster's mind — each cast increases your criminal rating as you begin to see threats everywhere.",
                 AttributePenalty = "-1 Social"
@@ -131,7 +156,7 @@ namespace ColoursOfCalradia
                                    "Their pacifist heart cannot act while holding a blade, and the weight of nearby violence seeps back into their body.",
                 PersonalityEffect= "Repeated casting increases your Mercy — slow to strike, quick to spare.",
                 LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon.",
-                LimitationB      = "Gentle Burden: Casting while enemies are in melee reach is painful — Green magic recoils against violence.",
+                LimitationB      = "Gentle Burden: Each killing blow you land costs you — Green magic does not forgive the taking of life.",
                 AttributePenalty = "-1 Endurance"
             },
             [ColorSchool.Blue] = new SchoolInfo
@@ -140,8 +165,8 @@ namespace ColoursOfCalradia
                 FlavorText       = "Scholar's Weight — Cold, distanced magic of order and stillness. Blue mages freeze formations and conjure spectral shields. " +
                                    "But knowledge is heavy — each casting strains the body, adding invisible weight to armour and limb.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
-                LimitationA      = "Scholar's Fatigue: Each Blue spell tires the body — a bruising cost paid in flesh.",
-                LimitationB      = "Heavy Knowledge: Blue magic accumulates in the flesh — you move and strike with slightly less vigour as it settles.",
+                LimitationA      = "Scholar's Weight: Each Blue spell makes your equipment feel heavier — movement slows with every cast and does not recover until the battle ends. Six stacks will slow you to a crawl.",
+                LimitationB      = "Heavy Knowledge: Cerulean Mirror shields you from spells and magic effects for 60 seconds — but steel still finds you.",
                 AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
@@ -149,9 +174,9 @@ namespace ColoursOfCalradia
                 Name             = "Purple",
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
                                    "The grey does not take violently — it takes slowly, steadily. Each working bleeds away a little of the mage's time, presence, and will to be.",
-                PersonalityEffect= "Repeated casting deepens indifference — your Mercy erodes as caring grows too heavy to carry.",
+                PersonalityEffect= "Repeated casting drains your Valor — grief and resignation make it harder to believe anything is worth the fight.",
                 LimitationA      = "Waning Cost: Each Purple spell ages the caster — the grey draws time inward, silently.",
-                LimitationB      = "The Slow Unravelling: Purple magic does not announce itself. It simply continues until there is less of you.",
+                LimitationB      = "The Slow Unravelling: Each Purple cast quietly reduces the caster's fertility — something within grows dimmer with every working. It never reaches zero, but it never comes back.",
                 AttributePenalty = "-1 Cunning"
             }
         };
@@ -193,10 +218,10 @@ namespace ColoursOfCalradia
             {
                 case ColorSchool.Red:    return (DefaultTraits.Calculating, -1);
                 case ColorSchool.Orange: return (DefaultTraits.Generosity,  +1);
-                case ColorSchool.Yellow: return (DefaultTraits.Valor,       -1);
+                case ColorSchool.Yellow: return (DefaultTraits.Mercy,       -1);
                 case ColorSchool.Green:  return (DefaultTraits.Mercy,       +1);
                 case ColorSchool.Blue:   return (DefaultTraits.Calculating, +1);
-                case ColorSchool.Purple: return (DefaultTraits.Mercy,       -1);
+                case ColorSchool.Purple: return (DefaultTraits.Valor,       -1);
                 default:                 return (DefaultTraits.Valor,        0);
             }
         }
@@ -261,7 +286,7 @@ namespace ColoursOfCalradia
             // ── SELF (DD prefix) — creates a glowing aura around the caster ─────
             new SpellEntry { Name="Scarlet Ward",     Combo="DDUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
-                Flavour="The next blow lands on iron. Your body becomes briefly unbreakable." },
+                Flavour="The next blow lands on iron. One strike. The ward then shatters." },
             new SpellEntry { Name="Warm Beacon",      Combo="DDLLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
                 Flavour="A golden light calls your companions from across the field to your side." },
@@ -273,7 +298,7 @@ namespace ColoursOfCalradia
                 Flavour="You lay hands upon yourself. The wounds knit closed." },
             new SpellEntry { Name="Cerulean Mirror",  Combo="DDLLUU", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
-                Flavour="Your body becomes a perfect reflector. For a time, no harm finds purchase." },
+                Flavour="Spells pass through you for 60 seconds. Steel does not." },
             new SpellEntry { Name="Grief's Veil",     Combo="DDRRLU", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="A heavy grey settles over the field. Enemies lose the will to see you — the grief of their own losses washes through them instead." },
@@ -282,9 +307,9 @@ namespace ColoursOfCalradia
             new SpellEntry { Name="Cinder Burst",     Combo="LRUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
                 Flavour="The world around you ignites. All nearby pay the price of your fury." },
-            new SpellEntry { Name="Gilded Ground",    Combo="LRLLRR", School=ColorSchool.Orange,
+            new SpellEntry { Name="Golden Snare",     Combo="LRLLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="A treacherous patch of joyful earth — horses enter gladly and regret it." },
+                Flavour="A bright patch of golden earth waits for the first soul to step into it — then gives their formation a random, chaotic order and vanishes. Cast again to dismiss." },
             new SpellEntry { Name="Creeping Dread",   Combo="LRLRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="A cloud of formless revulsion drifts across the field. Those it passes through feel their skin crawl and their courage hollow out. Cast again to dismiss." },
@@ -325,12 +350,21 @@ namespace ColoursOfCalradia
             };
         private static readonly HashSet<string> _giftedChildIds = new HashSet<string>();
 
-        private static int _grimoirePage = 0;
-        private const  int GrimoirePageSize = 4;
+        private static int   _grimoirePage         = 0;
+        private const  int   GrimoirePageSize       = 4;
+        private static float _purpleFertilityLevel  = 1.0f;
 
-        public static bool HasAnySchool => _chosenSchools.Count > 0;
-        public static bool HasSchool(ColorSchool school) => _chosenSchools.Contains(school);
+        public static bool  HasAnySchool            => _chosenSchools.Count > 0;
+        public static bool  HasSchool(ColorSchool school) => _chosenSchools.Contains(school);
         public static IEnumerable<ColorSchool> AllSchools => _chosenSchools;
+        public static float PurpleFertilityLevel    => _purpleFertilityLevel;
+
+        public static bool ReducePurpleFertility()
+        {
+            if (_purpleFertilityLevel <= 0.01f) return false;
+            _purpleFertilityLevel = Math.Max(0.01f, _purpleFertilityLevel - 0.05f);
+            return true;
+        }
 
         public static void AddSchool(ColorSchool school)
         {
@@ -410,10 +444,11 @@ namespace ColoursOfCalradia
             var ccVals     = _castCounters.Values.ToList();
             var giftedList = _giftedChildIds.ToList();
 
-            store.SyncData("COC_ChosenSchools",  ref schoolList);
-            store.SyncData("COC_CastCounterKeys", ref ccKeys);
-            store.SyncData("COC_CastCounterVals", ref ccVals);
-            store.SyncData("COC_GiftedChildIds",  ref giftedList);
+            store.SyncData("COC_ChosenSchools",    ref schoolList);
+            store.SyncData("COC_CastCounterKeys",  ref ccKeys);
+            store.SyncData("COC_CastCounterVals",  ref ccVals);
+            store.SyncData("COC_GiftedChildIds",   ref giftedList);
+            store.SyncData("COC_PurpleFertility",  ref _purpleFertilityLevel);
 
             _chosenSchools.Clear();
             if (schoolList != null)
@@ -946,23 +981,6 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            // Orange — Lighthearted: coin cost
-            if (spell.School == ColorSchool.Orange)
-            {
-                Hero player = Hero.MainHero;
-                if (player != null)
-                {
-                    int cost = Math.Max(50, (int)(player.Gold * 0.05f));
-                    if (player.Gold < cost)
-                    {
-                        Fizzle($"Lighthearted: You need at least {cost} gold to cast an Orange spell.");
-                        return;
-                    }
-                    try { GiveGoldAction.ApplyBetweenCharacters(player, null, cost, true); }
-                    catch { }
-                    SpellEffects.LastOrangeCoinCost = cost;
-                }
-            }
 
             // Green — Pacifist: no weapon in hand
             if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
@@ -1046,43 +1064,33 @@ namespace ColoursOfCalradia
                 catch { }
             }
 
-            // Green — Gentle Burden: recoil if enemies are in melee reach
-            if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
-            {
-                try
-                {
-                    bool meleeRange = Mission.Current?.Agents.Any(a =>
-                        a.IsActive() && !a.IsMount && a.Team != Agent.Main.Team &&
-                        a.Position.Distance(Agent.Main.Position) <= 4f) ?? false;
-                    if (meleeRange)
-                    {
-                        Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 5f);
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "Gentle Burden: Violence is close. Your magic recoils.",
-                            ColorSchoolData.GetMessageColor(ColorSchool.Green)));
-                    }
-                }
-                catch { }
-            }
 
-            // Blue — Scholar's Fatigue: small self-damage from mental strain
-            if (spell.School == ColorSchool.Blue && inMission && Agent.Main != null)
-            {
-                try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 5f); }
-                catch { }
-            }
+            // Orange — Generous Hunger: briefly flood the senses, obscuring the HUD
+            if (spell.School == ColorSchool.Orange && inMission)
+                SpellEffects.TriggerHUDConfusion();
 
-            // Purple — Consuming Art: ages the caster by ~7 days
+            // Blue — Scholar's Weight: equipment grows heavier each cast, limiting speed
+            if (spell.School == ColorSchool.Blue && inMission)
+                SpellEffects.ApplyBlueWeight();
+
+            // Purple — Waning Cost: ages the caster ~7 days; also quietly reduces fertility
             if (spell.School == ColorSchool.Purple)
             {
                 try
                 {
                     Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(7f / 365f));
                     InformationManager.DisplayMessage(new InformationMessage(
-                        $"Consuming Art: The void takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
+                        $"Waning Cost: The grey takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
                         ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
                 }
                 catch { }
+                if (ColourKnowledge.ReducePurpleFertility())
+                {
+                    int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%",
+                        ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
+                }
             }
 
             // Personality drift
@@ -1109,8 +1117,6 @@ namespace ColoursOfCalradia
     {
         private static readonly Random _rng = new Random();
 
-        // Set by Orange Calling so Calling's effect knows how many coins were spent
-        public static int LastOrangeCoinCost { get; set; } = 0;
 
         public static bool IsDaytime()
         {
@@ -1226,37 +1232,66 @@ namespace ColoursOfCalradia
                 // Apply the area effect this tick
                 switch (e.Id)
                 {
-                    case "create_orange": // Gilded Ground — dismount horses in area
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsMount && a.IsActive() &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
-                        {
-                            try
-                            {
-                                Agent rider = a.RiderAgent;
-                                if (rider != null)
-                                {
-                                    // Force dismount by teleporting rider away from mount
-                                    Vec3 dest = rider.Position + new Vec3(1.5f, 0f, 0f);
-                                    dest.z = rider.Position.z;
-                                    rider.TeleportToPosition(dest);
-                                    BeginAgentGlow(rider, e.School, 1.5f);
-                                }
-                            }
-                            catch { }
-                        }
-                        // Also glow any agents in the area to show the patch
+                    case "create_orange": // Golden Snare — one-shot random command on first contact
+                    {
+                        // Glow the patch centre each tick so the player can see it
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                             try { BeginAgentGlow(a, e.School, 1.5f); } catch { }
-                        break;
 
-                    case "create_yellow": // Sallow Wraith — damage agents in cloud
+                        // Find the first non-player agent that stepped into the patch
+                        Agent contact = null;
+                        foreach (Agent a in Mission.Current.Agents)
+                        {
+                            if (!a.IsActive() || a.IsMount || a == Player) continue;
+                            if (a.Position.Distance(e.Position) > e.Radius) continue;
+                            contact = a; break;
+                        }
+                        if (contact == null) break;
+
+                        // Apply a random command to their formation (or just to them if no formation)
+                        Formation f = contact.Formation;
+                        string cmdName;
+                        switch (_rng.Next(4))
+                        {
+                            case 0: // Halt
+                                if (f != null) try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                                cmdName = "Halt";
+                                break;
+                            case 1: // Charge
+                                if (f != null) try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
+                                cmdName = "Charge";
+                                break;
+                            case 2: // Dismount
+                                foreach (Agent a in Mission.Current.Agents
+                                    .Where(a => a.IsActive() && a.Formation == f && a.MountAgent != null).ToList())
+                                {
+                                    Vec3 dest = a.Position + new Vec3(1.5f, 0f, 0f);
+                                    dest.z = a.Position.z;
+                                    try { a.TeleportToPosition(dest); } catch { }
+                                }
+                                cmdName = "Dismount";
+                                break;
+                            default: // Scatter — drain morale so the formation routes
+                                foreach (Agent a in Mission.Current.Agents
+                                    .Where(a => a.IsActive() && a.Formation == f).ToList())
+                                    try { a.SetMorale(0f); } catch { }
+                                cmdName = "Scatter";
+                                break;
+                        }
+                        BeginAgentGlow(contact, e.School, 2f);
+                        Msg($"Golden Snare — {contact.Name}'s formation receives a sudden command: {cmdName}!", ColorSchool.Orange);
+                        e.Remaining = 0.001f; // consume the patch immediately
+                        break;
+                    }
+
+                    case "create_yellow": // Creeping Dread — damage agents in cloud
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
+                            if (ProtectedByMirror(a)) continue;
                             try
                             {
                                 a.Health = Math.Max(0f, a.Health - 15f);
@@ -1330,11 +1365,15 @@ namespace ColoursOfCalradia
         // ── Duration self-effects ────────────────────────────────────────────
         // Invulnerability states for Self Red (Scarlet Ward) and Self Blue (Cerulean Mirror)
         private static bool  _scarletWardActive   = false;
+        public  static bool  ScarletWardActive    => _scarletWardActive;
         private static bool  _ceruleanMirrorActive = false;
         private static bool  _shadowVeilActive     = false;
         private static Agent _hollowGazeTarget     = null;
         private static float _hollowGazeTimer      = 0f;
         private const  float HollowGazeInterval    = 0.3f;
+
+        // Returns true when the agent is the player and Cerulean Mirror is blocking magic
+        public static bool ProtectedByMirror(Agent a) => a == Player && _ceruleanMirrorActive;
 
         public static void TickHollowGaze(float dt)
         {
@@ -1348,12 +1387,56 @@ namespace ColoursOfCalradia
             try { _hollowGazeTarget.SetMorale(0f); } catch { }
         }
 
+        // ── Orange: HUD confusion burst ───────────────────────────────────────
+        private static int   _confusionBursts = 0;
+        private static float _confusionTimer  = 0f;
+        private const  int   ConfusionBurstCount   = 9;
+        private const  float ConfusionBurstInterval = 0.18f;
+
+        public static void TriggerHUDConfusion() => _confusionBursts = ConfusionBurstCount;
+
+        public static void TickHUDConfusion(float dt)
+        {
+            if (_confusionBursts <= 0) return;
+            _confusionTimer -= dt;
+            if (_confusionTimer > 0f) return;
+            _confusionTimer = ConfusionBurstInterval;
+            _confusionBursts--;
+            InformationManager.DisplayMessage(new InformationMessage(
+                "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~",
+                Color.FromUint(0x44FF8800u)));
+        }
+
+        // ── Blue: accumulating weight stacks ─────────────────────────────────
+        private static int   _blueWeightStacks = 0;
+        private const  float BlueBaseSpeed     = 6.5f;
+        private const  float BlueSpeedPenalty  = 0.4f;
+        private const  int   BlueMaxStacks     = 6;
+
+        public static void ApplyBlueWeight()
+        {
+            if (Player == null || !Player.IsActive()) return;
+            _blueWeightStacks = Math.Min(_blueWeightStacks + 1, BlueMaxStacks);
+            float cap = Math.Max(1.5f, BlueBaseSpeed - _blueWeightStacks * BlueSpeedPenalty);
+            try { Player.SetMaximumSpeedLimit(cap, true); } catch { }
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"Scholar's Weight: The knowledge settles in your limbs. [{_blueWeightStacks}/{BlueMaxStacks}]",
+                ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+        }
+
         public static void ClearSelfEffects()
         {
             if (_scarletWardActive)   { try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { } _scarletWardActive = false; }
-            if (_ceruleanMirrorActive){ try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { } _ceruleanMirrorActive = false; }
+            if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; }
             _shadowVeilActive  = false;
             _hollowGazeTarget  = null;
+            _confusionBursts   = 0;
+            if (_blueWeightStacks > 0)
+            {
+                _blueWeightStacks = 0;
+                if (Player?.IsActive() == true)
+                    try { Player.SetMaximumSpeedLimit(0f, false); } catch { }
+            }
         }
 
         // Issue Charge to own formations (Red post-cast limitation)
@@ -1664,12 +1747,12 @@ namespace ColoursOfCalradia
         // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        // Scarlet Ward — 5-second invulnerability (absorbs next hit, approximated as timed ward)
+        // Scarlet Ward — absorbs the next single blow; expires after 15 s if nothing hits
         private static void SpellSelfRed()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
-            const float Duration = 5f;
+            const float Duration = 15f;
             try { Player.ToggleInvulnerable(); } catch { return; }
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
@@ -1682,11 +1765,20 @@ namespace ColoursOfCalradia
                     {
                         try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
                         _scarletWardActive = false;
+                        Msg("The Scarlet Ward fades — no blow came to claim it.", ColorSchool.Red);
                     }
-                    Msg("The Scarlet Ward shatters. You are exposed again.", ColorSchool.Red);
                 }
             });
-            Msg("Scarlet Ward — the next blow will find iron, not flesh. 5 seconds.", ColorSchool.Red);
+            Msg("Scarlet Ward — the next blow will find iron, not flesh.", ColorSchool.Red);
+        }
+
+        // Called from OnAgentHit when a blow lands on the player while the ward is up
+        public static void AbsorbScarletWard()
+        {
+            if (!_scarletWardActive) return;
+            try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
+            _scarletWardActive = false;
+            Msg("Scarlet Ward — the blow lands on iron. The ward shatters.", ColorSchool.Red);
         }
 
         // Warm Beacon — teleport all nearby allies to your side
@@ -1749,13 +1841,12 @@ namespace ColoursOfCalradia
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Mirror — 30-second invulnerability (approximation of magic immunity)
+        // Cerulean Mirror — 60-second magic immunity (physical attacks still connect)
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
-            const float Duration = 30f;
-            try { Player.ToggleInvulnerable(); } catch { return; }
+            const float Duration = 60f;
             _ceruleanMirrorActive = true;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
             ActiveEffectManager.Add(new ActiveEffect
@@ -1763,15 +1854,11 @@ namespace ColoursOfCalradia
                 Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
                 OnExpire = () =>
                 {
-                    if (_ceruleanMirrorActive)
-                    {
-                        try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
-                        _ceruleanMirrorActive = false;
-                    }
-                    Msg("The Cerulean Mirror dims. You are no longer untouchable.", ColorSchool.Blue);
+                    _ceruleanMirrorActive = false;
+                    Msg("The Cerulean Mirror dims. Spells find you again.", ColorSchool.Blue);
                 }
             });
-            Msg("Cerulean Mirror — you become a perfect reflector. Nothing harms you for 30 seconds.", ColorSchool.Blue);
+            Msg("Cerulean Mirror — spells pass through you for 60 seconds. Steel does not.", ColorSchool.Blue);
         }
 
         // Grief's Veil — nearby enemies' morale collapses + brief player invulnerability
@@ -1840,24 +1927,24 @@ namespace ColoursOfCalradia
                           : "The burst finds nothing nearby.", ColorSchool.Red);
         }
 
-        // Gilded Ground — persistent patch that dismounts horses entering the area
+        // Golden Snare — one-shot patch; triggers on first contact with a random formation command
         private static void SpellCreateOrange()
         {
             if (Player == null) return;
             if (HasAreaEffect("create_orange"))
             {
                 ToggleAreaEffect("create_orange", null);
-                Msg("Gilded Ground dissolves.", ColorSchool.Orange);
+                Msg("The Golden Snare fades before it could spring.", ColorSchool.Orange);
                 return;
             }
             ToggleAreaEffect("create_orange", new AreaEffect
             {
                 Id = "create_orange", School = ColorSchool.Orange,
                 Position = Player.Position, Radius = 10f,
-                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+                TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 60f
             });
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
-            Msg("Gilded Ground spreads beneath you — horses entering this zone will throw their riders. Cast again to dismiss.", ColorSchool.Orange);
+            Msg("Golden Snare laid — the first formation to step into it receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
         }
 
         // Creeping Dread — moving cloud of revulsion that damages agents it passes through
@@ -2710,6 +2797,7 @@ namespace ColoursOfCalradia
                     {
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                         {
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             a.Health = Math.Max(0f, a.Health - 45f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
@@ -2750,6 +2838,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -2879,6 +2968,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3371,6 +3461,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 8f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.35f) continue;
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3404,6 +3495,8 @@ namespace ColoursOfCalradia
                     case ColorSchool.Blue:
                         foreach (Agent a in EnemiesOf(agent)
                             .Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                        {
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             try
                             {
                                 a.Health = Math.Max(1f, a.Health - 10f);
@@ -3411,12 +3504,14 @@ namespace ColoursOfCalradia
                                 cast = true;
                             }
                             catch { }
+                        }
                         break;
 
                     case ColorSchool.Purple:
                         foreach (Agent a in EnemiesOf(agent)
                             .Where(a => a.Position.Distance(agent.Position) <= 6f).ToList())
                         {
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             a.Health = Math.Max(0f, a.Health - 40f);
                             if (a.Health <= 0f) SpellEffects.KillAgent(a);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
