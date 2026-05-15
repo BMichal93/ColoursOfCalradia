@@ -103,7 +103,7 @@ Each school carries two permanent limitations. The first category (A) applies ev
 - **(B) Heavy Knowledge:** Cerulean Mirror shields you from spells and magic effects for 60 seconds — but steel still finds you.
 
 **Purple — The Waning Art**
-- **(A) Waning Cost:** Each Purple spell ages the caster by approximately 7 days — the grey draws time inward, silently.
+- **(A) Waning Cost:** Each Purple spell ages the caster by approximately 2 days — the grey draws time inward, quietly.
 - **(B) The Slow Unravelling:** Each Purple cast quietly reduces the caster's fertility by 5 percentage points (minimum 1%). The current level is shown in the message log after every cast. It never reaches zero — but it never comes back. This value persists across saves.
 
 ---
@@ -191,7 +191,7 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 | **Nausea Bloom** | `DDLRLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 5 damage every 2 s to all nearby creatures. |
 | **Verdant Touch** | `DDRRLL` | Green | Heals the caster for 20 HP. |
 | **Cerulean Mirror** | `DDLLUU` | Blue | 60 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
-| **Grief's Veil** | `DDRRLU` | Purple | Drains morale of all enemies within 20 m to zero; grants the caster 15 s invulnerability while the veil holds. |
+| **Grief's Veil** | `DDRRLU` | Purple | The grey folds you from sight for 15 s — you become invulnerable and nearby enemy formations halt momentarily. They do not flee; they simply lose track of you. |
 
 ### Create Spells (LR prefix) — Persistent battlefield effects
 
@@ -206,7 +206,7 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 ### Notes on Create Spells
 
-- **Toggled effects** (Gilded Ground, Creeping Dread, Emerald Font, Hollow Gaze) are cancelled by casting the same spell again.
+- **Toggled effects** (Golden Snare, Creeping Dread, Emerald Font, Hollow Gaze) are cancelled by casting the same spell again.
 - **Timed effects** (Nausea Bloom at 30 s, Sapphire Bastion at 3 minutes) expire automatically and display a message when they fade.
 - **Area glows**: Affected agents pulse in the school's colour on each effect tick (approximately every 2 s for most effects, every 0.5 s for Sapphire Bastion). Glow is not applied every frame to avoid performance cost.
 - **Smooth movement**: Push and pull effects (Crimson Torrent, Warm Beacon, Sapphire Bastion) move agents using a smoothstep lerp over 0.4 s rather than instant teleportation.
@@ -261,9 +261,9 @@ At character levels 10, 20, 30 … (while you have at least one school but fewer
 
 ### Seeding
 
-- At campaign start, lords across all factions are seeded with 1–3 colour schools based on party size and random chance.
+- At campaign start, one lord per faction is designated as the **archmage** and receives 4 colour schools. Remaining lords each have a random chance of receiving 1–3 schools (10 % for 3, 10 % for 2, 15 % for 1; otherwise none).
 - Companion heroes have a **10 % chance** to be granted 1–2 colours when they join your party.
-- When a mage lord dies, their colours are extinguished. After **7 days**, the colours pass to a randomly selected younger lord (under 50) in the same kingdom.
+- When a mage lord dies, their colours are extinguished. After **7 days**, the colours pass to a randomly selected younger lord (under 50) in the same kingdom. If no suitable candidate exists, the timer retries every day until one becomes available — every kingdom retains at least one mage lord.
 
 ### Battle AI
 
@@ -298,15 +298,19 @@ Each mage lord has a **20 % daily chance** to cast a campaign-map spell. At most
 
 ### Seeding
 
-Small numbers of named magical soldiers are seeded into lord and bandit parties:
+Named magical soldiers are seeded sparingly to keep large-battle performance stable:
 
-| Party Type | Condition | Units seeded |
-|------------|-----------|--------------|
-| Lord party | 50–149 troops | 1 unit |
-| Lord party | 150+ troops | 2 units |
-| Bandit party | 15+ troops, 12 % chance | 1 unit |
+| Party Type | Condition | Units | Daily reseed chance |
+|------------|-----------|-------|---------------------|
+| Lord party | 200–349 troops | 1 unit (1 colour) | 5 % |
+| Lord party | 350+ troops | 2 units (1 colour each) | 5 % |
+| Bandit party | 40+ troops | 1 unit (1 colour) | 1 % |
 
-Each named unit receives 1–2 colour schools. Their names are generated from a pool of 20 first names combined with school-specific suffixes:
+The named lord or companion in a party is always the primary magic user; the unit soldiers are rare additions who only appear in the largest armies.
+
+When a unit dies in battle, they re-enter a **3–5 day respawn queue** and re-emerge in a party of the same type: lord-party units respawn in the next qualifying large lord party (200+ troops); bandit units respawn in the next qualifying bandit party (40+ troops). If no suitable party is available, the queue retries every 5 days until one appears.
+
+Each named unit receives 1 colour school. Their names are generated from a pool of 20 first names combined with school-specific suffixes:
 
 | School | Suffixes |
 |--------|----------|
@@ -317,8 +321,6 @@ Each named unit receives 1–2 colour schools. Their names are generated from a 
 | Blue | the Still, Coldwater, the Patient |
 | Purple | the Hollow, the Grey, the Fading |
 
-New qualifying parties are seeded during daily maintenance: 15 % chance for lord parties with 50+ troops, 3 % for bandit parties with 15+ troops.
-
 ### Battle Behaviour
 
 Named magical units cast spells in battle using the same AI rules as mage lords, with a **20-second cooldown** between casts and a **0.5 s AI evaluation tick**. They require daylight to cast.
@@ -326,13 +328,6 @@ Named magical units cast spells in battle using the same AI rules as mage lords,
 ### Campaign Map Effects
 
 Each named unit has a **10 % daily chance** to trigger a minor campaign map effect. At most **2 unit map-casts fire per day** total. After casting, a unit cannot cast on the map again for 3–5 days. Effects are generally positive for the unit's own party (morale, experience, food).
-
-### Respawn
-
-When a named magical unit is killed in battle:
-
-1. They enter a **respawn queue** with a delay of **3–5 days**.
-2. After the delay, they reappear in their original lord's party, or in a fallback lord's party within the same faction if the original party has disbanded.
 
 ---
 

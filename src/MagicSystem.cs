@@ -175,7 +175,7 @@ namespace ColoursOfCalradia
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
                                    "The grey does not take violently — it takes slowly, steadily. Each working bleeds away a little of the mage's time, presence, and will to be.",
                 PersonalityEffect= "Repeated casting drains your Valor — grief and resignation make it harder to believe anything is worth the fight.",
-                LimitationA      = "Waning Cost: Each Purple spell ages the caster — the grey draws time inward, silently.",
+                LimitationA      = "Waning Cost: Each Purple spell ages the caster by ~2 days — the grey draws time inward, quietly.",
                 LimitationB      = "The Slow Unravelling: Each Purple cast quietly reduces the caster's fertility — something within grows dimmer with every working. It never reaches zero, but it never comes back.",
                 AttributePenalty = "-1 Cunning"
             }
@@ -301,7 +301,7 @@ namespace ColoursOfCalradia
                 Flavour="Spells pass through you for 60 seconds. Steel does not." },
             new SpellEntry { Name="Grief's Veil",     Combo="DDRRLU", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
-                Flavour="A heavy grey settles over the field. Enemies lose the will to see you — the grief of their own losses washes through them instead." },
+                Flavour="The grey folds you from sight for 15 seconds. Nearby enemies lose track of you and pause. You cannot be touched while the veil holds." },
 
             // ── CREATE (LR prefix) — special area effect, specific to each colour ─
             new SpellEntry { Name="Cinder Burst",     Combo="LRUURR", School=ColorSchool.Red,
@@ -1073,12 +1073,12 @@ namespace ColoursOfCalradia
             if (spell.School == ColorSchool.Blue && inMission)
                 SpellEffects.ApplyBlueWeight();
 
-            // Purple — Waning Cost: ages the caster ~7 days; also quietly reduces fertility
+            // Purple — Waning Cost: ages the caster ~2 days; also quietly reduces fertility
             if (spell.School == ColorSchool.Purple)
             {
                 try
                 {
-                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(7f / 365f));
+                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(2f / 365f));
                     InformationManager.DisplayMessage(new InformationMessage(
                         $"Waning Cost: The grey takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
                         ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
@@ -1861,19 +1861,27 @@ namespace ColoursOfCalradia
             Msg("Cerulean Mirror — spells pass through you for 60 seconds. Steel does not.", ColorSchool.Blue);
         }
 
-        // Grief's Veil — nearby enemies' morale collapses + brief player invulnerability
+        // Grief's Veil — the grey folds you from sight; nearby enemies pause, unsure where you went
         private static void SpellSelfPurple()
         {
             if (Player == null || Mission.Current == null) return;
             const float Radius = 20f;
             const float Duration = 15f;
-            // Drain nearby enemy morale so they flee / stop targeting you
-            int affected = 0;
+            // Briefly halt nearby enemy formations — they lose track of you
+            var halted = new HashSet<Formation>();
             foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
             {
-                try { a.SetMorale(0f); BeginAgentGlow(a, ColorSchool.Purple, 1.5f); affected++; } catch { }
+                try
+                {
+                    BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
+                    if (a.Formation != null && !halted.Contains(a.Formation))
+                    {
+                        a.Formation.SetMovementOrder(MovementOrder.MovementOrderStop);
+                        halted.Add(a.Formation);
+                    }
+                } catch { }
             }
-            // Brief invulnerability while the veil holds
+            // The grey hides the caster — invulnerable while unseen
             if (!_shadowVeilActive)
             {
                 try { Player.ToggleInvulnerable(); _shadowVeilActive = true; } catch { }
@@ -1892,7 +1900,10 @@ namespace ColoursOfCalradia
                 });
             }
             BeginAgentGlow(Player, ColorSchool.Purple, 2f);
-            Msg($"Grief's Veil — {affected} nearby {(affected == 1 ? "enemy loses" : "enemies lose")} the will to see. The grey holds you for {(int)Duration}s.", ColorSchool.Purple);
+            string haltedMsg = halted.Count > 0
+                ? $" {halted.Count} nearby {(halted.Count == 1 ? "formation pauses" : "formations pause")}."
+                : string.Empty;
+            Msg($"Grief's Veil — the grey folds you from sight for {(int)Duration}s.{haltedMsg}", ColorSchool.Purple);
         }
 
         // =================================================================
@@ -2426,7 +2437,11 @@ namespace ColoursOfCalradia
                     .Where(h => h.MapFaction == kingdom && h.IsLord && !IsColourLord(h) &&
                                 h.Age < 50f) // prefer younger lords
                     .ToList();
-                if (candidates.Count == 0) continue;
+                if (candidates.Count == 0)
+                {
+                    _respawnHours[factionId] = 24; // no candidates yet — try again in 1 day
+                    continue;
+                }
 
                 Hero chosen = candidates[_rng.Next(candidates.Count)];
                 _lordColors[chosen.StringId] = PickColors(1 + _rng.Next(2));
@@ -3056,7 +3071,7 @@ namespace ColoursOfCalradia
         private static void ApplyPurpleAging(Hero hero)
         {
             if (hero == null) return;
-            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(7f / 365f)); } catch { }
+            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(2f / 365f)); } catch { }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -3138,9 +3153,11 @@ namespace ColoursOfCalradia
 
     // =========================================================================
     // 12. COLOUR UNIT REGISTRY
-    //     ~1% of each lord party (min size 50) gets 1–2 colour schools.
-    //     Bandit/looter groups have a 12% chance of harbouring one.
+    //     Single-school mage soldiers embedded in armies and bandit groups.
+    //     Lord parties (200+ troops): 1 unit; (350+ troops): 2 units. Daily 5% reseed.
+    //     Bandit parties (40+ troops): 4% initial chance, 1% daily reseed.
     //     Units are persistent: they survive between battles and die permanently.
+    //     On death, they re-queue (3–5 days) and respawn in a party of the same type.
     // =========================================================================
     public static class ColourUnitRegistry
     {
@@ -3212,16 +3229,18 @@ namespace ColoursOfCalradia
 
         private static void SeedLordParty(MobileParty party)
         {
-            int size  = party.MemberRoster.TotalManCount;
-            int count = size >= 150 ? 2 : (size >= 50 ? 1 : 0);
+            // Only very large armies get 1-2 single-school mage soldiers
+            int size = party.MemberRoster.TotalManCount;
+            if (size < 200) return;
+            int count = size >= 350 ? 2 : 1;
             for (int i = 0; i < count; i++)
-                CreateUnit(party, 1 + _rng.Next(2));
+                CreateUnit(party, 1);
         }
 
         private static void TrySeedBanditParty(MobileParty party)
         {
-            if (party.MemberRoster.TotalManCount < 15) return;
-            if (_rng.Next(100) >= 12) return;
+            if (party.MemberRoster.TotalManCount < 40) return;
+            if (_rng.Next(100) >= 4) return;
             CreateUnit(party, 1);
         }
 
@@ -3268,12 +3287,38 @@ namespace ColoursOfCalradia
 
                     _respawnQueue.Remove(entry);
 
-                    MobileParty target = MobileParty.All.FirstOrDefault(p =>
-                        p.StringId == entry.PartyStringId && p.IsLordParty && p.MemberRoster.TotalManCount >= 20);
+                    // Determine original party type to route respawn correctly
+                    MobileParty origin = MobileParty.All.FirstOrDefault(p => p.StringId == entry.PartyStringId);
+                    bool wasLord = origin?.IsLordParty ?? false;
+
+                    MobileParty target;
+                    if (wasLord)
+                    {
+                        // Re-emerge in any large lord party without a unit
+                        target = MobileParty.All
+                            .Where(p => p.IsLordParty && p.MemberRoster.TotalManCount >= 200
+                                        && !_units.Values.Any(u => u.IsAlive && u.PartyStringId == p.StringId))
+                            .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    }
+                    else
+                    {
+                        // Bandit freelancer — try original party first, then any qualifying bandit party
+                        target = MobileParty.All.FirstOrDefault(p =>
+                            p.StringId == entry.PartyStringId && p.IsBandit && p.MemberRoster.TotalManCount >= 40);
+                        if (target == null)
+                            target = MobileParty.All
+                                .Where(p => p.IsBandit && p.MemberRoster.TotalManCount >= 40
+                                            && !_units.Values.Any(u => u.IsAlive && u.PartyStringId == p.StringId))
+                                .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    }
+
                     if (target == null)
-                        target = MobileParty.All.Where(p => p.IsLordParty && p.MemberRoster.TotalManCount >= 50)
-                                             .OrderBy(_ => _rng.Next()).FirstOrDefault();
-                    if (target == null) continue;
+                    {
+                        // No qualifying party yet — re-queue for 5 more days
+                        entry.DaysLeft = 5;
+                        _respawnQueue.Add(entry);
+                        continue;
+                    }
 
                     CreateUnit(target, entry.Schools.Count);
                 }
@@ -3292,13 +3337,13 @@ namespace ColoursOfCalradia
                     bool has = _units.Values.Any(u => u.IsAlive && u.PartyStringId == party.StringId);
                     if (has) continue;
 
-                    if (party.IsLordParty && party.MemberRoster.TotalManCount >= 50
-                        && _rng.Next(100) < 15)
+                    if (party.IsLordParty && party.MemberRoster.TotalManCount >= 200
+                        && _rng.Next(100) < 5)
                     {
-                        CreateUnit(party, 1 + _rng.Next(2));
+                        CreateUnit(party, 1);
                     }
-                    else if (party.IsBandit && party.MemberRoster.TotalManCount >= 15
-                             && _rng.Next(100) < 3)
+                    else if (party.IsBandit && party.MemberRoster.TotalManCount >= 40
+                        && _rng.Next(100) < 1)
                     {
                         CreateUnit(party, 1);
                     }
