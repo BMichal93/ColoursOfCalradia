@@ -63,7 +63,11 @@ The six colours form a ring: **Red — Orange — Yellow — Green — Blue — 
 
 If you pick two or more colours that are **not contiguous** on the ring (e.g. Red and Yellow, skipping Orange), the incompatible natures fracture your sense of self. **Madness** is applied at game start: two random personality traits shift by ±1, chosen from Mercy, Valor, Honor, Generosity, and Calculating.
 
-Contiguous selections (e.g. Red + Orange + Yellow, or Blue + Purple + Red wrapping around) carry no madness penalty regardless of how many schools you choose.
+Contiguous selections (e.g. Red + Orange + Yellow, or Blue + Purple + Red wrapping around) carry no madness penalty from adjacency — but a second rule applies regardless:
+
+**Picking more than 4 colours** triggers **The Fracture** in addition to any adjacency madness:
+- Two further random traits shift at game start (stacking on top of adjacency madness if applicable).
+- Every **week** thereafter, all five personality traits are randomised completely (each set to a random value between −2 and +2) with no recovery. No mind can hold five colours whole.
 
 ---
 

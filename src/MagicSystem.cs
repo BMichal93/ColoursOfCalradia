@@ -539,6 +539,7 @@ namespace ColoursOfCalradia
         {
             CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, OnHourlyTick);
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
+            CampaignEvents.WeeklyTickEvent.AddNonSerializedListener(this, OnWeeklyTick);
             CampaignEvents.OnMissionEndedEvent.AddNonSerializedListener(this, OnMissionEnded);
             CampaignEvents.HeroKilledEvent.AddNonSerializedListener(this, OnHeroKilled);
             CampaignEvents.OnCharacterCreationIsOverEvent.AddNonSerializedListener(this, OnNewGameCreated);
@@ -617,6 +618,14 @@ namespace ColoursOfCalradia
             {
                 InformationManager.DisplayMessage(new InformationMessage(
                     "Madness: The colours you wield are incompatible — their conflicting natures fracture your sense of self.",
+                    Color.FromUint(0xFFCC44FF)));
+                ApplyMadness(player);
+            }
+            // Five or more colours — madness regardless of adjacency, and the fracture never heals.
+            if (schools.Count > 4)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "The Fracture: No mind can hold five colours whole. Something in you breaks — and will keep breaking, week after week.",
                     Color.FromUint(0xFFCC44FF)));
                 ApplyMadness(player);
             }
@@ -747,6 +756,35 @@ namespace ColoursOfCalradia
         private void OnHourlyTick()
         {
             ColourLordRegistry.CheckRespawnTimers();
+        }
+
+        // ── Weekly tick ──────────────────────────────────────────────────────
+        private void OnWeeklyTick()
+        {
+            if (ColourKnowledge.AllSchools.Count() <= 4) return;
+            Hero player = Hero.MainHero;
+            if (player == null) return;
+            // Five or more colours — the fracture never heals; traits shift without warning each week
+            var rng = new Random();
+            bool anyChanged = false;
+            foreach (TraitObject trait in MadnessTraits)
+            {
+                try
+                {
+                    int next    = rng.Next(5) - 2; // −2 to +2
+                    int current = player.GetTraitLevel(trait);
+                    if (next != current)
+                    {
+                        player.SetTraitLevel(trait, next);
+                        anyChanged = true;
+                    }
+                }
+                catch { }
+            }
+            if (anyChanged)
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "The Fracture: Five colours tear at your sense of self — your personality shifts without warning.",
+                    Color.FromUint(0xFFCC44FF)));
         }
 
         // ── Mission ended ────────────────────────────────────────────────────
