@@ -1748,13 +1748,12 @@ namespace ColoursOfCalradia
                 if (remaining <= 0f)
                 {
                     expired.Add(idx);
-                    try { a.SetMaximumSpeedLimit(float.MaxValue, false); } catch { }
+                    try { a.SetMaximumSpeedLimit(10f, false); } catch { }
                 }
                 else
                 {
                     _haltedAgents[idx] = (remaining, frozenPos);
-                    // Teleport back to frozen position every tick (same technique as Hollow Gaze)
-                    // to counter navigation-mesh drift that bypasses the speed limit.
+                    try { a.SetMaximumSpeedLimit(0f, false); } catch { }
                     try { a.TeleportToPosition(frozenPos); } catch { }
                 }
             }
