@@ -127,10 +127,10 @@ namespace ColoursOfCalradia
         public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
             in MissionWeapon affectorWeapon, in Blow blow, in AttackCollisionData attackCollisionData)
         {
-            // Scarlet Ward: first physical blow against the player shatters the ward
+            // Scarlet Ward: first physical blow against the player shatters the ward and undoes the damage
             if (affectedAgent == Agent.Main && affectorAgent != Agent.Main
                 && affectorAgent != null && SpellEffects.ScarletWardActive)
-                SpellEffects.AbsorbScarletWard();
+                SpellEffects.AbsorbScarletWard(blow.InflictedDamage);
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent,
@@ -1447,20 +1447,23 @@ namespace ColoursOfCalradia
                         }
                         if (contact == null) break;
 
-                        // Apply a random command to their formation (or just to them if no formation)
+                        // Apply a random command to their formation
                         Formation f = contact.Formation;
+                        var formationAgents = f == null ? new List<Agent>() :
+                            Mission.Current.Agents.Where(a => a.IsActive() && a.Formation == f).ToList();
                         string cmdName;
                         switch (_rng.Next(4))
                         {
-                            case 0: // Halt
-                                if (f != null) try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
-                                cmdName = "Halt";
+                            case 0: // Panic — drain morale (enemy AI cannot override morale)
+                                foreach (Agent a in formationAgents) try { a.SetMorale(0f); } catch { }
+                                cmdName = "Panic";
                                 break;
-                            case 1: // Charge
+                            case 1: // Enrage — max morale + charge order
+                                foreach (Agent a in formationAgents) try { a.SetMorale(100f); } catch { }
                                 if (f != null) try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
-                                cmdName = "Charge";
+                                cmdName = "Enrage";
                                 break;
-                            case 2: // Dismount
+                            case 2: // Dismount — unseat riders
                                 foreach (Agent a in Mission.Current.Agents
                                     .Where(a => a.IsActive() && a.Formation == f && a.MountAgent != null).ToList())
                                 {
@@ -1470,10 +1473,8 @@ namespace ColoursOfCalradia
                                 }
                                 cmdName = "Dismount";
                                 break;
-                            default: // Scatter — drain morale so the formation routes
-                                foreach (Agent a in Mission.Current.Agents
-                                    .Where(a => a.IsActive() && a.Formation == f).ToList())
-                                    try { a.SetMorale(0f); } catch { }
+                            default: // Scatter — full morale drain
+                                foreach (Agent a in formationAgents) try { a.SetMorale(0f); } catch { }
                                 cmdName = "Scatter";
                                 break;
                         }
@@ -1634,7 +1635,7 @@ namespace ColoursOfCalradia
 
         public static void ClearSelfEffects()
         {
-            if (_scarletWardActive)   { try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { } _scarletWardActive = false; }
+            if (_scarletWardActive)   { _scarletWardActive = false; }
             if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; }
             _shadowVeilActive  = false;
             _hollowGazeTarget  = null;
@@ -1970,13 +1971,12 @@ namespace ColoursOfCalradia
         // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        // Scarlet Ward — absorbs the next single blow; expires after 15 s if nothing hits
+        // Scarlet Ward — absorbs the next single blow; expires after 6 s if nothing hits
         private static void SpellSelfRed()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
-            const float Duration = 15f;
-            try { Player.ToggleInvulnerable(); } catch { return; }
+            const float Duration = 6f;
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
             ActiveEffectManager.Add(new ActiveEffect
@@ -1986,7 +1986,6 @@ namespace ColoursOfCalradia
                 {
                     if (_scarletWardActive)
                     {
-                        try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
                         _scarletWardActive = false;
                         Msg("The Scarlet Ward fades — no blow came to claim it.", ColorSchool.Red);
                     }
@@ -1995,13 +1994,14 @@ namespace ColoursOfCalradia
             Msg("Scarlet Ward — the next blow will find iron, not flesh.", ColorSchool.Red);
         }
 
-        // Called from OnAgentHit when a blow lands on the player while the ward is up
-        public static void AbsorbScarletWard()
+        // Called from OnAgentHit — restores the damage from the triggering blow
+        public static void AbsorbScarletWard(int absorbed)
         {
             if (!_scarletWardActive) return;
-            try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
             _scarletWardActive = false;
-            Msg("Scarlet Ward — the blow lands on iron. The ward shatters.", ColorSchool.Red);
+            if (Player?.IsActive() == true && absorbed > 0)
+                try { Player.Health = Math.Min(Player.HealthLimit, Math.Max(1f, Player.Health) + absorbed); } catch { }
+            Msg($"Scarlet Ward shatters — iron turned the blow ({absorbed} absorbed).", ColorSchool.Red);
         }
 
         // Warm Beacon — teleport all nearby allies to your side
@@ -2342,8 +2342,17 @@ namespace ColoursOfCalradia
                 {
                     switch (kind)
                     {
-                        case BattleCommandKind.Halt:       f.SetMovementOrder(MovementOrder.MovementOrderStop); affected++; break;
-                        case BattleCommandKind.Enrage:     f.SetMovementOrder(MovementOrder.MovementOrderCharge); affected++; break;
+                        case BattleCommandKind.Halt:
+                            foreach (Agent fa in Mission.Current.Agents
+                                .Where(a => a.IsActive() && a.Formation == f).ToList())
+                                try { fa.SetMorale(0f); } catch { }
+                            affected++; break;
+                        case BattleCommandKind.Enrage:
+                            foreach (Agent fa in Mission.Current.Agents
+                                .Where(a => a.IsActive() && a.Formation == f).ToList())
+                                try { fa.SetMorale(100f); } catch { }
+                            try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
+                            affected++; break;
                         case BattleCommandKind.Dismount:
                             if (f.HasAnyMountedUnit) { f.SetRidingOrder(RidingOrder.RidingOrderDismount); affected++; } break;
                         case BattleCommandKind.StopArrows:
@@ -3702,8 +3711,7 @@ namespace ColoursOfCalradia
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 8f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.35f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            a.Health = Math.Max(0f, a.Health - 40f);
-                            if (a.Health <= 0f) SpellEffects.KillAgent(a);
+                            SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             cast = true;
                         }
