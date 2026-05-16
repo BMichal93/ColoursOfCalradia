@@ -876,6 +876,7 @@ namespace ColoursOfCalradia
         {
             ActiveEffectManager.ClearMissionEffects();
             ColourLordAI.ClearCooldowns();
+            SpellEffects.ClearAreaEffects();   // removes all engine lights + particle emitters
             SpellEffects.ClearSelfEffects();
             SpellEffects.ClearGlows();
             ColourUnitRegistry.OnMissionEnded();
@@ -1377,11 +1378,12 @@ namespace ColoursOfCalradia
                 entity.SetGlobalFrame(ref frame, false);
                 var light = Light.CreatePointLight(radius * 2f);
                 light.Radius        = radius * 2f;
-                light.Intensity     = 5000f; // daytime outdoor needs high intensity
+                light.Intensity     = 10000f;
                 light.LightColor    = SchoolToLightColor(school);
                 light.ShadowEnabled = false;
                 entity.AddLight(light);
-                // Attempt to attach a particle system for additional ground visibility
+                // Particles are safe now that ClearAreaEffects() is called on mission end.
+                // Previously they accumulated across missions and caused GPU overheating.
                 try { entity.AddParticleSystemComponent(SchoolToParticle(school)); } catch { }
                 return entity;
             }
@@ -3053,6 +3055,13 @@ namespace ColoursOfCalradia
             }
         }
 
+        // Pick a random element from a filtered list without sorting the whole collection.
+        private static T PickRandom<T>(IEnumerable<T> source) where T : class
+        {
+            var list = source.ToList();
+            return list.Count > 0 ? list[_rng.Next(list.Count)] : null;
+        }
+
         private static void CastLordMapSpell(Hero lord, ColorSchool school)
         {
             string msg = null;
@@ -3065,18 +3074,14 @@ namespace ColoursOfCalradia
                     case ColorSchool.Red:
                         if (_rng.Next(2) == 0)
                         {
-                            // Bloodlust — own party morale
                             spellName = "Bloodlust";
                             if (lord.PartyBelongedTo != null)
                             { lord.PartyBelongedTo.RecentEventsMorale += 10f; msg = $"{lord.Name}'s warband burns with purpose."; }
                         }
                         else
                         {
-                            // Carnage — nearby village loses prosperity
                             spellName = "Carnage";
-                            Settlement target = Settlement.All
-                                .Where(s => s.IsVillage && s.Village != null)
-                                .OrderBy(s => _rng.Next()).FirstOrDefault();
+                            var target = PickRandom(Settlement.All.Where(s => s.IsVillage && s.Village != null));
                             if (target?.Village != null)
                             {
                                 target.Village.Hearth = Math.Max(10f, target.Village.Hearth * 0.8f);
@@ -3088,11 +3093,9 @@ namespace ColoursOfCalradia
                     case ColorSchool.Orange:
                         if (_rng.Next(2) == 0)
                         {
-                            // Celebrate — own town/village prosperity
                             spellName = "Celebrate";
-                            var ownVillage = Settlement.All
-                                .Where(s => s.IsVillage && s.MapFaction == lord.MapFaction && s.Village != null)
-                                .OrderBy(s => _rng.Next()).FirstOrDefault();
+                            var ownVillage = PickRandom(Settlement.All
+                                .Where(s => s.IsVillage && s.MapFaction == lord.MapFaction && s.Village != null));
                             if (ownVillage?.Village != null)
                             {
                                 ownVillage.Village.Hearth = Math.Min(2000f, ownVillage.Village.Hearth * 1.05f);
@@ -3101,23 +3104,22 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            // Bribe — random lord loses 1-2 troops, they join orange lord
                             spellName = "Bribe";
-                            Hero rival = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.PartyBelongedTo != null && h.IsAlive)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            var rival = PickRandom(Hero.AllAliveHeroes.Where(
+                                h => h.IsLord && h.MapFaction != lord.MapFaction
+                                     && h.PartyBelongedTo != null && h.IsAlive));
                             if (rival?.PartyBelongedTo != null && lord.PartyBelongedTo != null)
                             {
-                                int take = 1 + _rng.Next(2);
-                                var troop = rival.PartyBelongedTo.MemberRoster.GetTroopRoster()
-                                    .Where(e => !e.Character.IsHero && e.Number > 0)
-                                    .OrderBy(e => _rng.Next()).FirstOrDefault();
-                                if (troop.Character != null)
+                                int take  = 1 + _rng.Next(2);
+                                var troops = rival.PartyBelongedTo.MemberRoster.GetTroopRoster()
+                                    .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
+                                if (troops.Count > 0)
                                 {
+                                    var troop  = troops[_rng.Next(troops.Count)];
                                     int actual = Math.Min(take, troop.Number);
                                     rival.PartyBelongedTo.MemberRoster.RemoveTroop(troop.Character, actual);
                                     lord.PartyBelongedTo.MemberRoster.AddToCounts(troop.Character, actual);
-                                    msg = $"{actual} soldier{(actual>1?"s":"")} desert {rival.Name} for {lord.Name}'s generosity.";
+                                    msg = $"{actual} soldier{(actual > 1 ? "s" : "")} desert {rival.Name} for {lord.Name}'s generosity.";
                                 }
                             }
                         }
@@ -3126,11 +3128,9 @@ namespace ColoursOfCalradia
                     case ColorSchool.Yellow:
                         if (_rng.Next(2) == 0)
                         {
-                            // Fade — random enemy lord loses renown
                             spellName = "Fade";
-                            Hero target = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            var target = PickRandom(Hero.AllAliveHeroes.Where(
+                                h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive));
                             if (target?.Clan != null)
                             {
                                 try { target.Clan.AddRenown(-10f); } catch { }
@@ -3139,11 +3139,10 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            // Melancholy — random lord's army loses morale
                             spellName = "Melancholy";
-                            Hero target = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.PartyBelongedTo != null && h.IsAlive)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            var target = PickRandom(Hero.AllAliveHeroes.Where(
+                                h => h.IsLord && h.MapFaction != lord.MapFaction
+                                     && h.PartyBelongedTo != null && h.IsAlive));
                             if (target?.PartyBelongedTo != null)
                             {
                                 target.PartyBelongedTo.RecentEventsMorale -= 15f;
@@ -3155,7 +3154,6 @@ namespace ColoursOfCalradia
                     case ColorSchool.Green:
                         if (_rng.Next(2) == 0)
                         {
-                            // Rejuvenate — heal own party
                             spellName = "Rejuvenate";
                             if (lord.PartyBelongedTo != null)
                             {
@@ -3170,7 +3168,6 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            // Crops — add grain
                             spellName = "Crops";
                             if (lord.PartyBelongedTo != null)
                             {
@@ -3184,26 +3181,21 @@ namespace ColoursOfCalradia
                     case ColorSchool.Blue:
                         if (_rng.Next(2) == 0)
                         {
-                            // Schemes — own clan influence
                             spellName = "Schemes";
                             if (lord.Clan != null)
                             {
-                                try { ChangeClanInfluenceAction.Apply(lord.Clan, 8f); }
-                                catch { }
+                                try { ChangeClanInfluenceAction.Apply(lord.Clan, 8f); } catch { }
                                 msg = $"{lord.Name}'s schemes bear fruit — their clan's influence grows.";
                             }
                         }
                         else
                         {
-                            // Plots — reduce enemy clan influence
                             spellName = "Plots";
-                            Hero target = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            var target = PickRandom(Hero.AllAliveHeroes.Where(
+                                h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive));
                             if (target?.Clan != null)
                             {
-                                try { ChangeClanInfluenceAction.Apply(target.Clan, -8f); }
-                                catch { }
+                                try { ChangeClanInfluenceAction.Apply(target.Clan, -8f); } catch { }
                                 msg = $"{lord.Name}'s cold plots undermine {target.Name}'s standing.";
                             }
                         }
@@ -3212,11 +3204,10 @@ namespace ColoursOfCalradia
                     case ColorSchool.Purple:
                         if (_rng.Next(2) == 0)
                         {
-                            // Curse — reduce influence and morale of random other lord
                             spellName = "Curse";
-                            Hero target = Hero.AllAliveHeroes
-                                .Where(h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive && h.PartyBelongedTo != null)
-                                .OrderBy(h => _rng.Next()).FirstOrDefault();
+                            var target = PickRandom(Hero.AllAliveHeroes.Where(
+                                h => h.IsLord && h.MapFaction != lord.MapFaction
+                                     && h.Clan != null && h.IsAlive && h.PartyBelongedTo != null));
                             if (target != null)
                             {
                                 try { ChangeClanInfluenceAction.Apply(target.Clan, -5f); } catch { }
@@ -3226,7 +3217,6 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            // Bind — gain 10 free recruits
                             spellName = "Bind";
                             if (lord.PartyBelongedTo != null)
                             {
@@ -3854,6 +3844,13 @@ namespace ColoursOfCalradia
                     if (_mapCooldowns[key] <= 0) _mapCooldowns.Remove(key);
                 }
 
+                // Snapshot MobileParty.All once — repeated enumeration is the main perf cost.
+                var allParties  = MobileParty.All.ToList();
+                var allPartyIds = new HashSet<string>(allParties.Select(p => p.StringId));
+                // O(1) lookup: which party IDs already have a living colour unit
+                var occupiedIds = new HashSet<string>(
+                    _units.Values.Where(u => u.IsAlive).Select(u => u.PartyStringId));
+
                 // Process respawn queue
                 foreach (RespawnEntry entry in _respawnQueue.ToList())
                 {
@@ -3862,65 +3859,66 @@ namespace ColoursOfCalradia
 
                     _respawnQueue.Remove(entry);
 
-                    // Determine original party type to route respawn correctly
-                    MobileParty origin = MobileParty.All.FirstOrDefault(p => p.StringId == entry.PartyStringId);
+                    MobileParty origin = allParties.FirstOrDefault(p => p.StringId == entry.PartyStringId);
                     bool wasLord = origin?.IsLordParty ?? false;
 
                     MobileParty target;
                     if (wasLord)
                     {
-                        // Re-emerge in any large lord party without a unit
-                        target = MobileParty.All
+                        var candidates = allParties
                             .Where(p => p.IsLordParty && p.MemberRoster.TotalManCount >= 200
-                                        && !_units.Values.Any(u => u.IsAlive && u.PartyStringId == p.StringId))
-                            .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                                        && !occupiedIds.Contains(p.StringId)).ToList();
+                        target = candidates.Count > 0 ? candidates[_rng.Next(candidates.Count)] : null;
                     }
                     else
                     {
-                        // Bandit freelancer — try original party first, then any qualifying bandit party
-                        target = MobileParty.All.FirstOrDefault(p =>
-                            p.StringId == entry.PartyStringId && p.IsBandit && p.MemberRoster.TotalManCount >= 40);
+                        target = allParties.FirstOrDefault(p =>
+                            p.StringId == entry.PartyStringId && p.IsBandit
+                            && p.MemberRoster.TotalManCount >= 40);
                         if (target == null)
-                            target = MobileParty.All
+                        {
+                            var candidates = allParties
                                 .Where(p => p.IsBandit && p.MemberRoster.TotalManCount >= 40
-                                            && !_units.Values.Any(u => u.IsAlive && u.PartyStringId == p.StringId))
-                                .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                                            && !occupiedIds.Contains(p.StringId)).ToList();
+                            target = candidates.Count > 0 ? candidates[_rng.Next(candidates.Count)] : null;
+                        }
                     }
 
                     if (target == null)
                     {
-                        // No qualifying party yet — re-queue for 5 more days
                         entry.DaysLeft = 5;
                         _respawnQueue.Add(entry);
                         continue;
                     }
 
                     CreateUnit(target, entry.Schools.Count);
+                    occupiedIds.Add(target.StringId);
                 }
 
-                // Remove units whose party disbanded
+                // Remove units whose party disbanded — O(1) per unit using the HashSet
                 foreach (var entry in _units.Values.ToList())
                 {
                     if (!entry.IsAlive) continue;
-                    if (!MobileParty.All.Any(p => p.StringId == entry.PartyStringId))
+                    if (!allPartyIds.Contains(entry.PartyStringId))
                         entry.IsAlive = false;
                 }
 
-                // Seed newly-qualifying parties that don't yet have a colour unit
-                foreach (MobileParty party in MobileParty.All.ToList())
+                // Seed newly-qualifying parties
+                foreach (MobileParty party in allParties)
                 {
-                    bool has = _units.Values.Any(u => u.IsAlive && u.PartyStringId == party.StringId);
-                    if (has) continue;
+                    if (occupiedIds.Contains(party.StringId)) continue;
 
                     if (party.IsLordParty && party.MemberRoster.TotalManCount >= 200
                         && _rng.Next(100) < 5)
                     {
                         CreateUnit(party, 1);
+                        occupiedIds.Add(party.StringId);
                     }
                     else if (party.IsBandit && party.MemberRoster.TotalManCount >= 40
                         && _rng.Next(100) < 1)
                     {
                         CreateUnit(party, 1);
+                        occupiedIds.Add(party.StringId);
                     }
                 }
             }
