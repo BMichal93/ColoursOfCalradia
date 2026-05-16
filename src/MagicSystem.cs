@@ -76,6 +76,7 @@ namespace ColoursOfCalradia
             SpellEffects.TickAreaEffects(dt);
             SpellEffects.TickHollowGaze(dt);
             SpellEffects.TickHUDConfusion(dt);
+            SpellEffects.TickBlueWeight(dt);
             SpellEffects.TickRandomUnitMagic(dt);
         }
 
@@ -222,7 +223,7 @@ namespace ColoursOfCalradia
                                    "But knowledge is heavy — each casting strains the body, adding invisible weight to armour and limb.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
                 LimitationA      = "Scholar's Weight: Each Blue spell makes your equipment feel heavier — movement slows with every cast and does not recover until the battle ends. Six stacks will slow you to a crawl.",
-                LimitationB      = "Heavy Knowledge: Cerulean Mirror shields you from spells and magic effects for 60 seconds — but steel still finds you.",
+                LimitationB      = "Heavy Knowledge: Cerulean Mirror shields you from spells and magic effects for 40 seconds — but steel still finds you.",
                 AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
@@ -1500,7 +1501,7 @@ namespace ColoursOfCalradia
                     {
                         int dreadHit = 0;
                         foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount && a != Player &&
+                            .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
                             if (ProtectedByMirror(a)) continue;
@@ -1540,15 +1541,12 @@ namespace ColoursOfCalradia
                         }
                         break;
 
-                    case "create_blue": // Sapphire Bastion — push agents that enter the radius
+                    case "create_blue": // Sapphire Bastion — push all agents inside the radius every tick
                     {
-                        var currentInside = new HashSet<int>();
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
-                            currentInside.Add(a.Index);
-                            if (_bastionPrevInside.Contains(a.Index)) continue; // already inside, skip
                             try
                             {
                                 Vec3 dir = (a.Position - e.Position);
@@ -1561,8 +1559,6 @@ namespace ColoursOfCalradia
                             }
                             catch { }
                         }
-                        _bastionPrevInside.Clear();
-                        foreach (int idx in currentInside) _bastionPrevInside.Add(idx);
                         break;
                     }
 
@@ -1666,11 +1662,22 @@ namespace ColoursOfCalradia
         {
             if (Player == null || !Player.IsActive()) return;
             _blueWeightStacks = Math.Min(_blueWeightStacks + 1, BlueMaxStacks);
-            float cap = Math.Max(1.5f, BlueBaseSpeed - _blueWeightStacks * BlueSpeedPenalty);
-            try { Player.SetMaximumSpeedLimit(cap, true); } catch { }
+            EnforceBlueWeightCap();
             InformationManager.DisplayMessage(new InformationMessage(
                 $"Scholar's Weight: The knowledge settles in your limbs. [{_blueWeightStacks}/{BlueMaxStacks}]",
                 ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+        }
+
+        private static void EnforceBlueWeightCap()
+        {
+            if (Player == null || !Player.IsActive() || _blueWeightStacks <= 0) return;
+            float cap = Math.Max(1.5f, BlueBaseSpeed - _blueWeightStacks * BlueSpeedPenalty);
+            try { Player.SetMaximumSpeedLimit(cap, false); } catch { }
+        }
+
+        public static void TickBlueWeight(float dt)
+        {
+            if (_blueWeightStacks > 0) EnforceBlueWeightCap();
         }
 
         public static void ClearSelfEffects()
@@ -1684,7 +1691,7 @@ namespace ColoursOfCalradia
             {
                 _blueWeightStacks = 0;
                 if (Player?.IsActive() == true)
-                    try { Player.SetMaximumSpeedLimit(0f, false); } catch { }
+                    try { Player.SetMaximumSpeedLimit(float.MaxValue, false); } catch { }
             }
         }
 
