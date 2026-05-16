@@ -1010,6 +1010,9 @@ namespace ColoursOfCalradia
         private static string _lastDisplayedBuffer = "";
         private const  int    MaxLen               = 10;
 
+        // Previous-frame state for R-stick directions (IsKeyPressed unreliable for analog axes)
+        private static bool _prevRUp, _prevRDown, _prevRLeft, _prevRRight;
+
         public static bool InputSuppressed { get; private set; }
 
         public static void Tick(bool inMission)
@@ -1038,16 +1041,21 @@ namespace ColoursOfCalradia
                     if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
                     else Append("D");
                 }
-                // Gamepad: R3 stick directions map to U/D/L/R; R3 Down or L3 opens grimoire
-                else if (Input.IsKeyPressed(InputKey.ControllerRUp))    Append("U");
-                else if (Input.IsKeyPressed(InputKey.ControllerRDown))
-                {
-                    if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
-                    else Append("D");
-                }
-                else if (Input.IsKeyPressed(InputKey.ControllerRLeft))  Append("L");
-                else if (Input.IsKeyPressed(InputKey.ControllerRRight)) Append("R");
-                else if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
+                // Gamepad: R-stick directions via manual edge detection (IsKeyDown + prev-state)
+                // R3-Down or L3 opens grimoire when buffer is empty.
+                bool rUp    = Input.IsKeyDown(InputKey.ControllerRUp);
+                bool rDown  = Input.IsKeyDown(InputKey.ControllerRDown);
+                bool rLeft  = Input.IsKeyDown(InputKey.ControllerRLeft);
+                bool rRight = Input.IsKeyDown(InputKey.ControllerRRight);
+
+                if (rUp    && !_prevRUp)   Append("U");
+                if (rDown  && !_prevRDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(); else Append("D"); }
+                if (rLeft  && !_prevRLeft) Append("L");
+                if (rRight && !_prevRRight) Append("R");
+
+                _prevRUp = rUp; _prevRDown = rDown; _prevRLeft = rLeft; _prevRRight = rRight;
+
+                if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
 
                 if (_buffer.Length > 0 && _buffer != _lastDisplayedBuffer)
                 {
@@ -1059,6 +1067,7 @@ namespace ColoursOfCalradia
             else if (_wasFocusing)
             {
                 _wasFocusing = false;
+                _prevRUp = _prevRDown = _prevRLeft = _prevRRight = false;
 
                 if (!inMission && Campaign.Current != null)
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
@@ -2279,31 +2288,50 @@ namespace ColoursOfCalradia
             Msg("The Emerald Font opens — all who stand within 12m are slowly mended, friend and foe alike. Cast again to dismiss.", ColorSchool.Green);
         }
 
-        // Sapphire Bastion — repulsion field that pushes all agents away (approximation of solid wall)
+        // Sapphire Bastion — three repulsion nodes in a line perpendicular to the caster's look direction,
+        // forming a wall of force across the battlefield.
         private static void SpellCreateBlue()
         {
             if (Player == null) return;
             if (HasAreaEffect("create_blue"))
             {
-                ToggleAreaEffect("create_blue", null);
+                RemoveAreaEffect("create_blue");
+                _bastionPrevInside.Clear();
                 Msg("The Sapphire Bastion crumbles.", ColorSchool.Blue);
                 return;
             }
-            const float Duration = 180f; // 3 minutes
-            const float BastionRadius = 5f;
-            ToggleAreaEffect("create_blue", new AreaEffect
+
+            const float Duration     = 120f;
+            const float NodeRadius   = 3f;
+            const float NodeSpacing  = 4.5f; // distance between adjacent node centres
+
+            // Wall runs perpendicular to the player's look direction
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * NodeSpacing,
+                centre,
+                centre + right * NodeSpacing
+            };
+
+            foreach (Vec3 pos in nodePos)
             {
-                Id = "create_blue", School = ColorSchool.Blue,
-                Position = Player.Position, Radius = BastionRadius,
-                TickInterval = 0.5f, TickTimer = 0.5f, Remaining = Duration
-            });
-            // Snapshot agents already inside so they are not repelled on first tick
-            _bastionPrevInside.Clear();
-            foreach (Agent a in Mission.Current.Agents)
-                if (a.IsActive() && !a.IsMount && a.Position.Distance(Player.Position) <= BastionRadius)
-                    _bastionPrevInside.Add(a.Index);
+                var node = new AreaEffect
+                {
+                    Id = "create_blue", School = ColorSchool.Blue,
+                    Position = pos, Radius = NodeRadius,
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = Duration
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
+
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
-            Msg("Sapphire Bastion rises — a wall of force repels all who approach. Fades in 3 minutes.", ColorSchool.Blue);
+            Msg("Sapphire Bastion rises — three pillars of force seal the line. None shall cross. Fades in 2 minutes.", ColorSchool.Blue);
         }
 
         // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect
@@ -2635,11 +2663,60 @@ namespace ColoursOfCalradia
             catch { }
         }
 
+        private static readonly string[] _archmageFlavour =
+        {
+            "Four colours burn in {0} of {1}. Do not face them lightly.",
+            "They say {0} of {1} bleeds in four colours. The field bends around them.",
+            "{0} of {1} carries four schools. Soldiers speak of them in hushed tones.",
+            "Four marks — four colours scar {0} of {1}. The most dangerous kind.",
+            "{0} of {1} wears four colours like armour. None who faced them alone lived to boast.",
+        };
+        private static readonly string[] _multiFlavour =
+        {
+            "{0} of {1} carries {2}.",
+            "The colours {2} have taken root in {0} of {1}.",
+            "{0} of {1} is touched by {2} — a rare combination.",
+            "Scouts report {0} of {1} wielding {2}.",
+            "Two schools stir in {0} of {1}: {2}.",
+        };
+        private static readonly string[] _singleFlavour =
+        {
+            "{0} of {1} walks with the {2}.",
+            "The {2} has chosen {0} of {1}.",
+            "{0} of {1} — marked by {2}.",
+            "A single colour, but sharp: {0} of {1} carries {2}.",
+            "The {2} stirs in {0} of {1}.",
+        };
+
+        private static string FormatAnnouncement(Hero lord, IReadOnlyList<ColorSchool> colors)
+        {
+            string name    = lord.Name.ToString();
+            string faction = lord.MapFaction?.Name?.ToString() ?? "the world";
+            string colourList = string.Join(", ", colors.Select(c => ColorSchoolData.Info[c].Name));
+
+            if (colors.Count >= 4)
+            {
+                string tmpl = _archmageFlavour[_rng.Next(_archmageFlavour.Length)];
+                return string.Format(tmpl, name, faction);
+            }
+            else if (colors.Count >= 2)
+            {
+                string tmpl = _multiFlavour[_rng.Next(_multiFlavour.Length)];
+                return string.Format(tmpl, name, faction, colourList);
+            }
+            else
+            {
+                string colour = ColorSchoolData.Info[colors[0]].Name;
+                string tmpl   = _singleFlavour[_rng.Next(_singleFlavour.Length)];
+                return string.Format(tmpl, name, faction, colour);
+            }
+        }
+
         public static void FlushAnnouncements()
         {
             if (_pendingAnnouncements.Count == 0) return;
             InformationManager.DisplayMessage(new InformationMessage(
-                $"── Colour mages walk the world ({_pendingAnnouncements.Count}) ──",
+                $"The colours have awoken. {_pendingAnnouncements.Count} mages walk among the lords of Calradia.",
                 new Color(0.85f, 0.65f, 1.0f)));
             foreach (var (msg, col) in _pendingAnnouncements)
                 InformationManager.DisplayMessage(new InformationMessage(msg, col));
@@ -2664,10 +2741,8 @@ namespace ColoursOfCalradia
             Hero archmage = lords[0];
             _lordColors[archmage.StringId] = PickColors(4);
             try { ApplyColourTraits(archmage, _lordColors[archmage.StringId]); } catch { }
-            var archmageColors = string.Join(", ", _lordColors[archmage.StringId]
-                .Select(c => ColorSchoolData.Info[c].Name));
             _pendingAnnouncements.Add((
-                $"[Archmage] {archmage.Name} of {faction.Name} — {archmageColors}.",
+                FormatAnnouncement(archmage, _lordColors[archmage.StringId]),
                 new Color(0.9f, 0.7f, 0.9f)));
 
             for (int i = 1; i < lords.Count; i++)
@@ -2681,10 +2756,8 @@ namespace ColoursOfCalradia
 
                 _lordColors[lords[i].StringId] = PickColors(colorCount);
                 try { ApplyColourTraits(lords[i], _lordColors[lords[i].StringId]); } catch { }
-                var lordColors = string.Join(", ", _lordColors[lords[i].StringId]
-                    .Select(c => ColorSchoolData.Info[c].Name));
                 _pendingAnnouncements.Add((
-                    $"{lords[i].Name} of {faction.Name} — {lordColors}.",
+                    FormatAnnouncement(lords[i], _lordColors[lords[i].StringId]),
                     new Color(0.7f, 0.4f, 0.8f)));
             }
         }
@@ -2827,7 +2900,7 @@ namespace ColoursOfCalradia
                 _lordColors[chosen.StringId] = PickColors(1 + _rng.Next(2));
                 ApplyColourTraits(chosen, _lordColors[chosen.StringId]);
                 InformationManager.DisplayMessage(new InformationMessage(
-                    $"Colour magic stirs anew in {chosen.Name} of {kingdom.Name}.",
+                    FormatAnnouncement(chosen, _lordColors[chosen.StringId]),
                     new Color(0.7f, 0.5f, 0.8f)));
             }
         }
