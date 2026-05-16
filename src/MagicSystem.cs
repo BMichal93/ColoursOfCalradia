@@ -1277,6 +1277,24 @@ namespace ColoursOfCalradia
             catch { return true; }
         }
 
+        // Returns true only during actual combat missions (battles, sieges).
+        // Town/village visits have no active enemy agents, so this reliably excludes them.
+        public static bool IsBattleMission()
+        {
+            try
+            {
+                if (Mission.Current == null || Mission.Current.PlayerTeam == null) return false;
+                Team playerTeam = Mission.Current.PlayerTeam;
+                foreach (Agent a in Mission.Current.Agents)
+                {
+                    if (!a.IsActive() || a.IsMount || a.Team == null) continue;
+                    if (a.Team != playerTeam && playerTeam.IsEnemyOf(a.Team)) return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
         // ── Smooth movement system ────────────────────────────────────────────
         // Moves agents gradually toward a target over a set duration (lerp).
         // Used by push/pull spells for fluid visual movement.
@@ -1375,9 +1393,9 @@ namespace ColoursOfCalradia
                 if (scene == null) return null;
                 var entity = GameEntity.CreateEmpty(scene, true, false, false);
                 var frame  = new MatrixFrame(Mat3.Identity, position + new Vec3(0f, 0f, 0.5f));
-                entity.SetGlobalFrame(ref frame, false);
-                var light = Light.CreatePointLight(radius * 2f);
-                light.Radius        = radius * 2f;
+                entity.SetGlobalFrame(ref frame, true);
+                var light = Light.CreatePointLight(radius);
+                light.Radius        = radius;
                 light.Intensity     = 10000f;
                 light.LightColor    = SchoolToLightColor(school);
                 light.ShadowEnabled = false;
@@ -1455,7 +1473,7 @@ namespace ColoursOfCalradia
                     try
                     {
                         var lf = new MatrixFrame(Mat3.Identity, e.Position + new Vec3(0f, 0f, 0.5f));
-                        e.LightEntity.SetGlobalFrame(ref lf, false);
+                        e.LightEntity.SetGlobalFrame(ref lf, true);
                     }
                     catch { }
                 }
@@ -1788,6 +1806,8 @@ namespace ColoursOfCalradia
             _randomMagicTimer += dt;
             if (_randomMagicTimer < RandomMagicInterval) return;
             _randomMagicTimer = 0f;
+
+            if (!IsBattleMission()) return;
 
             // 0.7% chance per minute
             if (_rng.Next(1000) >= 7) return;
@@ -3327,6 +3347,8 @@ namespace ColoursOfCalradia
             if (_tickAccum < TickInterval) return;
             _tickAccum = 0f;
 
+            if (!SpellEffects.IsBattleMission()) return;
+
             foreach (string key in _cooldowns.Keys.ToList())
             {
                 _cooldowns[key] -= TickInterval;
@@ -3989,6 +4011,12 @@ namespace ColoursOfCalradia
         {
             if (Mission.Current == null) return;
 
+            _aiAccum += dt;
+            if (_aiAccum < AiTickInterval) return;
+            _aiAccum = 0f;
+
+            if (!SpellEffects.IsBattleMission()) return;
+
             if (!_missionInitialized)
             {
                 InitializeMissionAgents();
@@ -3996,10 +4024,6 @@ namespace ColoursOfCalradia
             }
 
             if (_missionAgents.Count == 0) return;
-
-            _aiAccum += dt;
-            if (_aiAccum < AiTickInterval) return;
-            _aiAccum = 0f;
 
             foreach (string key in _cooldowns.Keys.ToList())
             {
