@@ -300,14 +300,14 @@ namespace ColoursOfCalradia
     }
 
     // =========================================================================
-    // 3. SPELL DATABASE  (18 battle spells, 6-char combos)
+    // 3. SPELL DATABASE  (18 battle spells, 4-char combos)
     // =========================================================================
     public enum SpellContext { Mission, Map }
 
     public class SpellEntry
     {
         public string      Name;
-        public string      Combo;      // exactly 6 chars: U / L / R
+        public string      Combo;      // exactly 4 chars: U / L / R
         public ColorSchool School;
         public SpellContext Context;
         public string      Flavour;
@@ -315,69 +315,69 @@ namespace ColoursOfCalradia
 
     public static class SpellDatabase
     {
-        // Combos follow a strict structure: first 2 chars = Form, last 4 chars = Colour.
-        // Forms: UU = Blast (cone), DD = Self (aura), LR = Create (area effect)
-        // Colours: UURR = Red, LLRR = Orange, LRLU = Yellow, RRLL = Green, LLUU = Blue, RRLU = Purple
+        // Combos follow a strict structure: first 2 chars = Form, last 2 chars = Colour.
+        // Forms: UU = Blast (cone), RL = Self (aura), LR = Create (area effect)
+        // Colours: RR = Red, RU = Orange, LU = Yellow, LL = Green, UL = Blue, UR = Purple
         public static readonly IReadOnlyList<SpellEntry> All = new List<SpellEntry>
         {
             // ── BLAST (UU prefix) — medium cone in front of the caster ──────────
-            new SpellEntry { Name="Crimson Torrent",  Combo="UUUURR", School=ColorSchool.Red,
+            new SpellEntry { Name="Crimson Torrent",  Combo="UURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
                 Flavour="The rage of a thousand battles channelled into a single, devastating wave." },
-            new SpellEntry { Name="Golden Tide",      Combo="UULLRR", School=ColorSchool.Orange,
+            new SpellEntry { Name="Golden Tide",      Combo="UURU", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
                 Flavour="Wash over your foes with jubilant force; even enemies cannot resist the urge to advance." },
-            new SpellEntry { Name="Tide of Dread",    Combo="UULRLU", School=ColorSchool.Yellow,
+            new SpellEntry { Name="Tide of Dread",    Combo="UULU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="A wave of creeping, nameless wrongness — it strips the nerve from all it touches and leaves behind only the urge to run." },
-            new SpellEntry { Name="Verdant Surge",    Combo="UURRLL", School=ColorSchool.Green,
+            new SpellEntry { Name="Verdant Surge",    Combo="UULL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
                 Flavour="A tide of living energy that flows toward your own — allies in the cone are mended, enemies and the caster untouched." },
-            new SpellEntry { Name="Azure Arrest",     Combo="UULLUU", School=ColorSchool.Blue,
+            new SpellEntry { Name="Azure Arrest",     Combo="UUUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
                 Flavour="A freezing wave of scholarly force. All before you halt; riders are unseated." },
-            new SpellEntry { Name="Grey Harvest",     Combo="UURRLU", School=ColorSchool.Purple,
+            new SpellEntry { Name="Grey Harvest",     Combo="UUUR", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="The grey settles over one soul in the cone. They simply stop. The body follows the spirit out like a slow tide." },
 
             // ── SELF (RL prefix) — creates a glowing aura around the caster ─────
             // Note: DD prefix cannot be used — S with empty buffer opens the spellbook.
-            new SpellEntry { Name="Scarlet Ward",     Combo="RLUURR", School=ColorSchool.Red,
+            new SpellEntry { Name="Scarlet Ward",     Combo="RLRR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
                 Flavour="The next blow lands on iron. One strike. The ward then shatters." },
-            new SpellEntry { Name="Warm Beacon",      Combo="RLLLRR", School=ColorSchool.Orange,
+            new SpellEntry { Name="Warm Beacon",      Combo="RLRU", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
                 Flavour="A golden light calls your companions from across the field to your side." },
-            new SpellEntry { Name="Nausea Bloom",     Combo="RLLRLU", School=ColorSchool.Yellow,
+            new SpellEntry { Name="Nausea Bloom",     Combo="RLLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="Something deeply wrong radiates from you. All who linger nearby feel it in their stomach before they know it in their mind." },
-            new SpellEntry { Name="Verdant Touch",    Combo="RLRRLL", School=ColorSchool.Green,
+            new SpellEntry { Name="Verdant Touch",    Combo="RLLL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
                 Flavour="You lay hands upon yourself. The wounds knit closed." },
-            new SpellEntry { Name="Cerulean Mirror",  Combo="RLLLUU", School=ColorSchool.Blue,
+            new SpellEntry { Name="Cerulean Mirror",  Combo="RLUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
                 Flavour="Spells pass through you for 40 seconds. Steel does not." },
-            new SpellEntry { Name="Grief's Veil",     Combo="RLRRLU", School=ColorSchool.Purple,
+            new SpellEntry { Name="Grief's Veil",     Combo="RLUR", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="The grey folds you from sight for 12 seconds. Nearby enemies lose track of you and pause. You cannot be touched while the veil holds." },
 
             // ── CREATE (LR prefix) — special area effect, specific to each colour ─
-            new SpellEntry { Name="Cinder Burst",     Combo="LRUURR", School=ColorSchool.Red,
+            new SpellEntry { Name="Cinder Burst",     Combo="LRRR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
                 Flavour="The world around you ignites. All nearby pay the price of your fury." },
-            new SpellEntry { Name="Golden Snare",     Combo="LRLLRR", School=ColorSchool.Orange,
+            new SpellEntry { Name="Golden Snare",     Combo="LRRU", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
                 Flavour="A bright patch of golden earth waits for the first soul to step into it — then gives their formation a random, chaotic order and vanishes. Cast again to dismiss." },
-            new SpellEntry { Name="Creeping Dread",   Combo="LRLRLU", School=ColorSchool.Yellow,
+            new SpellEntry { Name="Creeping Dread",   Combo="LRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="A cloud of formless revulsion drifts across the field. Those it passes through feel their skin crawl and their courage hollow out. Cast again to dismiss." },
-            new SpellEntry { Name="Emerald Font",     Combo="LRRRLL", School=ColorSchool.Green,
+            new SpellEntry { Name="Emerald Font",     Combo="LRLL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
                 Flavour="A blessed circle of earth. All who stand within are slowly mended — friend and foe alike. Cast again to dismiss." },
-            new SpellEntry { Name="Sapphire Bastion", Combo="LRLLUU", School=ColorSchool.Blue,
+            new SpellEntry { Name="Sapphire Bastion", Combo="LRUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
                 Flavour="A wall of solid blue force rises from the earth, repelling all who approach. Fades after three minutes." },
-            new SpellEntry { Name="Hollow Gaze",      Combo="LRRRLU", School=ColorSchool.Purple,
+            new SpellEntry { Name="Hollow Gaze",      Combo="LRUR", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="One nearby enemy empties out. They stand. They do not move. They wait for nothing. Cast again to release them." },
         };
@@ -764,7 +764,7 @@ namespace ColoursOfCalradia
         private void ShowStartingSpells(List<ColorSchool> schools)
         {
             InformationManager.DisplayMessage(new InformationMessage(
-                "Your colours are chosen. Hold Left Alt and type a 6-key combo (WASD) then release to cast. S opens spellbook.",
+                "Your colours are chosen. Hold Left Alt and type a 4-key combo (WASD) then release to cast. S opens spellbook.",
                 new Color(0.8f, 0.8f, 0.8f)));
 
             foreach (ColorSchool school in schools)
@@ -999,7 +999,7 @@ namespace ColoursOfCalradia
     }
 
     // =========================================================================
-    // 7. INPUT HANDLER  — 6-key combo system (focus = Left Alt / LT)
+    // 7. INPUT HANDLER  — 4-key combo system (focus = Left Alt / LT)
     // =========================================================================
     public static class MagicInputHandler
     {
@@ -1059,10 +1059,10 @@ namespace ColoursOfCalradia
 
                 _lastDisplayedBuffer = "";
 
-                if (_buffer.Length >= 6)
+                if (_buffer.Length >= 4)
                     TryCast(_buffer, inMission);
                 else if (_buffer.Length > 0)
-                    Fizzle("Incantation too short — colour magic requires six keys.");
+                    Fizzle("Incantation too short — colour magic requires four keys.");
 
                 _buffer = "";
             }
@@ -1843,33 +1843,32 @@ namespace ColoursOfCalradia
 
         // ── Execute switch ───────────────────────────────────────────────────
         // Combos: first 2 chars = form (UU=Blast, RL=Self, LR=Create),
-        //         last 4 chars = colour (UURR=Red, LLRR=Orange, LRLU=Yellow,
-        //                                RRLL=Green, LLUU=Blue, RRLU=Purple)
+        //         last 2 chars = colour (RR=Red, RU=Orange, LU=Yellow, LL=Green, UL=Blue, UR=Purple)
         public static bool Execute(string combo)
         {
             switch (combo)
             {
                 // BLAST (UU)
-                case "UUUURR": SpellBlastRed();    break;
-                case "UULLRR": SpellBlastOrange(); break;
-                case "UULRLU": SpellBlastYellow(); break;
-                case "UURRLL": SpellBlastGreen();  break;
-                case "UULLUU": SpellBlastBlue();   break;
-                case "UURRLU": SpellBlastPurple(); break;
+                case "UURR": SpellBlastRed();    break;
+                case "UURU": SpellBlastOrange(); break;
+                case "UULU": SpellBlastYellow(); break;
+                case "UULL": SpellBlastGreen();  break;
+                case "UUUL": SpellBlastBlue();   break;
+                case "UUUR": SpellBlastPurple(); break;
                 // SELF (RL)
-                case "RLUURR": SpellSelfRed();     break;
-                case "RLLLRR": SpellSelfOrange();  break;
-                case "RLLRLU": SpellSelfYellow();  break;
-                case "RLRRLL": SpellSelfGreen();   break;
-                case "RLLLUU": SpellSelfBlue();    break;
-                case "RLRRLU": SpellSelfPurple();  break;
+                case "RLRR": SpellSelfRed();     break;
+                case "RLRU": SpellSelfOrange();  break;
+                case "RLLU": SpellSelfYellow();  break;
+                case "RLLL": SpellSelfGreen();   break;
+                case "RLUL": SpellSelfBlue();    break;
+                case "RLUR": SpellSelfPurple();  break;
                 // CREATE (LR)
-                case "LRUURR": SpellCreateRed();    break;
-                case "LRLLRR": SpellCreateOrange(); break;
-                case "LRLRLU": SpellCreateYellow(); break;
-                case "LRRRLL": SpellCreateGreen();  break;
-                case "LRLLUU": SpellCreateBlue();   break;
-                case "LRRRLU": SpellCreatePurple(); break;
+                case "LRRR": SpellCreateRed();    break;
+                case "LRRU": SpellCreateOrange(); break;
+                case "LRLU": SpellCreateYellow(); break;
+                case "LRLL": SpellCreateGreen();  break;
+                case "LRUL": SpellCreateBlue();   break;
+                case "LRUR": SpellCreatePurple(); break;
                 default: return false;
             }
             return true;
@@ -1886,14 +1885,14 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Red); return; }
             int affected = 0;
             foreach (Agent a in inCone)
             {
                 try
                 {
-                    DamageAgent(a, 35f);
+                    DamageAgent(a, 40f);
                     if (a.IsActive() && a.Health > 0f)
                     {
                         Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
@@ -1913,14 +1912,14 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Orange); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
             {
                 try
                 {
-                    DamageAgent(a, 8f);
+                    DamageAgent(a, 12f);
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
@@ -1937,13 +1936,13 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Yellow); return; }
             foreach (Agent a in inCone)
             {
                 try
                 {
-                    DamageAgent(a, 10f);
+                    DamageAgent(a, 14f);
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 55f)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                 }
@@ -1957,7 +1956,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             int healed = 0;
             foreach (Agent a in inCone)
             {
@@ -1965,7 +1964,7 @@ namespace ColoursOfCalradia
                 if (a.Team != Player.Team) continue; // enemies excluded
                 try
                 {
-                    float h = Math.Min(12f, a.HealthLimit - a.Health);
+                    float h = Math.Min(15f, a.HealthLimit - a.Health);
                     if (h > 0f) { a.Health += h; healed++; }
                     BeginAgentGlow(a, ColorSchool.Green, 1.5f);
                 }
@@ -1980,14 +1979,14 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Blue); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
             {
                 try
                 {
-                    DamageAgent(a, 8f);
+                    DamageAgent(a, 12f);
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
@@ -2007,7 +2006,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("Nothing in the cone.", ColorSchool.Purple); return; }
             Agent target = inCone[_rng.Next(inCone.Count)];
             BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
@@ -2586,6 +2585,19 @@ namespace ColoursOfCalradia
         private static readonly Dictionary<string, int> _campaignCooldowns
             = new Dictionary<string, int>();
 
+        // Desired trait level per colour school — applied when colours are assigned
+        // Key: trait to set; Value: target level (positive or negative)
+        private static readonly Dictionary<ColorSchool, List<(TraitObject Trait, int Level)>> _colourTraits =
+            new Dictionary<ColorSchool, List<(TraitObject, int)>>
+        {
+            [ColorSchool.Red]    = new List<(TraitObject, int)> { (DefaultTraits.Calculating, -1), (DefaultTraits.Valor, +1) },
+            [ColorSchool.Orange] = new List<(TraitObject, int)> { (DefaultTraits.Generosity, +1) },
+            [ColorSchool.Yellow] = new List<(TraitObject, int)> { (DefaultTraits.Mercy, -1), (DefaultTraits.Honor, -1) },
+            [ColorSchool.Green]  = new List<(TraitObject, int)> { (DefaultTraits.Mercy, +1), (DefaultTraits.Honor, +1) },
+            [ColorSchool.Blue]   = new List<(TraitObject, int)> { (DefaultTraits.Calculating, +1) },
+            [ColorSchool.Purple] = new List<(TraitObject, int)> { (DefaultTraits.Valor, -1) },
+        };
+
         // ── Public access ─────────────────────────────────────────────────────
         public static bool IsColourLord(Hero hero) =>
             hero != null && _lordColors.ContainsKey(hero.StringId);
@@ -2630,6 +2642,7 @@ namespace ColoursOfCalradia
             // Assign one archmage (4 colours)
             Hero archmage = lords[0];
             _lordColors[archmage.StringId] = PickColors(4);
+            ApplyColourTraits(archmage, _lordColors[archmage.StringId]);
             InformationManager.DisplayMessage(new InformationMessage(
                 $"Four colours shine in {archmage.Name} of {faction.Name}.",
                 new Color(0.9f, 0.7f, 0.9f)));
@@ -2644,6 +2657,7 @@ namespace ColoursOfCalradia
                 else                continue;
 
                 _lordColors[lords[i].StringId] = PickColors(colorCount);
+                ApplyColourTraits(lords[i], _lordColors[lords[i].StringId]);
                 InformationManager.DisplayMessage(new InformationMessage(
                     $"{colorCount} colour{(colorCount>1?"s":"")} stir in {lords[i].Name} of {faction.Name}.",
                     new Color(0.7f, 0.4f, 0.8f)));
@@ -2665,11 +2679,68 @@ namespace ColoursOfCalradia
             return result;
         }
 
+        // Applies personality traits to a hero based on their colour schools.
+        // Existing traits in the same direction are kept or made more extreme.
+        // Conflicting traits (opposite sign) are resolved by coin flip.
+        public static void ApplyColourTraits(Hero hero, IReadOnlyList<ColorSchool> colors)
+        {
+            if (hero == null || colors == null || colors.Count == 0) return;
+
+            // Merge desired trait levels across all assigned colours
+            var desired = new Dictionary<TraitObject, int>();
+            foreach (ColorSchool school in colors)
+            {
+                if (!_colourTraits.TryGetValue(school, out var entries)) continue;
+                foreach (var (trait, level) in entries)
+                {
+                    if (!desired.ContainsKey(trait))
+                    {
+                        desired[trait] = level;
+                    }
+                    else
+                    {
+                        int existing = desired[trait];
+                        if (Math.Sign(existing) == Math.Sign(level))
+                            // Same direction: keep the more extreme value
+                            desired[trait] = Math.Abs(level) > Math.Abs(existing) ? level : existing;
+                        else
+                            // Colours disagree on this trait: pick randomly
+                            desired[trait] = _rng.Next(2) == 0 ? existing : level;
+                    }
+                }
+            }
+
+            // Apply to hero, respecting existing trait values
+            foreach (var kvp in desired)
+            {
+                try
+                {
+                    TraitObject trait  = kvp.Key;
+                    int         target = kvp.Value;
+                    int         current = hero.GetTraitLevel(trait);
+
+                    int chosen;
+                    if (current == 0 || Math.Sign(current) == Math.Sign(target))
+                        // No conflict: use whichever is more extreme
+                        chosen = Math.Abs(target) >= Math.Abs(current) ? target : current;
+                    else
+                        // Conflict (hero already leans the other way): pick randomly
+                        chosen = _rng.Next(2) == 0 ? current : target;
+
+                    // Clamp to valid trait range
+                    chosen = Math.Max(-2, Math.Min(2, chosen));
+                    hero.SetTraitLevel(trait, chosen);
+                }
+                catch { }
+            }
+        }
+
         // ── Children ──────────────────────────────────────────────────────────
         public static void GrantChildColours(Hero hero, List<ColorSchool> schools)
         {
             if (hero == null || schools == null || schools.Count == 0) return;
             _lordColors[hero.StringId] = new List<ColorSchool>(schools);
+            ApplyColourTraits(hero, schools);
         }
 
         // ── Companions ────────────────────────────────────────────────────────
@@ -2683,8 +2754,11 @@ namespace ColoursOfCalradia
             else                return;
 
             _lordColors[companion.StringId] = PickColors(count);
+            ApplyColourTraits(companion, _lordColors[companion.StringId]);
+            string colorNames = string.Join(", ", _lordColors[companion.StringId]
+                .Select(c => ColorSchoolData.Info[c].Name));
             InformationManager.DisplayMessage(new InformationMessage(
-                $"{companion.Name} carries {count} colour{(count>1?"s":"")} — they will fight with them.",
+                $"{companion.Name} carries colour magic: {colorNames}.",
                 new Color(0.7f, 0.7f, 0.5f)));
         }
 
@@ -2726,6 +2800,7 @@ namespace ColoursOfCalradia
 
                 Hero chosen = candidates[_rng.Next(candidates.Count)];
                 _lordColors[chosen.StringId] = PickColors(1 + _rng.Next(2));
+                ApplyColourTraits(chosen, _lordColors[chosen.StringId]);
                 InformationManager.DisplayMessage(new InformationMessage(
                     $"Colour magic stirs anew in {chosen.Name} of {kingdom.Name}.",
                     new Color(0.7f, 0.5f, 0.8f)));
@@ -2851,7 +2926,7 @@ namespace ColoursOfCalradia
                             if (target?.PartyBelongedTo != null)
                             {
                                 target.PartyBelongedTo.RecentEventsMorale -= 15f;
-                                msg = $"Despair settles over {target.Name}'s ranks — {lord.Name} breathes sadness into the world.";
+                                msg = $"Fear settles over {target.Name}'s ranks — {lord.Name} breathes terror into the world.";
                             }
                         }
                         break;
@@ -3059,6 +3134,10 @@ namespace ColoursOfCalradia
                 var colors = ColourLordRegistry.GetColors(hero);
                 if (colors.Count == 0) continue;
 
+                // Green lords fight unarmed — sheathe weapon every tick so CanUseGreen passes
+                if (colors.Contains(ColorSchool.Green))
+                    TrySheathWeapon(agent);
+
                 DecideAndCast(agent, hero, colors);
             }
         }
@@ -3109,7 +3188,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
@@ -3120,7 +3199,7 @@ namespace ColoursOfCalradia
             }
 
             // Cone enemies — Crimson Torrent (Red) or Azure Arrest (Blue)
-            int coneEnemies = CountEnemiesInCone(agent, 17f, 0.6f);
+            int coneEnemies = CountEnemiesInCone(agent, 15f, 0.6f);
             if (coneEnemies >= 2)
             {
                 if (colors.Contains(ColorSchool.Red))
@@ -3131,7 +3210,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3149,7 +3228,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             try { a.SetMorale(0f); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             if (a.Formation != null) formations.Add(a.Formation);
@@ -3165,7 +3244,7 @@ namespace ColoursOfCalradia
             if (colors.Contains(ColorSchool.Green) && CanUseGreen(agent))
             {
                 bool allyHurt = AlliesOf(agent).Any(a => a.Health < a.HealthLimit * 0.6f &&
-                                                    a.Position.Distance(agent.Position) <= 17f);
+                                                    a.Position.Distance(agent.Position) <= 15f);
                 if (allyHurt)
                 {
                     CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
@@ -3174,7 +3253,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in AlliesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             float h = Math.Min(15f, a.HealthLimit - a.Health);
                             if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
@@ -3192,7 +3271,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in EnemiesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                        if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                         try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); } catch { }
                         SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                     }
@@ -3260,7 +3339,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3285,7 +3364,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in AlliesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             float h = Math.Min(15f, a.HealthLimit - a.Health);
                             if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
@@ -3331,6 +3410,17 @@ namespace ColoursOfCalradia
             if (agent == null || !CanCastAny(agent)) return false;
             try { return agent.WieldedWeapon.IsEmpty || agent.WieldedWeapon.CurrentUsageItem?.IsShield == true; }
             catch { return true; }
+        }
+
+        private static void TrySheathWeapon(Agent agent)
+        {
+            try
+            {
+                if (agent.WieldedWeapon.IsEmpty || agent.WieldedWeapon.CurrentUsageItem?.IsShield == true) return;
+                agent.TryToSheathWeaponInHand(Agent.HandIndex.MainHand,
+                    Agent.WeaponWieldActionType.WithAnimationUninterruptible);
+            }
+            catch { }
         }
 
         // ── Post-cast limitation side effects ─────────────────────────────────

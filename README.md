@@ -192,7 +192,7 @@ Each school carries two permanent limitations. The first category (A) applies ev
 ### Keyboard
 
 1. Hold **Left Alt** to enter spell mode.
-2. Input any 6-key combo using **W / A / S / D**, which map to:
+2. Input any 4-key combo using **W / A / S / D**, which map to:
    - **W** → U (Up)
    - **A** → L (Left)
    - **D** → R (Right)
@@ -221,7 +221,7 @@ Press **S** (keyboard, empty buffer) or **L3** (gamepad, while holding Alt/LT) t
 All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 - The **first two characters** encode the *form* (how the spell behaves).
-- The **last four characters** encode the *colour school*.
+- The **last two characters** encode the *colour school*.
 
 ### Forms
 
@@ -235,12 +235,12 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 | Suffix | School |
 |--------|--------|
-| `UURR` | Red |
-| `LLRR` | Orange |
-| `LRLU` | Yellow |
-| `RRLL` | Green |
-| `LLUU` | Blue |
-| `RRLU` | Purple |
+| `RR` | Red |
+| `RU` | Orange |
+| `LU` | Yellow |
+| `LL` | Green |
+| `UL` | Blue |
+| `UR` | Purple |
 
 ---
 
@@ -250,34 +250,34 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UUUURR` | Red | 35 damage to all enemies in a forward cone (17 m); pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UULLRR` | Orange | 8 damage to cone enemies (17 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UULRLU` | Yellow | 10 damage to cone enemies (17 m); drains 55 morale from each. |
-| **Verdant Surge** | `UURRLL` | Green | Heals allies in the cone (17 m) for up to 12 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UULLUU` | Blue | 8 damage to cone enemies (17 m); halts all enemy formations; dismounts riders. |
-| **Grey Harvest** | `UURRLU` | Purple | Instantly kills one random creature in the cone (17 m). |
+| **Crimson Torrent** | `UURR` | Red | 40 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
+| **Golden Tide** | `UURU` | Orange | 12 damage to cone enemies (15 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UULU` | Yellow | 14 damage to cone enemies (15 m); drains 55 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 15 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UUUL` | Blue | 12 damage to cone enemies (15 m); halts all enemy formations; dismounts riders. |
+| **Grey Harvest** | `UUUR` | Purple | Instantly kills one random creature in the cone (15 m). |
 
-### Self Spells (DD prefix) — Caster-centred effects
+### Self Spells (RL prefix) — Caster-centred effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Ward** | `RLUURR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 8 s if nothing hits. |
-| **Warm Beacon** | `RLLLRR` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
-| **Nausea Bloom** | `RLLRLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 15 damage every 2 s to all nearby creatures. |
-| **Verdant Touch** | `RLRRLL` | Green | Heals the caster for 20 HP. |
-| **Cerulean Mirror** | `RLLLUU` | Blue | 40 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
-| **Grief's Veil** | `RLRRLU` | Purple | The grey folds you from sight for 12 s — you become invulnerable and nearby enemy formations halt momentarily. They do not flee; they simply lose track of you. |
+| **Scarlet Ward** | `RLRR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 8 s if nothing hits. |
+| **Warm Beacon** | `RLRU` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
+| **Nausea Bloom** | `RLLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 15 damage every 2 s to all nearby creatures. |
+| **Verdant Touch** | `RLLL` | Green | Heals the caster for 20 HP. |
+| **Cerulean Mirror** | `RLUL` | Blue | 40 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
+| **Grief's Veil** | `RLUR` | Purple | The grey folds you from sight for 12 s — you become invulnerable and nearby enemy formations halt momentarily. They do not flee; they simply lose track of you. |
 
 ### Create Spells (LR prefix) — Persistent battlefield effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Cinder Burst** | `LRUURR` | Red | Instant 45 damage to all creatures within 10 m. |
-| **Golden Snare** | `LRLLRR` | Orange | Places a golden patch (radius 10 m) at the caster's feet. The first enemy formation to step into it receives one random command — **Halt**, **Charge**, **Dismount**, or **Scatter** — then the trap vanishes. Expires after 60 s if untriggered; cast again to dismiss early. |
-| **Creeping Dread** | `LRLRLU` | Yellow | Toggle: releases a wandering cloud (radius 7 m) that roams the field, dealing 25 damage every 2 s to creatures it passes through. Changes direction randomly every ~3 s. Cast again to dismiss. |
-| **Emerald Font** | `LRRRLL` | Green | Toggle: creates a healing circle (radius 8 m) that restores 10 HP every 2 s to all within it — friend and foe alike. Cast again to dismiss. |
-| **Sapphire Bastion** | `LRLLUU` | Blue | Places a persistent repulsion field (radius 5 m) for 3 minutes. Any creature that crosses into the radius is pushed outward every 0.5 s; creatures already inside when the field is raised are not affected. |
-| **Hollow Gaze** | `LRRRLU` | Purple | Pins one random nearby non-hero enemy (within 15 m) into a catatonic state — they stand still and do nothing. The effect is maintained until cancelled. Cast again to release them. |
+| **Cinder Burst** | `LRRR` | Red | Instant 45 damage to all creatures within 10 m. |
+| **Golden Snare** | `LRRU` | Orange | Places a golden patch (radius 10 m) at the caster's feet. The first enemy formation to step into it receives one random command — **Halt**, **Charge**, **Dismount**, or **Scatter** — then the trap vanishes. Expires after 60 s if untriggered; cast again to dismiss early. |
+| **Creeping Dread** | `LRLU` | Yellow | Toggle: releases a wandering cloud (radius 7 m) that roams the field, dealing 25 damage every 2 s to creatures it passes through. Changes direction randomly every ~3 s. Cast again to dismiss. |
+| **Emerald Font** | `LRLL` | Green | Toggle: creates a healing circle (radius 8 m) that restores 10 HP every 2 s to all within it — friend and foe alike. Cast again to dismiss. |
+| **Sapphire Bastion** | `LRUL` | Blue | Places a persistent repulsion field (radius 5 m) for 3 minutes. Any creature that crosses into the radius is pushed outward every 0.5 s; creatures already inside when the field is raised are not affected. |
+| **Hollow Gaze** | `LRUR` | Purple | Pins one random nearby non-hero enemy (within 15 m) into a catatonic state — they stand still and do nothing. The effect is maintained until cancelled. Cast again to release them. |
 
 ### Notes on Create Spells
 
