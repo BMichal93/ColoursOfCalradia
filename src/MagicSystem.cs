@@ -1402,31 +1402,13 @@ namespace ColoursOfCalradia
                 entity.SetGlobalFrame(ref frame, true);
                 var light = Light.CreatePointLight(radius);
                 light.Radius        = radius;
-                light.Intensity     = 10000f;
+                light.Intensity     = 3000f;
                 light.LightColor    = SchoolToLightColor(school);
                 light.ShadowEnabled = false;
                 entity.AddLight(light);
-                // Particles are safe now that ClearAreaEffects() is called on mission end.
-                // Previously they accumulated across missions and caused GPU overheating.
-                try { entity.AddParticleSystemComponent(SchoolToParticle(school)); } catch { }
                 return entity;
             }
             catch { return null; }
-        }
-
-        private static string SchoolToParticle(ColorSchool school)
-        {
-            // Named particle systems from the base game — wrapped in try/catch at call site
-            switch (school)
-            {
-                case ColorSchool.Red:    return "psys_campfire_a";
-                case ColorSchool.Orange: return "psys_campfire_a";
-                case ColorSchool.Yellow: return "psys_torch_fire_small_a";
-                case ColorSchool.Green:  return "psys_torch_fire_small_a";
-                case ColorSchool.Blue:   return "psys_torch_fire_small_a";
-                case ColorSchool.Purple: return "psys_campfire_a";
-                default:                 return "psys_campfire_a";
-            }
         }
 
         private static Vec3 SchoolToLightColor(ColorSchool school)
@@ -1473,8 +1455,8 @@ namespace ColoursOfCalradia
                     e.Position += e.Velocity * dt;
                 }
 
-                // Keep light anchored to current effect position (matters for moving effects)
-                if (e.LightEntity != null)
+                // Only moving Yellow clouds need their light repositioned every frame
+                if (e.LightEntity != null && (e.Id == "create_yellow" || e.Id == "self_yellow"))
                 {
                     try
                     {
@@ -3064,7 +3046,7 @@ namespace ColoursOfCalradia
         }
 
         // ── Campaign map effects (lord-only) ──────────────────────────────────
-        private const int MaxLordMapCastsPerDay = 3;
+        private const int MaxLordMapCastsPerDay = 1;
 
         public static void DailyMapCast()
         {
@@ -3079,9 +3061,9 @@ namespace ColoursOfCalradia
                 if (_campaignCooldowns.TryGetValue(kvp.Key, out int cd) && cd > 0)
                 { _campaignCooldowns[kvp.Key] = cd - 1; continue; }
 
-                if (_rng.Next(100) >= 20) continue; // 20% chance per day
+                if (_rng.Next(100) >= 5) continue; // 5% chance per day
 
-                _campaignCooldowns[kvp.Key] = 6 + _rng.Next(4);
+                _campaignCooldowns[kvp.Key] = 12 + _rng.Next(5);
                 ColorSchool school = kvp.Value[_rng.Next(kvp.Value.Count)];
                 CastLordMapSpell(hero, school);
                 castsToday++;
@@ -3167,12 +3149,12 @@ namespace ColoursOfCalradia
                             if (target?.Clan != null)
                             {
                                 try { target.Clan.AddRenown(-10f); } catch { }
-                                msg = $"{target.Name}'s name grows quieter — {lord.Name}'s melancholy reaches far.";
+                                msg = $"{target.Name}'s name grows quieter — {lord.Name}'s power reaches far.";
                             }
                         }
                         else
                         {
-                            spellName = "Melancholy";
+                            spellName = "Terror";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
                                      && h.PartyBelongedTo != null && h.IsAlive));
@@ -3960,7 +3942,7 @@ namespace ColoursOfCalradia
             catch { }
         }
 
-        private const int MaxUnitMapCastsPerDay = 2;
+        private const int MaxUnitMapCastsPerDay = 1;
 
         public static void DailyMapCast()
         {
@@ -3970,7 +3952,7 @@ namespace ColoursOfCalradia
                 if (castsToday >= MaxUnitMapCastsPerDay) break;
                 if (!unit.IsAlive || unit.Schools.Count == 0) continue;
                 if (_mapCooldowns.ContainsKey(unit.Id)) continue;
-                if (_rng.Next(100) >= 10) continue;
+                if (_rng.Next(100) >= 3) continue; // 3% chance per day
 
                 ColorSchool school = unit.Schools[_rng.Next(unit.Schools.Count)];
                 string      name   = unit.DisplayName;
@@ -4013,7 +3995,7 @@ namespace ColoursOfCalradia
                 {
                     InformationManager.DisplayMessage(new InformationMessage(msg,
                         ColorSchoolData.GetMessageColor(school)));
-                    _mapCooldowns[unit.Id] = 3 + _rng.Next(3);
+                    _mapCooldowns[unit.Id] = 6 + _rng.Next(4);
                     castsToday++;
                 }
             }
