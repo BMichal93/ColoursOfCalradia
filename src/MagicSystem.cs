@@ -2284,7 +2284,7 @@ namespace ColoursOfCalradia
                 return;
             }
             const float Duration = 180f; // 3 minutes
-            const float BastionRadius = 8f;
+            const float BastionRadius = 5f;
             ToggleAreaEffect("create_blue", new AreaEffect
             {
                 Id = "create_blue", School = ColorSchool.Blue,

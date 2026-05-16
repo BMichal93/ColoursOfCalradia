@@ -276,7 +276,7 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 | **Golden Snare** | `LRLLRR` | Orange | Places a golden patch (radius 10 m) at the caster's feet. The first enemy formation to step into it receives one random command — **Halt**, **Charge**, **Dismount**, or **Scatter** — then the trap vanishes. Expires after 60 s if untriggered; cast again to dismiss early. |
 | **Creeping Dread** | `LRLRLU` | Yellow | Toggle: releases a wandering cloud (radius 7 m) that roams the field, dealing 25 damage every 2 s to creatures it passes through. Changes direction randomly every ~3 s. Cast again to dismiss. |
 | **Emerald Font** | `LRRRLL` | Green | Toggle: creates a healing circle (radius 8 m) that restores 10 HP every 2 s to all within it — friend and foe alike. Cast again to dismiss. |
-| **Sapphire Bastion** | `LRLLUU` | Blue | Places a persistent repulsion field (radius 8 m) for 3 minutes. Any creature that crosses into the radius is pushed outward every 0.5 s; creatures already inside when the field is raised are not affected. |
+| **Sapphire Bastion** | `LRLLUU` | Blue | Places a persistent repulsion field (radius 5 m) for 3 minutes. Any creature that crosses into the radius is pushed outward every 0.5 s; creatures already inside when the field is raised are not affected. |
 | **Hollow Gaze** | `LRRRLU` | Purple | Pins one random nearby non-hero enemy (within 15 m) into a catatonic state — they stand still and do nothing. The effect is maintained until cancelled. Cast again to release them. |
 
 ### Notes on Create Spells
