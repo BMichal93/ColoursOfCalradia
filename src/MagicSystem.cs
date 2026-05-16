@@ -1056,10 +1056,10 @@ namespace ColoursOfCalradia
                 // Only runs when L-trigger is the focus key.
                 if (focusingPad)
                 {
-                    bool rUp    = Input.IsKeyDown(InputKey.ControllerRUp);
-                    bool rDown  = Input.IsKeyDown(InputKey.ControllerRDown);
-                    bool rLeft  = Input.IsKeyDown(InputKey.ControllerRLeft);
-                    bool rRight = Input.IsKeyDown(InputKey.ControllerRRight);
+                    bool rUp    = Input.IsKeyDown(InputKey.ControllerRStickUp);
+                    bool rDown  = Input.IsKeyDown(InputKey.ControllerRStickDown);
+                    bool rLeft  = Input.IsKeyDown(InputKey.ControllerRStickLeft);
+                    bool rRight = Input.IsKeyDown(InputKey.ControllerRStickRight);
 
                     if (rUp    && !_prevRUp)   Append("U");
                     if (rDown  && !_prevRDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(); else Append("D"); }

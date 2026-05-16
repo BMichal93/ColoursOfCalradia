@@ -79,4 +79,17 @@
     <Compile Include="MagicSystem.cs"/>
   </ItemGroup>
 
+  <!-- Auto-copy DLL into the game's Modules folder after every successful build. -->
+  <Target Name="DeployToGame" AfterTargets="Build">
+    <PropertyGroup>
+      <_ModuleBinDir>$(BannerlordPath)\Modules\ColoursOfCalradia\bin\$(BannerlordBin)</_ModuleBinDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(_ModuleBinDir)" Condition="!Exists('$(_ModuleBinDir)')"/>
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
+          DestinationFolder="$(_ModuleBinDir)"
+          OverwriteReadOnlyFiles="true"
+          SkipUnchangedFiles="false"/>
+    <Message Text="▶ Deployed $(AssemblyName).dll → $(_ModuleBinDir)" Importance="high"/>
+  </Target>
+
 </Project>
