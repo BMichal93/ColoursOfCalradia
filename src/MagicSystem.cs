@@ -1196,7 +1196,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(2f / 365f));
+                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(1f / 365f));
                     InformationManager.DisplayMessage(new InformationMessage(
                         $"Waning Cost: The grey takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
                         ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
@@ -3288,7 +3288,7 @@ namespace ColoursOfCalradia
         private static void ApplyPurpleAging(Hero hero)
         {
             if (hero == null) return;
-            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(2f / 365f)); } catch { }
+            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(1f / 365f)); } catch { }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
