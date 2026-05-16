@@ -1336,16 +1336,35 @@ namespace ColoursOfCalradia
             {
                 var scene = Mission.Current?.Scene;
                 if (scene == null) return null;
-                var entity = GameEntity.CreateEmpty(scene, true);
+                var entity = GameEntity.CreateEmpty(scene, true, false, false);
                 var frame  = new MatrixFrame(Mat3.Identity, position + new Vec3(0f, 0f, 0.5f));
-                entity.SetGlobalFrame(in frame);
-                var light = Light.CreatePointLight(radius * 1.5f);
-                light.Intensity   = 30f;
-                light.LightColor  = SchoolToLightColor(school);
+                entity.SetGlobalFrame(ref frame, false);
+                var light = Light.CreatePointLight(radius * 2f);
+                light.Radius        = radius * 2f;
+                light.Intensity     = 1000f; // daytime outdoor needs high intensity
+                light.LightColor    = SchoolToLightColor(school);
+                light.ShadowEnabled = false;
                 entity.AddLight(light);
+                // Attempt to attach a particle system for additional ground visibility
+                try { entity.AddParticleSystemComponent(SchoolToParticle(school)); } catch { }
                 return entity;
             }
             catch { return null; }
+        }
+
+        private static string SchoolToParticle(ColorSchool school)
+        {
+            // Named particle systems from the base game — wrapped in try/catch at call site
+            switch (school)
+            {
+                case ColorSchool.Red:    return "psys_campfire_a";
+                case ColorSchool.Orange: return "psys_campfire_a";
+                case ColorSchool.Yellow: return "psys_torch_fire_small_a";
+                case ColorSchool.Green:  return "psys_torch_fire_small_a";
+                case ColorSchool.Blue:   return "psys_torch_fire_small_a";
+                case ColorSchool.Purple: return "psys_campfire_a";
+                default:                 return "psys_campfire_a";
+            }
         }
 
         private static Vec3 SchoolToLightColor(ColorSchool school)
@@ -1398,7 +1417,7 @@ namespace ColoursOfCalradia
                     try
                     {
                         var lf = new MatrixFrame(Mat3.Identity, e.Position + new Vec3(0f, 0f, 0.5f));
-                        e.LightEntity.SetGlobalFrame(in lf);
+                        e.LightEntity.SetGlobalFrame(ref lf, false);
                     }
                     catch { }
                 }
@@ -1465,6 +1484,8 @@ namespace ColoursOfCalradia
                     }
 
                     case "create_yellow": // Creeping Dread — damage agents in cloud
+                    {
+                        int dreadHit = 0;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -1473,12 +1494,16 @@ namespace ColoursOfCalradia
                             try
                             {
                                 a.Health = Math.Max(0f, a.Health - 15f);
+                                BeginAgentGlow(a, e.School, 1.5f);
                                 if (a.Health <= 0f) KillAgent(a);
-                                else BeginAgentGlow(a, e.School, 1.5f);
+                                dreadHit++;
                             }
                             catch { }
                         }
+                        if (dreadHit > 0)
+                            Msg($"Creeping Dread: {dreadHit} caught in the cloud. (−15 HP)", ColorSchool.Yellow);
                         break;
+                    }
 
                     case "create_green": // Emerald Font — heal all agents in area
                         foreach (Agent a in Mission.Current.Agents
@@ -1513,9 +1538,11 @@ namespace ColoursOfCalradia
                         }
                         break;
 
-                    case "self_yellow": // Pale Halo — damage all non-player agents near player
+                    case "self_yellow": // Nausea Bloom — damage all non-player agents near player
+                    {
                         if (Player == null || !Player.IsActive()) { _areaEffects.RemoveAt(i); continue; }
                         e.Position = Player.Position; // follows caster
+                        int bloomHit = 0;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(Player.Position) <= e.Radius).ToList())
@@ -1523,14 +1550,18 @@ namespace ColoursOfCalradia
                             try
                             {
                                 a.Health = Math.Max(0f, a.Health - 5f);
+                                BeginAgentGlow(a, e.School, 1.5f);
                                 if (a.Health <= 0f) KillAgent(a);
-                                else BeginAgentGlow(a, e.School, 1.5f);
+                                bloomHit++;
                             }
                             catch { }
                         }
+                        if (bloomHit > 0)
+                            Msg($"Nausea Bloom: {bloomHit} nearby. (−5 HP)", ColorSchool.Yellow);
                         // Re-glow player to show active aura
                         try { BeginAgentGlow(Player, e.School, 1.5f); } catch { }
                         break;
+                    }
                 }
             }
         }
