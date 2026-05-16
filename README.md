@@ -250,12 +250,12 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UUUURR` | Red | 40 damage to all enemies in a forward cone; pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UULLRR` | Orange | 8 damage to cone enemies; forces all enemy formations to Charge. |
-| **Tide of Dread** | `UULRLU` | Yellow | 8 damage to cone enemies; drains 30 morale from each. |
-| **Verdant Surge** | `UURRLL` | Green | Heals all creatures in the cone (allies and enemies) for 15 HP — entirely indiscriminate. |
-| **Azure Arrest** | `UULLUU` | Blue | 8 damage to cone enemies; halts all enemy formations; dismounts riders. |
-| **Grey Harvest** | `UURRLU` | Purple | Instantly kills one random creature in the cone. |
+| **Crimson Torrent** | `UUUURR` | Red | 35 damage to all enemies in a forward cone (17 m); pushes them back 6 m (smooth lerp over 0.4 s). |
+| **Golden Tide** | `UULLRR` | Orange | 8 damage to cone enemies (17 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UULRLU` | Yellow | 10 damage to cone enemies (17 m); drains 55 morale from each. |
+| **Verdant Surge** | `UURRLL` | Green | Heals allies in the cone (17 m) for up to 12 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UULLUU` | Blue | 8 damage to cone enemies (17 m); halts all enemy formations; dismounts riders. |
+| **Grey Harvest** | `UURRLU` | Purple | Instantly kills one random creature in the cone (17 m). |
 
 ### Self Spells (DD prefix) — Caster-centred effects
 

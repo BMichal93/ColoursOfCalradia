@@ -332,7 +332,7 @@ namespace ColoursOfCalradia
                 Flavour="A wave of creeping, nameless wrongness — it strips the nerve from all it touches and leaves behind only the urge to run." },
             new SpellEntry { Name="Verdant Surge",    Combo="UURRLL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
-                Flavour="A tide of living energy that mends all it touches — friend and foe alike." },
+                Flavour="A tide of living energy that flows toward your own — allies in the cone are mended, enemies and the caster untouched." },
             new SpellEntry { Name="Azure Arrest",     Combo="UULLUU", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
                 Flavour="A freezing wave of scholarly force. All before you halt; riders are unseated." },
@@ -1829,7 +1829,7 @@ namespace ColoursOfCalradia
         private static Blow BuildBlow(Agent target, DamageTypes type, float magnitude)
         {
             Blow blow = new Blow();
-            blow.OwnerId         = Agent.Main?.Index ?? 0;
+            blow.OwnerId         = -1; // no owner — prevents weapon/riding XP being awarded to the player
             blow.DamageType      = type;
             blow.BaseMagnitude   = magnitude;
             blow.InflictedDamage = (int)magnitude;
@@ -1877,7 +1877,7 @@ namespace ColoursOfCalradia
 
         // =================================================================
         // BLAST SPELLS — medium cone in front of the caster
-        // Cone: 15m range, dot >= 0.6 (≈53° half-angle)
+        // Cone: 17m range, dot >= 0.6 (≈53° half-angle)
         // Glow applied to all affected agents to show the area of effect.
         // =================================================================
 
@@ -1886,7 +1886,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Red); return; }
             int affected = 0;
             foreach (Agent a in inCone)
@@ -1913,7 +1913,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Orange); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
@@ -1937,7 +1937,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Yellow); return; }
             foreach (Agent a in inCone)
             {
@@ -1952,26 +1952,27 @@ namespace ColoursOfCalradia
             Msg($"Tide of Dread — {inCone.Count} {(inCone.Count == 1 ? "creature loses" : "creatures lose")} their nerve.", ColorSchool.Yellow);
         }
 
-        // Verdant Surge — heal all creatures in cone (allies AND enemies — indiscriminate)
+        // Verdant Surge — heal allies in cone (player and enemies excluded)
         private static void SpellBlastGreen()
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            // Include the player herself in the cone heal
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
-            inCone.Add(Player);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             int healed = 0;
             foreach (Agent a in inCone)
             {
+                if (a == Player) continue;
+                if (a.Team != Player.Team) continue; // enemies excluded
                 try
                 {
-                    float h = Math.Min(22f, a.HealthLimit - a.Health);
+                    float h = Math.Min(12f, a.HealthLimit - a.Health);
                     if (h > 0f) { a.Health += h; healed++; }
                     BeginAgentGlow(a, ColorSchool.Green, 1.5f);
                 }
                 catch { }
             }
-            Msg($"Verdant Surge mends {healed} {(healed == 1 ? "creature" : "creatures")} in the cone.", ColorSchool.Green);
+            if (healed == 0) Msg("Verdant Surge — no allies in the cone to mend.", ColorSchool.Green);
+            else Msg($"Verdant Surge mends {healed} {(healed == 1 ? "ally" : "allies")} in the cone.", ColorSchool.Green);
         }
 
         // Azure Arrest — tiny damage + halt formations + dismount riders in cone
@@ -1979,7 +1980,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Blue); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
@@ -2006,7 +2007,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
+            var inCone = ConeAgents(Player.Position, fwd, 17f, 0.6f);
             if (inCone.Count == 0) { Msg("Nothing in the cone.", ColorSchool.Purple); return; }
             Agent target = inCone[_rng.Next(inCone.Count)];
             BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
@@ -3108,7 +3109,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
@@ -3119,7 +3120,7 @@ namespace ColoursOfCalradia
             }
 
             // Cone enemies — Crimson Torrent (Red) or Azure Arrest (Blue)
-            int coneEnemies = CountEnemiesInCone(agent, 15f, 0.6f);
+            int coneEnemies = CountEnemiesInCone(agent, 17f, 0.6f);
             if (coneEnemies >= 2)
             {
                 if (colors.Contains(ColorSchool.Red))
@@ -3130,7 +3131,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3148,7 +3149,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             try { a.SetMorale(0f); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             if (a.Formation != null) formations.Add(a.Formation);
@@ -3164,7 +3165,7 @@ namespace ColoursOfCalradia
             if (colors.Contains(ColorSchool.Green) && CanUseGreen(agent))
             {
                 bool allyHurt = AlliesOf(agent).Any(a => a.Health < a.HealthLimit * 0.6f &&
-                                                    a.Position.Distance(agent.Position) <= 15f);
+                                                    a.Position.Distance(agent.Position) <= 17f);
                 if (allyHurt)
                 {
                     CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
@@ -3173,7 +3174,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in AlliesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             float h = Math.Min(15f, a.HealthLimit - a.Health);
                             if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
@@ -3191,7 +3192,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in EnemiesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                        if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                         try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); } catch { }
                         SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                     }
@@ -3259,7 +3260,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 40f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -3284,7 +3285,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in AlliesOf(agent).ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (to.Length > 17f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             float h = Math.Min(15f, a.HealthLimit - a.Health);
                             if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                         }
@@ -3300,7 +3301,7 @@ namespace ColoursOfCalradia
                 case ColorSchool.Yellow:
                     CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
                     {
-                        foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                        foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
                             try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); } catch { }
                     });
                     SetCooldown(hero);
@@ -3778,7 +3779,7 @@ namespace ColoursOfCalradia
 
                     case ColorSchool.Orange:
                         foreach (Agent a in AlliesOf(agent)
-                            .Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                            .Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
                             try { a.SetMorale(Math.Min(a.GetMorale() + 15f, 100f)); cast = true; } catch { }
                         break;
 
@@ -3801,7 +3802,7 @@ namespace ColoursOfCalradia
 
                     case ColorSchool.Blue:
                         foreach (Agent a in EnemiesOf(agent)
-                            .Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                            .Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
                         {
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             try
