@@ -1513,7 +1513,7 @@ namespace ColoursOfCalradia
                         {
                             try
                             {
-                                float h = Math.Min(8f, a.HealthLimit - a.Health);
+                                float h = Math.Min(10f, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
                             }
                             catch { }
@@ -1846,7 +1846,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 40f);
+                    DamageAgent(a, 35f);
                     if (a.IsActive() && a.Health > 0f)
                     {
                         Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
@@ -1896,8 +1896,8 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 8f);
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f)); } catch { }
+                    DamageAgent(a, 10f);
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 55f)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                 }
                 catch { }
@@ -1918,7 +1918,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    float h = Math.Min(15f, a.HealthLimit - a.Health);
+                    float h = Math.Min(22f, a.HealthLimit - a.Health);
                     if (h > 0f) { a.Health += h; healed++; }
                     BeginAgentGlow(a, ColorSchool.Green, 1.5f);
                 }
@@ -1940,7 +1940,7 @@ namespace ColoursOfCalradia
                 try
                 {
                     DamageAgent(a, 8f);
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 60f)); } catch { }
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
@@ -1971,12 +1971,12 @@ namespace ColoursOfCalradia
         // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        // Scarlet Ward — absorbs the next single blow; expires after 6 s if nothing hits
+        // Scarlet Ward — absorbs the next single blow; expires after 8 s if nothing hits
         private static void SpellSelfRed()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
-            const float Duration = 6f;
+            const float Duration = 8f;
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
             ActiveEffectManager.Add(new ActiveEffect
@@ -2008,7 +2008,7 @@ namespace ColoursOfCalradia
         private static void SpellSelfOrange()
         {
             if (Mission.Current == null || Player == null) return;
-            const float Radius = 30f;
+            const float Radius = 18f;
             const float LandDist = 3f;
             var nearAllies = Allies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList();
             if (nearAllies.Count == 0) { Msg("No allies within range.", ColorSchool.Orange); return; }
@@ -2065,12 +2065,12 @@ namespace ColoursOfCalradia
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Mirror — 60-second magic immunity (physical attacks still connect)
+        // Cerulean Mirror — 40-second magic immunity (physical attacks still connect)
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
-            const float Duration = 60f;
+            const float Duration = 40f;
             _ceruleanMirrorActive = true;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
             ActiveEffectManager.Add(new ActiveEffect
@@ -2085,12 +2085,12 @@ namespace ColoursOfCalradia
             Msg("Cerulean Mirror — spells pass through you for 60 seconds. Steel does not.", ColorSchool.Blue);
         }
 
-        // Grief's Veil — the grey folds you from sight; nearby enemies pause, unsure where you went
+        // Grief's Veil — the grey folds you from sight; nearby enemies lose nerve
         private static void SpellSelfPurple()
         {
             if (Player == null || Mission.Current == null) return;
             const float Radius = 20f;
-            const float Duration = 15f;
+            const float Duration = 12f;
             // Drain morale of nearby enemies — they falter and lose aggression
             var halted = new HashSet<Formation>();
             foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
@@ -2147,7 +2147,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 45f);
+                    DamageAgent(a, 50f);
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                     count++;
                 }
@@ -2213,7 +2213,7 @@ namespace ColoursOfCalradia
             ToggleAreaEffect("create_green", new AreaEffect
             {
                 Id = "create_green", School = ColorSchool.Green,
-                Position = Player.Position, Radius = 12f,
+                Position = Player.Position, Radius = 8f,
                 TickInterval = 2f, TickTimer = 2f, Remaining = -1f
             });
             BeginAgentGlow(Player, ColorSchool.Green, 2f);
@@ -2234,7 +2234,7 @@ namespace ColoursOfCalradia
             ToggleAreaEffect("create_blue", new AreaEffect
             {
                 Id = "create_blue", School = ColorSchool.Blue,
-                Position = Player.Position, Radius = 6f,
+                Position = Player.Position, Radius = 8f,
                 TickInterval = 0.5f, TickTimer = 0.5f, Remaining = Duration
             });
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
