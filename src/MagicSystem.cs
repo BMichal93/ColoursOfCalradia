@@ -91,7 +91,7 @@ namespace ColoursOfCalradia
         }
 
         private void OnPlayerOrderIssued(OrderType orderType,
-            MBReadOnlyList<Formation> formations, OrderController controller)
+            MBReadOnlyList<Formation> formations, OrderController orderController, object[] delegateParams)
         {
             int chance = ColourKnowledge.GetMadnessOrderChance();
             if (chance <= 0 || _orderRng.Next(100) >= chance) return;
@@ -110,7 +110,7 @@ namespace ColoursOfCalradia
                 Color.FromUint(0xFFCC44FF)));
         }
 
-        public override void FinalizeMission()
+        protected override void OnEndMission()
         {
             if (!_orderHookRegistered) return;
             try
