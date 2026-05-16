@@ -444,7 +444,7 @@ namespace ColoursOfCalradia
         public static bool ReducePurpleFertility()
         {
             if (_purpleFertilityLevel <= 0.01f) return false;
-            _purpleFertilityLevel = Math.Max(0.01f, _purpleFertilityLevel - 0.05f);
+            _purpleFertilityLevel = Math.Max(0.01f, _purpleFertilityLevel - 0.01f);
             return true;
         }
 
@@ -1359,6 +1359,9 @@ namespace ColoursOfCalradia
             = new Dictionary<int, (float, Vec3)>();
         private static float _haltTeleportTimer = 0f;
         private const  float HaltTeleportInterval = 0.25f;
+        private static readonly Dictionary<int, Agent> _haltAgentMap  = new Dictionary<int, Agent>();
+        private static readonly List<int>              _haltKeySnap   = new List<int>();
+        private static readonly List<int>              _expiredHaltKeys = new List<int>();
 
         // If an effect with this id exists, remove it. Otherwise add newEffect (if not null).
         internal static void ToggleAreaEffect(string id, AreaEffect newEffect)
@@ -1741,24 +1744,26 @@ namespace ColoursOfCalradia
             bool doTeleport = _haltTeleportTimer <= 0f;
             if (doTeleport) _haltTeleportTimer = HaltTeleportInterval;
 
-            // Build index→agent map once per tick instead of O(agents) scan per halted agent
-            var agentMap = new Dictionary<int, Agent>();
+            // Reuse static collections to keep TickHaltedAgents allocation-free
+            _haltAgentMap.Clear();
             foreach (Agent a in Mission.Current.Agents)
-                if (a.IsActive() && a.Health > 0f) agentMap[a.Index] = a;
+                if (a.IsActive() && a.Health > 0f) _haltAgentMap[a.Index] = a;
 
-            var expired = new List<int>();
-            foreach (int idx in _haltedAgents.Keys.ToList())
+            _haltKeySnap.Clear();
+            _haltKeySnap.AddRange(_haltedAgents.Keys);
+            _expiredHaltKeys.Clear();
+            foreach (int idx in _haltKeySnap)
             {
                 var (remaining, frozenPos) = _haltedAgents[idx];
                 remaining -= dt;
-                if (!agentMap.TryGetValue(idx, out Agent a))
+                if (!_haltAgentMap.TryGetValue(idx, out Agent a))
                 {
-                    expired.Add(idx);
+                    _expiredHaltKeys.Add(idx);
                     continue;
                 }
                 if (remaining <= 0f)
                 {
-                    expired.Add(idx);
+                    _expiredHaltKeys.Add(idx);
                     try { a.SetMaximumSpeedLimit(10f, false); } catch { }
                 }
                 else
@@ -1768,7 +1773,7 @@ namespace ColoursOfCalradia
                     if (doTeleport) try { a.TeleportToPosition(frozenPos); } catch { }
                 }
             }
-            foreach (int idx in expired) _haltedAgents.Remove(idx);
+            foreach (int idx in _expiredHaltKeys) _haltedAgents.Remove(idx);
         }
 
         public static void ClearSelfEffects()
