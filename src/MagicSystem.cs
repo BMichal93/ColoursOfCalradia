@@ -77,6 +77,7 @@ namespace ColoursOfCalradia
             SpellEffects.TickHollowGaze(dt);
             SpellEffects.TickHUDConfusion(dt);
             SpellEffects.TickBlueWeight(dt);
+            SpellEffects.TickHaltedAgents(dt);
             SpellEffects.TickRandomUnitMagic(dt);
         }
 
@@ -1019,8 +1020,12 @@ namespace ColoursOfCalradia
         {
             if (!ColourKnowledge.HasAnySchool) { InputSuppressed = false; return; }
 
-            bool focusingKb  = Input.IsKeyDown(InputKey.LeftAlt);
+            // ControllerLTrigger takes priority — Bannerlord maps L-trigger to LeftAlt at the
+            // OS level, so both can be true simultaneously when using a controller. Checking
+            // the controller key first and excluding it from the keyboard path prevents face
+            // buttons (Y→W, X→A, A→S) from bleeding into the spell buffer.
             bool focusingPad = Input.IsKeyDown(InputKey.ControllerLTrigger);
+            bool focusingKb  = Input.IsKeyDown(InputKey.LeftAlt) && !focusingPad;
             bool focusing    = focusingKb || focusingPad;
 
             InputSuppressed = focusing;
@@ -1329,6 +1334,9 @@ namespace ColoursOfCalradia
         private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
         private static readonly HashSet<int> _bastionPrevInside = new HashSet<int>();
         private static readonly HashSet<int> _snarePrevInside   = new HashSet<int>();
+        // AgentIndex → (seconds remaining, position frozen at cast time) for Azure Arrest halt
+        private static readonly Dictionary<int, (float Remaining, Vec3 FrozenPos)> _haltedAgents
+            = new Dictionary<int, (float, Vec3)>();
 
         // If an effect with this id exists, remove it. Otherwise add newEffect (if not null).
         internal static void ToggleAreaEffect(string id, AreaEffect newEffect)
@@ -1616,6 +1624,7 @@ namespace ColoursOfCalradia
             _areaEffects.Clear();
             _bastionPrevInside.Clear();
             _snarePrevInside.Clear();
+            _haltedAgents.Clear();
         }
 
         // ── Duration self-effects ────────────────────────────────────────────
@@ -1702,6 +1711,36 @@ namespace ColoursOfCalradia
             if (_blueWeightStacks > 0) EnforceBlueWeightCap();
         }
 
+        public static void TickHaltedAgents(float dt)
+        {
+            if (_haltedAgents.Count == 0 || Mission.Current == null) return;
+            var expired = new List<int>();
+            foreach (int idx in _haltedAgents.Keys.ToList())
+            {
+                var (remaining, frozenPos) = _haltedAgents[idx];
+                remaining -= dt;
+                Agent a = Mission.Current.Agents.FirstOrDefault(x => x.Index == idx);
+                if (a == null || !a.IsActive())
+                {
+                    expired.Add(idx);
+                    continue;
+                }
+                if (remaining <= 0f)
+                {
+                    expired.Add(idx);
+                    try { a.SetMaximumSpeedLimit(float.MaxValue, false); } catch { }
+                }
+                else
+                {
+                    _haltedAgents[idx] = (remaining, frozenPos);
+                    // Teleport back to frozen position every tick (same technique as Hollow Gaze)
+                    // to counter navigation-mesh drift that bypasses the speed limit.
+                    try { a.TeleportToPosition(frozenPos); } catch { }
+                }
+            }
+            foreach (int idx in expired) _haltedAgents.Remove(idx);
+        }
+
         public static void ClearSelfEffects()
         {
             if (_scarletWardActive)   { _scarletWardActive = false; }
@@ -1715,6 +1754,7 @@ namespace ColoursOfCalradia
                 if (Player?.IsActive() == true)
                     try { Player.SetMaximumSpeedLimit(float.MaxValue, false); } catch { }
             }
+            _haltedAgents.Clear();
         }
 
         // Issue Charge to own formations (Red post-cast limitation)
@@ -1821,6 +1861,19 @@ namespace ColoursOfCalradia
         public static void KillAgent(Agent target)
         {
             if (target == null || !target.IsActive()) return;
+            if (target.IsHero)
+            {
+                // Hero agents go "unconscious" via normal battle logic; calling Die() on them
+                // with OwnerId=-1 crashes Bannerlord's death attribution. Wound them instead.
+                try
+                {
+                    Blow blow = BuildBlow(target, DamageTypes.Blunt, 2f);
+                    AttackCollisionData acd = default;
+                    target.RegisterBlow(blow, in acd);
+                }
+                catch { try { target.Health = 1f; } catch { } }
+                return;
+            }
             try
             {
                 Blow blow = BuildBlow(target, DamageTypes.Cut, 2000f);
@@ -1844,7 +1897,8 @@ namespace ColoursOfCalradia
             catch
             {
                 target.Health = Math.Max(0f, target.Health - damage);
-                if (target.Health <= 0f) KillAgent(target);
+                // Don't call KillAgent on heroes — let the game's own incapacitation logic handle them.
+                if (target.Health <= 0f && !target.IsHero) KillAgent(target);
             }
         }
 
@@ -1996,7 +2050,7 @@ namespace ColoursOfCalradia
             else Msg($"Verdant Surge mends {healed} {(healed == 1 ? "ally" : "allies")} in the cone.", ColorSchool.Green);
         }
 
-        // Azure Arrest — tiny damage + halt formations + dismount riders in cone
+        // Azure Arrest — damage + 2.5 s per-agent speed halt + dismount riders in cone
         private static void SpellBlastBlue()
         {
             if (Player == null) return;
@@ -2010,6 +2064,10 @@ namespace ColoursOfCalradia
                 {
                     DamageAgent(a, 12f);
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
+                    // Speed limit + per-tick position lock (like Hollow Gaze). Formation orders
+                    // are overridden by enemy battle AI within one AI tick, so per-agent is needed.
+                    try { a.SetMaximumSpeedLimit(0f, false); } catch { }
+                    _haltedAgents[a.Index] = (2.5f, a.Position);
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
@@ -2020,16 +2078,17 @@ namespace ColoursOfCalradia
                 try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                 try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
             }
-            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} and unseats riders.", ColorSchool.Blue);
+            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for 2 seconds and unseats riders.", ColorSchool.Blue);
         }
 
-        // Grey Harvest — one random creature in cone fades and dies
+        // Grey Harvest — one random non-hero creature in cone fades and dies
         private static void SpellBlastPurple()
         {
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
-            if (inCone.Count == 0) { Msg("Nothing in the cone.", ColorSchool.Purple); return; }
+            // Exclude heroes — Die() with OwnerId=-1 on a hero crashes Bannerlord's death processing
+            var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f).Where(a => !a.IsHero).ToList();
+            if (inCone.Count == 0) { Msg("No common souls in the cone — the grey passes over champions.", ColorSchool.Purple); return; }
             Agent target = inCone[_rng.Next(inCone.Count)];
             BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
             KillAgent(target);
