@@ -1341,7 +1341,7 @@ namespace ColoursOfCalradia
                 entity.SetGlobalFrame(ref frame, false);
                 var light = Light.CreatePointLight(radius * 2f);
                 light.Radius        = radius * 2f;
-                light.Intensity     = 1000f; // daytime outdoor needs high intensity
+                light.Intensity     = 5000f; // daytime outdoor needs high intensity
                 light.LightColor    = SchoolToLightColor(school);
                 light.ShadowEnabled = false;
                 entity.AddLight(light);
@@ -1398,8 +1398,8 @@ namespace ColoursOfCalradia
                     }
                 }
 
-                // Create Yellow: move the cloud slowly in a random direction
-                if (e.Id == "create_yellow")
+                // Yellow clouds drift randomly from their spawn position
+                if (e.Id == "create_yellow" || e.Id == "self_yellow")
                 {
                     e.DirTimer -= dt;
                     if (e.DirTimer <= 0f)
@@ -1487,21 +1487,21 @@ namespace ColoursOfCalradia
                     {
                         int dreadHit = 0;
                         foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount &&
+                            .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
                             if (ProtectedByMirror(a)) continue;
                             try
                             {
-                                a.Health = Math.Max(0f, a.Health - 15f);
+                                float before = a.Health;
+                                DamageAgent(a, 25f);
+                                if (a.Health < before || a.Health <= 0f) dreadHit++;
                                 BeginAgentGlow(a, e.School, 1.5f);
-                                if (a.Health <= 0f) KillAgent(a);
-                                dreadHit++;
                             }
                             catch { }
                         }
                         if (dreadHit > 0)
-                            Msg($"Creeping Dread: {dreadHit} caught in the cloud. (−15 HP)", ColorSchool.Yellow);
+                            Msg($"Creeping Dread: {dreadHit} caught in the cloud. (−25 HP)", ColorSchool.Yellow);
                         break;
                     }
 
@@ -1538,28 +1538,25 @@ namespace ColoursOfCalradia
                         }
                         break;
 
-                    case "self_yellow": // Nausea Bloom — damage all non-player agents near player
+                    case "self_yellow": // Nausea Bloom — drifting toxic cloud
                     {
-                        if (Player == null || !Player.IsActive()) { _areaEffects.RemoveAt(i); continue; }
-                        e.Position = Player.Position; // follows caster
                         int bloomHit = 0;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
-                                        a.Position.Distance(Player.Position) <= e.Radius).ToList())
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
+                            if (ProtectedByMirror(a)) continue;
                             try
                             {
-                                a.Health = Math.Max(0f, a.Health - 5f);
+                                float before = a.Health;
+                                DamageAgent(a, 15f);
+                                if (a.Health < before || a.Health <= 0f) bloomHit++;
                                 BeginAgentGlow(a, e.School, 1.5f);
-                                if (a.Health <= 0f) KillAgent(a);
-                                bloomHit++;
                             }
                             catch { }
                         }
                         if (bloomHit > 0)
-                            Msg($"Nausea Bloom: {bloomHit} nearby. (−5 HP)", ColorSchool.Yellow);
-                        // Re-glow player to show active aura
-                        try { BeginAgentGlow(Player, e.School, 1.5f); } catch { }
+                            Msg($"Nausea Bloom: {bloomHit} caught in the cloud. (−15 HP)", ColorSchool.Yellow);
                         break;
                     }
                 }
@@ -1764,6 +1761,13 @@ namespace ColoursOfCalradia
             catch { }
             try { target.MakeDead(true, ActionIndexCache.Create("act_strike_walk_right_stance"), 0); }
             catch { }
+        }
+
+        private static void DamageAgent(Agent target, float damage)
+        {
+            if (target == null || !target.IsActive()) return;
+            target.Health = Math.Max(0f, target.Health - damage);
+            if (target.Health <= 0f) KillAgent(target);
         }
 
         private static Blow BuildBlow(Agent target, DamageTypes type, float magnitude)
@@ -2027,6 +2031,7 @@ namespace ColoursOfCalradia
             {
                 Id = "self_yellow", School = ColorSchool.Yellow,
                 Position = Player.Position, Radius = 8f,
+                Velocity = new Vec3(1f, 0f, 0f), DirTimer = 3f,
                 TickInterval = 2f, TickTimer = 2f, Remaining = 30f
             });
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
