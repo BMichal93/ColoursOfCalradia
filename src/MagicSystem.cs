@@ -1741,13 +1741,17 @@ namespace ColoursOfCalradia
             bool doTeleport = _haltTeleportTimer <= 0f;
             if (doTeleport) _haltTeleportTimer = HaltTeleportInterval;
 
+            // Build index→agent map once per tick instead of O(agents) scan per halted agent
+            var agentMap = new Dictionary<int, Agent>();
+            foreach (Agent a in Mission.Current.Agents)
+                if (a.IsActive() && a.Health > 0f) agentMap[a.Index] = a;
+
             var expired = new List<int>();
             foreach (int idx in _haltedAgents.Keys.ToList())
             {
                 var (remaining, frozenPos) = _haltedAgents[idx];
                 remaining -= dt;
-                Agent a = Mission.Current.Agents.FirstOrDefault(x => x.Index == idx);
-                if (a == null || !a.IsActive() || a.Health <= 0f)
+                if (!agentMap.TryGetValue(idx, out Agent a))
                 {
                     expired.Add(idx);
                     continue;
@@ -1778,7 +1782,7 @@ namespace ColoursOfCalradia
             {
                 _blueWeightStacks = 0;
                 if (Player?.IsActive() == true)
-                    try { Player.SetMaximumSpeedLimit(float.MaxValue, false); } catch { }
+                    try { Player.SetMaximumSpeedLimit(10f, false); } catch { }
             }
             _haltedAgents.Clear();
         }
@@ -1891,15 +1895,9 @@ namespace ColoursOfCalradia
             if (target == null || !target.IsActive()) return;
             if (target.IsHero)
             {
-                // Hero agents go "unconscious" via normal battle logic; calling Die() on them
-                // with OwnerId=-1 crashes Bannerlord's death attribution. Wound them instead.
-                try
-                {
-                    Blow blow = BuildBlow(target, DamageTypes.Blunt, 2f);
-                    AttackCollisionData acd = default;
-                    target.RegisterBlow(blow, in acd);
-                }
-                catch { try { target.Health = 1f; } catch { } }
+                // Heroes go unconscious via normal battle logic — never call Die() on them.
+                // Just wound them; the battle system handles incapacitation when health hits 0.
+                try { target.Health = Math.Max(1f, target.Health - 2f); } catch { }
                 return;
             }
             try
@@ -1916,23 +1914,19 @@ namespace ColoursOfCalradia
         public static void DamageAgent(Agent target, float damage)
         {
             if (target == null || !target.IsActive()) return;
-            if (target.Health <= damage)
+            // Use direct health assignment to avoid RegisterBlow's hit pipeline:
+            // RegisterBlow with AttackCollisionData=default causes native crashes because
+            // the engine reads weapon/body-part data from fields we leave at zero (OwnerId=-1,
+            // AffectorWeaponSlot=0, VictimBodyPart=0), leading to invalid native lookups.
+            float newHealth = target.Health - damage;
+            if (newHealth <= 0f)
             {
-                // RegisterBlow with OwnerId=-1 crashes the engine's kill attribution pipeline
-                // when the blow is lethal. Route through KillAgent (Die()) which handles -1 safely.
-                if (!target.IsHero) { KillAgent(target); return; }
-                target.Health = 1f; // heroes: clamp to 1, let battle system handle incapacitation
-                return;
+                if (!target.IsHero) KillAgent(target);
+                else try { target.Health = 1f; } catch { }
             }
-            try
+            else
             {
-                Blow blow = BuildBlow(target, DamageTypes.Blunt, damage);
-                AttackCollisionData acd = default;
-                target.RegisterBlow(blow, in acd);
-            }
-            catch
-            {
-                target.Health = Math.Max(1f, target.Health - damage);
+                try { target.Health = newHealth; } catch { }
             }
         }
 
@@ -2030,6 +2024,7 @@ namespace ColoursOfCalradia
                 try
                 {
                     DamageAgent(a, 12f);
+                    if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
@@ -2097,9 +2092,8 @@ namespace ColoursOfCalradia
                 try
                 {
                     DamageAgent(a, 12f);
+                    if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
-                    // Speed limit + per-tick position lock (like Hollow Gaze). Formation orders
-                    // are overridden by enemy battle AI within one AI tick, so per-agent is needed.
                     try { a.SetMaximumSpeedLimit(0f, false); } catch { }
                     _haltedAgents[a.Index] = (2.5f, a.Position);
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
