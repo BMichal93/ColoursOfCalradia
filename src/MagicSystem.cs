@@ -1019,8 +1019,9 @@ namespace ColoursOfCalradia
         {
             if (!ColourKnowledge.HasAnySchool) { InputSuppressed = false; return; }
 
-            bool focusing = Input.IsKeyDown(InputKey.LeftAlt)
-                         || Input.IsKeyDown(InputKey.ControllerLTrigger);
+            bool focusingKb  = Input.IsKeyDown(InputKey.LeftAlt);
+            bool focusingPad = Input.IsKeyDown(InputKey.ControllerLTrigger);
+            bool focusing    = focusingKb || focusingPad;
 
             InputSuppressed = focusing;
 
@@ -1031,31 +1032,38 @@ namespace ColoursOfCalradia
                 if (!inMission && Campaign.Current != null)
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
 
-                // Keyboard: W=Up, A=Left, D=Right, S=Down-or-Grimoire
-                // S opens grimoire when buffer is empty; otherwise it appends "D" (down direction)
-                if      (Input.IsKeyPressed(InputKey.W)) Append("U");
-                else if (Input.IsKeyPressed(InputKey.A)) Append("L");
-                else if (Input.IsKeyPressed(InputKey.D)) Append("R");
-                else if (Input.IsKeyPressed(InputKey.S))
+                // Keyboard path: only when Left Alt is the focus key, so controller face-button
+                // virtual keys (Y→W, X→A, A→S) don't bleed into the spell buffer.
+                if (focusingKb)
                 {
-                    if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
-                    else Append("D");
+                    if      (Input.IsKeyPressed(InputKey.W)) Append("U");
+                    else if (Input.IsKeyPressed(InputKey.A)) Append("L");
+                    else if (Input.IsKeyPressed(InputKey.D)) Append("R");
+                    else if (Input.IsKeyPressed(InputKey.S))
+                    {
+                        if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
+                        else Append("D");
+                    }
                 }
+
                 // Gamepad: R-stick directions via manual edge detection (IsKeyDown + prev-state)
-                // R3-Down or L3 opens grimoire when buffer is empty.
-                bool rUp    = Input.IsKeyDown(InputKey.ControllerRUp);
-                bool rDown  = Input.IsKeyDown(InputKey.ControllerRDown);
-                bool rLeft  = Input.IsKeyDown(InputKey.ControllerRLeft);
-                bool rRight = Input.IsKeyDown(InputKey.ControllerRRight);
+                // Only runs when L-trigger is the focus key.
+                if (focusingPad)
+                {
+                    bool rUp    = Input.IsKeyDown(InputKey.ControllerRUp);
+                    bool rDown  = Input.IsKeyDown(InputKey.ControllerRDown);
+                    bool rLeft  = Input.IsKeyDown(InputKey.ControllerRLeft);
+                    bool rRight = Input.IsKeyDown(InputKey.ControllerRRight);
 
-                if (rUp    && !_prevRUp)   Append("U");
-                if (rDown  && !_prevRDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(); else Append("D"); }
-                if (rLeft  && !_prevRLeft) Append("L");
-                if (rRight && !_prevRRight) Append("R");
+                    if (rUp    && !_prevRUp)   Append("U");
+                    if (rDown  && !_prevRDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(); else Append("D"); }
+                    if (rLeft  && !_prevRLeft) Append("L");
+                    if (rRight && !_prevRRight) Append("R");
 
-                _prevRUp = rUp; _prevRDown = rDown; _prevRLeft = rLeft; _prevRRight = rRight;
+                    _prevRUp = rUp; _prevRDown = rDown; _prevRLeft = rLeft; _prevRRight = rRight;
 
-                if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
+                    if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
+                }
 
                 if (_buffer.Length > 0 && _buffer != _lastDisplayedBuffer)
                 {
@@ -1451,28 +1459,25 @@ namespace ColoursOfCalradia
                 {
                     case "create_orange": // Golden Snare — one-shot random command on first contact
                     {
-                        // Track who is inside this tick; glow them
-                        var snareCurrentInside = new HashSet<int>();
+                        // Glow agents inside this node
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
-                            snareCurrentInside.Add(a.Index);
                             try { BeginAgentGlow(a, e.School, 1.5f); } catch { }
                         }
 
-                        // Find the first enemy that newly entered (not in previous tick's set)
+                        // Find the first enemy inside this node not exempted at cast time.
+                        // _snarePrevInside is set once at cast and never updated — one-shot trap.
                         Agent contact = null;
                         foreach (Agent a in Mission.Current.Agents)
                         {
                             if (!a.IsActive() || a.IsMount || a == Player) continue;
-                            if (a.Team == Player?.Team) continue; // allies skip
+                            if (a.Team == Player?.Team) continue;
                             if (a.Position.Distance(e.Position) > e.Radius) continue;
-                            if (_snarePrevInside.Contains(a.Index)) continue; // was already inside
+                            if (_snarePrevInside.Contains(a.Index)) continue;
                             contact = a; break;
                         }
-                        _snarePrevInside.Clear();
-                        foreach (int idx in snareCurrentInside) _snarePrevInside.Add(idx);
                         if (contact == null) break;
 
                         // Apply a random command to their formation
@@ -1508,7 +1513,9 @@ namespace ColoursOfCalradia
                         }
                         BeginAgentGlow(contact, e.School, 2f);
                         Msg($"Golden Snare — {contact.Name}'s formation receives a sudden command: {cmdName}!", ColorSchool.Orange);
-                        e.Remaining = 0.001f; // consume the patch immediately
+                        // Expire all orange nodes (not just this one — 2x2 grid shares one ID)
+                        foreach (var oe in _areaEffects.Where(x => x.Id == "create_orange").ToList())
+                            oe.Remaining = 0.001f;
                         break;
                     }
 
@@ -2226,24 +2233,47 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             if (HasAreaEffect("create_orange"))
             {
-                ToggleAreaEffect("create_orange", null);
+                RemoveAreaEffect("create_orange");
+                _snarePrevInside.Clear();
                 Msg("The Golden Snare fades before it could spring.", ColorSchool.Orange);
                 return;
             }
-            const float SnareRadius = 10f;
-            ToggleAreaEffect("create_orange", new AreaEffect
-            {
-                Id = "create_orange", School = ColorSchool.Orange,
-                Position = Player.Position, Radius = SnareRadius,
-                TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 60f
-            });
-            // Snapshot agents already inside so they don't trigger the snare immediately
+            const float NodeRadius  = 6f;
+            const float HalfSpacing = 4f;
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * HalfSpacing - fwd * HalfSpacing,
+                centre + right * HalfSpacing - fwd * HalfSpacing,
+                centre - right * HalfSpacing + fwd * HalfSpacing,
+                centre + right * HalfSpacing + fwd * HalfSpacing,
+            };
             _snarePrevInside.Clear();
-            foreach (Agent a in Mission.Current.Agents)
-                if (a.IsActive() && !a.IsMount && a.Position.Distance(Player.Position) <= SnareRadius)
-                    _snarePrevInside.Add(a.Index);
+            foreach (Vec3 pos in nodePos)
+            {
+                var node = new AreaEffect
+                {
+                    Id = "create_orange", School = ColorSchool.Orange,
+                    Position = pos, Radius = NodeRadius,
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 60f
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
+            // Snapshot agents inside any node so they don't trigger the snare immediately.
+            // _snarePrevInside is set once at cast time and not updated during ticks (one-shot trap).
+            if (Mission.Current != null)
+                foreach (Agent a in Mission.Current.Agents)
+                {
+                    if (!a.IsActive() || a.IsMount) continue;
+                    foreach (Vec3 pos in nodePos)
+                        if (a.Position.Distance(pos) <= NodeRadius) { _snarePrevInside.Add(a.Index); break; }
+                }
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
-            Msg("Golden Snare laid — the first formation to step into it receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
+            Msg("Golden Snare laid — a 2×2 grid of arcane pressure. The first formation to step in receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
         }
 
         // Creeping Dread — moving cloud of revulsion that damages agents it passes through
@@ -2252,40 +2282,74 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             if (HasAreaEffect("create_yellow"))
             {
-                ToggleAreaEffect("create_yellow", null);
+                RemoveAreaEffect("create_yellow");
                 Msg("The Creeping Dread dissipates. The air settles.", ColorSchool.Yellow);
                 return;
             }
-            ToggleAreaEffect("create_yellow", new AreaEffect
+            const float NodeRadius  = 5f;
+            const float HalfSpacing = 4f;
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * HalfSpacing - fwd * HalfSpacing,
+                centre + right * HalfSpacing - fwd * HalfSpacing,
+                centre - right * HalfSpacing + fwd * HalfSpacing,
+                centre + right * HalfSpacing + fwd * HalfSpacing,
+            };
+            foreach (Vec3 pos in nodePos)
             {
-                Id = "create_yellow", School = ColorSchool.Yellow,
-                Position = Player.Position, Radius = 7f,
-                Velocity = new Vec3(1f, 0f, 0f),
-                DirTimer = 3f,
-                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
-            });
+                var node = new AreaEffect
+                {
+                    Id = "create_yellow", School = ColorSchool.Yellow,
+                    Position = pos, Radius = NodeRadius,
+                    Velocity = new Vec3(1f, 0f, 0f),
+                    DirTimer = 3f,
+                    TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
-            Msg("Creeping Dread takes shape — a cloud of formless revulsion drifts across the field. Cast again to dismiss.", ColorSchool.Yellow);
+            Msg("Creeping Dread takes shape — four clouds of formless revulsion drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
         }
 
-        // Emerald Font — persistent healing patch (heals allies and enemies — indiscriminate)
+        // Emerald Font — two healing pools side by side, perpendicular to caster's look direction
         private static void SpellCreateGreen()
         {
             if (Player == null) return;
             if (HasAreaEffect("create_green"))
             {
-                ToggleAreaEffect("create_green", null);
+                RemoveAreaEffect("create_green");
                 Msg("The Emerald Font closes.", ColorSchool.Green);
                 return;
             }
-            ToggleAreaEffect("create_green", new AreaEffect
+            const float NodeRadius  = 6f;
+            const float NodeSpacing = 5f;
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * (NodeSpacing * 0.5f),
+                centre + right * (NodeSpacing * 0.5f),
+            };
+            foreach (Vec3 pos in nodePos)
             {
-                Id = "create_green", School = ColorSchool.Green,
-                Position = Player.Position, Radius = 8f,
-                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
-            });
+                var node = new AreaEffect
+                {
+                    Id = "create_green", School = ColorSchool.Green,
+                    Position = pos, Radius = NodeRadius,
+                    TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
             BeginAgentGlow(Player, ColorSchool.Green, 2f);
-            Msg("The Emerald Font opens — all who stand within 12m are slowly mended, friend and foe alike. Cast again to dismiss.", ColorSchool.Green);
+            Msg("The Emerald Font opens — two pools of living light, mending all who stand within. Cast again to dismiss.", ColorSchool.Green);
         }
 
         // Sapphire Bastion — three repulsion nodes in a line perpendicular to the caster's look direction,
