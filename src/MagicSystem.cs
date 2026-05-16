@@ -789,7 +789,9 @@ namespace ColoursOfCalradia
                 _selectionDone = true;
 
             ColourLordRegistry.SeedInitialLords();
+            ColourLordRegistry.FlushAnnouncements();
             ColourLordRegistry.DailyMapCast();
+            ColourUnitRegistry.SeedInitialUnits();
             ColourUnitRegistry.DailyMaintenance();
             ColourUnitRegistry.DailyMapCast();
             ApplyDailyLimitations();
@@ -1036,9 +1038,13 @@ namespace ColoursOfCalradia
                     if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
                     else Append("D");
                 }
-                // Gamepad: R3 stick directions map to U/D/L/R; L3 opens grimoire
+                // Gamepad: R3 stick directions map to U/D/L/R; R3 Down or L3 opens grimoire
                 else if (Input.IsKeyPressed(InputKey.ControllerRUp))    Append("U");
-                else if (Input.IsKeyPressed(InputKey.ControllerRDown))  Append("D");
+                else if (Input.IsKeyPressed(InputKey.ControllerRDown))
+                {
+                    if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire();
+                    else Append("D");
+                }
                 else if (Input.IsKeyPressed(InputKey.ControllerRLeft))  Append("L");
                 else if (Input.IsKeyPressed(InputKey.ControllerRRight)) Append("R");
                 else if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire();
@@ -1507,7 +1513,7 @@ namespace ColoursOfCalradia
                             if (ProtectedByMirror(a)) continue;
                             try
                             {
-                                const float DreadDmg = 25f;
+                                const float DreadDmg = 30f;
                                 if (a.Health <= DreadDmg)
                                 {
                                     KillAgent(a);
@@ -2585,6 +2591,10 @@ namespace ColoursOfCalradia
         private static readonly Dictionary<string, int> _campaignCooldowns
             = new Dictionary<string, int>();
 
+        // Pending mage announcements — flushed on first daily tick so they're visible to the player
+        private static readonly List<(string message, Color color)> _pendingAnnouncements
+            = new List<(string, Color)>();
+
         // Desired trait level per colour school — applied when colours are assigned
         // Key: trait to set; Value: target level (positive or negative)
         private static readonly Dictionary<ColorSchool, List<(TraitObject Trait, int Level)>> _colourTraits =
@@ -2625,6 +2635,17 @@ namespace ColoursOfCalradia
             catch { }
         }
 
+        public static void FlushAnnouncements()
+        {
+            if (_pendingAnnouncements.Count == 0) return;
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"── Colour mages walk the world ({_pendingAnnouncements.Count}) ──",
+                new Color(0.85f, 0.65f, 1.0f)));
+            foreach (var (msg, col) in _pendingAnnouncements)
+                InformationManager.DisplayMessage(new InformationMessage(msg, col));
+            _pendingAnnouncements.Clear();
+        }
+
         private static void SeedFaction(IFaction faction)
         {
             var lords = Hero.AllAliveHeroes
@@ -2642,9 +2663,11 @@ namespace ColoursOfCalradia
             // Assign one archmage (4 colours)
             Hero archmage = lords[0];
             _lordColors[archmage.StringId] = PickColors(4);
-            ApplyColourTraits(archmage, _lordColors[archmage.StringId]);
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"Four colours shine in {archmage.Name} of {faction.Name}.",
+            try { ApplyColourTraits(archmage, _lordColors[archmage.StringId]); } catch { }
+            var archmageColors = string.Join(", ", _lordColors[archmage.StringId]
+                .Select(c => ColorSchoolData.Info[c].Name));
+            _pendingAnnouncements.Add((
+                $"[Archmage] {archmage.Name} of {faction.Name} — {archmageColors}.",
                 new Color(0.9f, 0.7f, 0.9f)));
 
             for (int i = 1; i < lords.Count; i++)
@@ -2657,9 +2680,11 @@ namespace ColoursOfCalradia
                 else                continue;
 
                 _lordColors[lords[i].StringId] = PickColors(colorCount);
-                ApplyColourTraits(lords[i], _lordColors[lords[i].StringId]);
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"{colorCount} colour{(colorCount>1?"s":"")} stir in {lords[i].Name} of {faction.Name}.",
+                try { ApplyColourTraits(lords[i], _lordColors[lords[i].StringId]); } catch { }
+                var lordColors = string.Join(", ", _lordColors[lords[i].StringId]
+                    .Select(c => ColorSchoolData.Info[c].Name));
+                _pendingAnnouncements.Add((
+                    $"{lords[i].Name} of {faction.Name} — {lordColors}.",
                     new Color(0.7f, 0.4f, 0.8f)));
             }
         }
