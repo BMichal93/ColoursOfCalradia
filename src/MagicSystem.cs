@@ -54,8 +54,17 @@ namespace ColoursOfCalradia
     {
         public override MissionBehaviorType BehaviorType => MissionBehaviorType.Other;
 
+        private bool _orderHookRegistered = false;
+        private static readonly Random _orderRng = new Random();
+        private static readonly MovementOrder[] _madnessOrders =
+        {
+            MovementOrder.MovementOrderStop,
+            MovementOrder.MovementOrderCharge,
+        };
+
         public override void OnMissionTick(float dt)
         {
+            TryRegisterOrderHook();
             MagicInputHandler.Tick(inMission: true);
             ActiveEffectManager.MissionTick(dt);
             ColourLordAI.MissionTick(dt);
@@ -66,6 +75,51 @@ namespace ColoursOfCalradia
             SpellEffects.TickHollowGaze(dt);
             SpellEffects.TickHUDConfusion(dt);
             SpellEffects.TickRandomUnitMagic(dt);
+        }
+
+        private void TryRegisterOrderHook()
+        {
+            if (_orderHookRegistered) return;
+            try
+            {
+                var ctrl = Mission.Current?.PlayerTeam?.PlayerOrderController;
+                if (ctrl == null) return;
+                ctrl.OnOrderIssued += OnPlayerOrderIssued;
+                _orderHookRegistered = true;
+            }
+            catch { }
+        }
+
+        private void OnPlayerOrderIssued(OrderType orderType,
+            MBReadOnlyList<Formation> formations, OrderController controller)
+        {
+            int chance = ColourKnowledge.GetMadnessOrderChance();
+            if (chance <= 0 || _orderRng.Next(100) >= chance) return;
+
+            bool charge = _orderRng.Next(2) == 0;
+            MovementOrder replacement = charge
+                ? MovementOrder.MovementOrderCharge
+                : MovementOrder.MovementOrderStop;
+            string name = charge ? "Charge" : "Halt";
+
+            foreach (Formation f in formations)
+                try { f.SetMovementOrder(replacement); } catch { }
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"Madness: Your command slips — {name} issued instead.",
+                Color.FromUint(0xFFCC44FF)));
+        }
+
+        public override void FinalizeMission()
+        {
+            if (!_orderHookRegistered) return;
+            try
+            {
+                var ctrl = Mission.Current?.PlayerTeam?.PlayerOrderController;
+                if (ctrl != null) ctrl.OnOrderIssued -= OnPlayerOrderIssued;
+            }
+            catch { }
+            _orderHookRegistered = false;
         }
 
         public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
@@ -358,6 +412,29 @@ namespace ColoursOfCalradia
         public static bool  HasSchool(ColorSchool school) => _chosenSchools.Contains(school);
         public static IEnumerable<ColorSchool> AllSchools => _chosenSchools;
         public static float PurpleFertilityLevel    => _purpleFertilityLevel;
+
+        // Returns the % chance that a player formation order is scrambled by madness.
+        // 5% for non-contiguous colours, 10% for 5 colours, 20% for 6 colours.
+        public static int GetMadnessOrderChance()
+        {
+            int count = _chosenSchools.Count;
+            if (count == 6) return 20;
+            if (count == 5) return 10;
+            if (count >= 2)
+            {
+                var positions = _chosenSchools.Select(s => (int)s).ToHashSet();
+                const int n = 6;
+                foreach (int start in positions)
+                {
+                    bool ok = true;
+                    for (int step = 0; step < positions.Count; step++)
+                        if (!positions.Contains((start + step) % n)) { ok = false; break; }
+                    if (ok) return 0; // contiguous — no order madness
+                }
+                return 5; // non-contiguous
+            }
+            return 0;
+        }
 
         public static bool ReducePurpleFertility()
         {

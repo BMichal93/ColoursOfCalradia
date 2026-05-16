@@ -69,6 +69,18 @@ Contiguous selections (e.g. Red + Orange + Yellow, or Blue + Purple + Red wrappi
 - Two further random traits shift at game start (stacking on top of adjacency madness if applicable).
 - Every **week** thereafter, all five personality traits are randomised completely (each set to a random value between −2 and +2) with no recovery. No mind can hold five colours whole.
 
+### Madness and Battle Orders
+
+Madness does not stay inside your head — it bleeds into command. Whenever you issue a formation order in battle, there is a chance it fires differently from what you intended:
+
+| Cause | Scramble chance |
+|-------|-----------------|
+| Non-contiguous colour selection | 5 % |
+| 5 colours chosen | 10 % |
+| 6 colours chosen | 20 % |
+
+When an order is scrambled, the formation receives a random command (Charge or Halt) instead of the one you issued. A message appears in the log. These chances stack independently of each other — a player with 5 non-contiguous colours is subject to the 10 % rule (the higher threshold applies).
+
 ---
 
 ## The Six Colour Schools
