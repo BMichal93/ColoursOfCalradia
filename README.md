@@ -137,7 +137,7 @@ Each school carries two permanent limitations. The first category (A) applies ev
    - **W** → U (Up)
    - **A** → L (Left)
    - **D** → R (Right)
-   - **S** → D (Down) — but only when the buffer is non-empty. Pressing S with an empty buffer opens your spellbook instead.
+   - **S** → D (Down) — **only** when the buffer is non-empty. Pressing S with an empty buffer opens your spellbook instead. This means no combo may begin with D.
 3. Release **Left Alt** to fire.
 
 ### Gamepad
@@ -169,7 +169,7 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 | Prefix | Form | Shape |
 |--------|------|-------|
 | `UU` | **Blast** | Cone in front of the caster |
-| `DD` | **Self** | Aura or effect centred on the caster |
+| `RL` | **Self** | Aura or effect centred on the caster |
 | `LR` | **Create** | Persistent area effect placed on the battlefield |
 
 ### Colour Suffixes
@@ -202,12 +202,12 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Ward** | `DDUURR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 15 s if nothing hits. |
-| **Warm Beacon** | `DDLLRR` | Orange | Pulls all allies within 30 m to a ring around the caster (smooth lerp). |
-| **Nausea Bloom** | `DDLRLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 5 damage every 2 s to all nearby creatures. |
-| **Verdant Touch** | `DDRRLL` | Green | Heals the caster for 20 HP. |
-| **Cerulean Mirror** | `DDLLUU` | Blue | 60 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
-| **Grief's Veil** | `DDRRLU` | Purple | The grey folds you from sight for 15 s — you become invulnerable and nearby enemy formations halt momentarily. They do not flee; they simply lose track of you. |
+| **Scarlet Ward** | `RLUURR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 15 s if nothing hits. |
+| **Warm Beacon** | `RLLLRR` | Orange | Pulls all allies within 30 m to a ring around the caster (smooth lerp). |
+| **Nausea Bloom** | `RLLRLU` | Yellow | Persistent 30 s aura (radius 8 m) that deals 5 damage every 2 s to all nearby creatures. |
+| **Verdant Touch** | `RLRRLL` | Green | Heals the caster for 20 HP. |
+| **Cerulean Mirror** | `RLLLUU` | Blue | 60 s magic immunity — spells and magical area effects cannot harm you. Physical attacks still connect. |
+| **Grief's Veil** | `RLRRLU` | Purple | The grey folds you from sight for 15 s — you become invulnerable and nearby enemy formations halt momentarily. They do not flee; they simply lose track of you. |
 
 ### Create Spells (LR prefix) — Persistent battlefield effects
 
@@ -230,6 +230,19 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 ---
 
 ## Visual Effects
+
+### Known Limitations
+
+The mod operates at the game-logic layer only and cannot access the engine's animation or particle systems. As a result:
+
+- **No cast animations** — casting a spell produces no hand, body, or weapon animation on the player or NPCs.
+- **No hit-block animations** — Scarlet Ward absorbing a blow, or Cerulean Mirror deflecting a spell, has no dedicated animation.
+- **No area-effect visuals** — Creeping Dread, Nausea Bloom, and other area effects have no visible cloud or ground texture. Only the agents inside the area glow in the school's colour.
+- **No projectile effects** — Blast spells fire instantly; there is no visible projectile.
+
+All visual feedback is limited to **agent glow outlines** (colour pulses on affected characters) and **message log text**.
+
+---
 
 Each school has a distinct colour used for both combat messages and agent glow:
 

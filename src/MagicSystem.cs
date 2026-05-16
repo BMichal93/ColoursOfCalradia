@@ -16,6 +16,8 @@ using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
+using TaleWorlds.Engine;
+using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.ObjectSystem;
 using TaleWorlds.CampaignSystem.MapEvents;
@@ -337,23 +339,24 @@ namespace ColoursOfCalradia
                 Context=SpellContext.Mission,
                 Flavour="The grey settles over one soul in the cone. They simply stop. The body follows the spirit out like a slow tide." },
 
-            // ── SELF (DD prefix) — creates a glowing aura around the caster ─────
-            new SpellEntry { Name="Scarlet Ward",     Combo="DDUURR", School=ColorSchool.Red,
+            // ── SELF (RL prefix) — creates a glowing aura around the caster ─────
+            // Note: DD prefix cannot be used — S with empty buffer opens the spellbook.
+            new SpellEntry { Name="Scarlet Ward",     Combo="RLUURR", School=ColorSchool.Red,
                 Context=SpellContext.Mission,
                 Flavour="The next blow lands on iron. One strike. The ward then shatters." },
-            new SpellEntry { Name="Warm Beacon",      Combo="DDLLRR", School=ColorSchool.Orange,
+            new SpellEntry { Name="Warm Beacon",      Combo="RLLLRR", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
                 Flavour="A golden light calls your companions from across the field to your side." },
-            new SpellEntry { Name="Nausea Bloom",     Combo="DDLRLU", School=ColorSchool.Yellow,
+            new SpellEntry { Name="Nausea Bloom",     Combo="RLLRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="Something deeply wrong radiates from you. All who linger nearby feel it in their stomach before they know it in their mind." },
-            new SpellEntry { Name="Verdant Touch",    Combo="DDRRLL", School=ColorSchool.Green,
+            new SpellEntry { Name="Verdant Touch",    Combo="RLRRLL", School=ColorSchool.Green,
                 Context=SpellContext.Mission,
                 Flavour="You lay hands upon yourself. The wounds knit closed." },
-            new SpellEntry { Name="Cerulean Mirror",  Combo="DDLLUU", School=ColorSchool.Blue,
+            new SpellEntry { Name="Cerulean Mirror",  Combo="RLLLUU", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
                 Flavour="Spells pass through you for 60 seconds. Steel does not." },
-            new SpellEntry { Name="Grief's Veil",     Combo="DDRRLU", School=ColorSchool.Purple,
+            new SpellEntry { Name="Grief's Veil",     Combo="RLRRLU", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="The grey folds you from sight for 15 seconds. Nearby enemies lose track of you and pause. You cannot be touched while the veil holds." },
 
@@ -693,18 +696,18 @@ namespace ColoursOfCalradia
             // create an internal conflict that fractures the mage's personality.
             if (schools.Count >= 2 && !AreColoursContiguous(schools))
             {
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "Madness: The colours you wield are incompatible — their conflicting natures fracture your sense of self.",
-                    Color.FromUint(0xFFCC44FF)));
                 ApplyMadness(player);
+                MBInformationManager.AddQuickInformation(
+                    new TextObject("MADNESS — The colours you wield are incompatible. Their conflicting natures fracture your sense of self. Two personality traits have shifted. You will not recover them."),
+                    8000, null, null, "");
             }
             // Five or more colours — madness regardless of adjacency, and the fracture never heals.
             if (schools.Count > 4)
             {
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "The Fracture: No mind can hold five colours whole. Something in you breaks — and will keep breaking, week after week.",
-                    Color.FromUint(0xFFCC44FF)));
                 ApplyMadness(player);
+                MBInformationManager.AddQuickInformation(
+                    new TextObject("THE FRACTURE — No mind can hold five colours whole. Something in you breaks — and it will keep breaking, week after week, for as long as you walk with this burden."),
+                    8000, null, null, "");
             }
         }
 
@@ -1297,6 +1300,7 @@ namespace ColoursOfCalradia
             public float  TickTimer;
             public float  Remaining;    // negative = no expiry (toggle-only)
             public float  DirTimer;     // Create Yellow direction-change timer
+            public GameEntity LightEntity; // coloured point light marking the effect area
         }
         private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
 
@@ -1304,16 +1308,59 @@ namespace ColoursOfCalradia
         internal static void ToggleAreaEffect(string id, AreaEffect newEffect)
         {
             int idx = _areaEffects.FindIndex(e => e.Id == id);
-            if (idx >= 0) { _areaEffects.RemoveAt(idx); return; }
-            if (newEffect != null) _areaEffects.Add(newEffect);
+            if (idx >= 0)
+            {
+                try { _areaEffects[idx].LightEntity?.Remove(0); } catch { }
+                _areaEffects.RemoveAt(idx);
+                return;
+            }
+            if (newEffect != null)
+            {
+                newEffect.LightEntity = SpawnAreaLight(newEffect.Position, newEffect.School, newEffect.Radius);
+                _areaEffects.Add(newEffect);
+            }
         }
 
         public static void RemoveAreaEffect(string id)
         {
+            foreach (var e in _areaEffects.Where(e => e.Id == id).ToList())
+                try { e.LightEntity?.Remove(0); } catch { }
             _areaEffects.RemoveAll(e => e.Id == id);
         }
 
         public static bool HasAreaEffect(string id) => _areaEffects.Any(e => e.Id == id);
+
+        private static GameEntity SpawnAreaLight(Vec3 position, ColorSchool school, float radius)
+        {
+            try
+            {
+                var scene = Mission.Current?.Scene;
+                if (scene == null) return null;
+                var entity = GameEntity.CreateEmpty(scene, true);
+                var frame  = new MatrixFrame(Mat3.Identity, position + new Vec3(0f, 0f, 0.5f));
+                entity.SetGlobalFrame(in frame);
+                var light = Light.CreatePointLight(radius * 1.5f);
+                light.Intensity   = 30f;
+                light.LightColor  = SchoolToLightColor(school);
+                entity.AddLight(light);
+                return entity;
+            }
+            catch { return null; }
+        }
+
+        private static Vec3 SchoolToLightColor(ColorSchool school)
+        {
+            switch (school)
+            {
+                case ColorSchool.Red:    return new Vec3(1f,    0.15f, 0.05f);
+                case ColorSchool.Orange: return new Vec3(1f,    0.50f, 0.05f);
+                case ColorSchool.Yellow: return new Vec3(1f,    0.90f, 0.10f);
+                case ColorSchool.Green:  return new Vec3(0.15f, 0.80f, 0.15f);
+                case ColorSchool.Blue:   return new Vec3(0.10f, 0.35f, 1f);
+                case ColorSchool.Purple: return new Vec3(0.60f, 0.10f, 0.90f);
+                default:                 return new Vec3(1f,    1f,    1f);
+            }
+        }
 
         public static void TickAreaEffects(float dt)
         {
@@ -1324,7 +1371,12 @@ namespace ColoursOfCalradia
                 if (e.Remaining >= 0f)
                 {
                     e.Remaining -= dt;
-                    if (e.Remaining <= 0f) { _areaEffects.RemoveAt(i); continue; }
+                    if (e.Remaining <= 0f)
+                    {
+                        try { e.LightEntity?.Remove(0); } catch { }
+                        _areaEffects.RemoveAt(i);
+                        continue;
+                    }
                 }
 
                 // Create Yellow: move the cloud slowly in a random direction
@@ -1338,6 +1390,17 @@ namespace ColoursOfCalradia
                         e.DirTimer = 3f + (float)_rng.NextDouble() * 4f;
                     }
                     e.Position += e.Velocity * dt;
+                }
+
+                // Keep light anchored to current effect position (matters for moving effects)
+                if (e.LightEntity != null)
+                {
+                    try
+                    {
+                        var lf = new MatrixFrame(Mat3.Identity, e.Position + new Vec3(0f, 0f, 0.5f));
+                        e.LightEntity.SetGlobalFrame(in lf);
+                    }
+                    catch { }
                 }
 
                 e.TickTimer -= dt;
@@ -1474,6 +1537,8 @@ namespace ColoursOfCalradia
 
         public static void ClearAreaEffects()
         {
+            foreach (var e in _areaEffects)
+                try { e.LightEntity?.Remove(0); } catch { }
             _areaEffects.Clear();
         }
 
@@ -1686,7 +1751,7 @@ namespace ColoursOfCalradia
         }
 
         // ── Execute switch ───────────────────────────────────────────────────
-        // Combos: first 2 chars = form (UU=Blast, DD=Self, LR=Create),
+        // Combos: first 2 chars = form (UU=Blast, RL=Self, LR=Create),
         //         last 4 chars = colour (UURR=Red, LLRR=Orange, LRLU=Yellow,
         //                                RRLL=Green, LLUU=Blue, RRLU=Purple)
         public static bool Execute(string combo)
@@ -1700,13 +1765,13 @@ namespace ColoursOfCalradia
                 case "UURRLL": SpellBlastGreen();  break;
                 case "UULLUU": SpellBlastBlue();   break;
                 case "UURRLU": SpellBlastPurple(); break;
-                // SELF (DD)
-                case "DDUURR": SpellSelfRed();     break;
-                case "DDLLRR": SpellSelfOrange();  break;
-                case "DDLRLU": SpellSelfYellow();  break;
-                case "DDRRLL": SpellSelfGreen();   break;
-                case "DDLLUU": SpellSelfBlue();    break;
-                case "DDRRLU": SpellSelfPurple();  break;
+                // SELF (RL)
+                case "RLUURR": SpellSelfRed();     break;
+                case "RLLLRR": SpellSelfOrange();  break;
+                case "RLLRLU": SpellSelfYellow();  break;
+                case "RLRRLL": SpellSelfGreen();   break;
+                case "RLLLUU": SpellSelfBlue();    break;
+                case "RLRRLU": SpellSelfPurple();  break;
                 // CREATE (LR)
                 case "LRUURR": SpellCreateRed();    break;
                 case "LRLLRR": SpellCreateOrange(); break;
