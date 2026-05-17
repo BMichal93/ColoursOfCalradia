@@ -208,9 +208,17 @@ Each school carries two permanent limitations. The first category (A) applies ev
 
 ## Casting — Controls
 
-### Requirement: Daylight
+### Requirement: Light
 
-**All magic requires sunlight.** You cannot cast at night, in underground locations, or in any environment where day hours (06:00–20:00 in-game) do not apply. The same restriction applies to NPC mages.
+**Magic is bound to available light.** The strength of light in your current environment determines whether a spell can be woven at all.
+
+| Light level | When | Effect |
+|-------------|------|--------|
+| **Bright** | 07:00–19:00 outdoors | Normal casting |
+| **Dim** | 05:00–07:00 (dawn) and 19:00–22:00 (dusk); hideout interiors | 33 % chance the spell unravels on cast with no effect |
+| **Dark** | 22:00–05:00 (deep night); caves, mines, dungeons | Cannot cast at all |
+
+NPC mage lords require full daylight and will not cast during dim or dark conditions.
 
 ### Keyboard
 
@@ -388,7 +396,7 @@ NPC mage lords cast in battle using a priority-driven AI:
 6. **Morale drain** — Tide of Dread (Yellow).
 7. **Reinforcement** — Calling (Orange) if outnumbered; Warm Beacon as fallback.
 
-All NPC battle spells **require daylight** (same global restriction as the player). NPC lords have a 12-second cast cooldown between spells.
+All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a 12-second cast cooldown between spells.
 
 ### Campaign Map Spells
 
@@ -434,7 +442,7 @@ Each named unit receives 1 colour school. Their names are generated from a pool 
 
 ### Battle Behaviour
 
-Named magical units cast spells in battle using the same AI rules as mage lords, with a **20-second cooldown** between casts and a **0.5 s AI evaluation tick**. They require daylight to cast.
+Named magical units cast spells in battle using the same AI rules as mage lords, with a **20-second cooldown** between casts and a **0.5 s AI evaluation tick**. The same light-level restriction applies — dim conditions carry a 33 % silent failure chance.
 
 ### Campaign Map Effects
 

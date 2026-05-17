@@ -335,8 +335,13 @@ namespace ColoursOfCalradia
         }
 
         // ── Limitation checks ─────────────────────────────────────────────────
-        // All magic now requires daylight (global rule); NPCs respect this too.
-        private static bool CanCastAny(Agent agent) => SpellEffects.IsDaytime();
+        private static bool CanCastAny(Agent agent)
+        {
+            var light = SpellEffects.GetLightLevel();
+            if (light == SpellEffects.LightLevel.Dark) return false;
+            if (light == SpellEffects.LightLevel.Dim && SpellEffects.RollDimFizzle()) return false;
+            return true;
+        }
 
         private static bool CanUseGreen(Agent agent)
         {

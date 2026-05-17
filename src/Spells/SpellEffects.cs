@@ -31,16 +31,41 @@ namespace ColoursOfCalradia
         private static readonly Random _rng = new Random();
 
 
-        public static bool IsDaytime()
+        internal enum LightLevel { Bright, Dim, Dark }
+
+        internal static LightLevel GetLightLevel()
         {
+            // Scene-based check takes priority over time of day
             try
             {
-                if (Campaign.Current == null) return true;
-                float hour = (float)(CampaignTime.Now.ToHours % 24.0);
-                return hour >= 6f && hour < 20f;
+                var scene = Mission.Current?.Scene;
+                if (scene != null)
+                {
+                    string sn = scene.GetName()?.ToLowerInvariant() ?? "";
+                    if (sn.Contains("cave") || sn.Contains("mine") || sn.Contains("dungeon"))
+                        return LightLevel.Dark;
+                    if (sn.Contains("hideout"))
+                        return LightLevel.Dim;
+                }
             }
-            catch { return true; }
+            catch { }
+
+            if (Campaign.Current == null) return LightLevel.Bright;
+
+            try
+            {
+                float hour = (float)(CampaignTime.Now.ToHours % 24.0);
+                if (hour < 5f  || hour >= 22f) return LightLevel.Dark; // 22:00–05:00 deep night
+                if (hour < 7f  || hour >= 19f) return LightLevel.Dim;  // dawn / dusk
+                return LightLevel.Bright;                               // 07:00–19:00 full day
+            }
+            catch { return LightLevel.Bright; }
         }
+
+        // 33 % chance used when casting in Dim light.
+        internal static bool RollDimFizzle() => _rng.Next(3) == 0;
+
+        public static bool IsDaytime() => GetLightLevel() == LightLevel.Bright;
 
         // Returns true only during actual combat missions (battles, sieges).
         // Town/village visits have no active enemy agents, so this reliably excludes them.

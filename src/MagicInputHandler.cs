@@ -144,10 +144,16 @@ namespace ColoursOfCalradia
 
             // ── Pre-cast limitation checks ────────────────────────────────────
 
-            // Global: all magic requires sunlight — the mage acts as a prism
-            if (!SpellEffects.IsDaytime())
+            // Global: magic requires light — the mage acts as a prism
+            var lightLevel = SpellEffects.GetLightLevel();
+            if (lightLevel == SpellEffects.LightLevel.Dark)
             {
-                Fizzle("The colours require sunlight. Magic cannot be cast at night or underground.");
+                Fizzle("The colours require light. Magic cannot be woven in deep night or dark places.");
+                return;
+            }
+            if (lightLevel == SpellEffects.LightLevel.Dim && SpellEffects.RollDimFizzle())
+            {
+                Fizzle("The fading light weakens the weave. The spell unravels before taking shape.");
                 return;
             }
 
