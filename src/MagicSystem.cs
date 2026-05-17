@@ -880,6 +880,7 @@ namespace ColoursOfCalradia
             SpellEffects.ClearSelfEffects();
             SpellEffects.ClearGlows();
             SpellEffects.ClearMoves();         // releases stale agent refs from Bastion pushes
+            SpellEffects.RestoreColourNamePrefixes();
             ColourUnitRegistry.OnMissionEnded();
         }
 
@@ -1334,6 +1335,61 @@ namespace ColoursOfCalradia
         public static void ClearMoves()
         {
             _pendingMoves.Clear();
+        }
+
+        // ── In-battle colour name prefixes ────────────────────────────────────
+        // Hero names are prefixed with [ROYGBP] letters during battle so players
+        // can see at a glance which schools a lord wields. Restored on mission end.
+        private static readonly Dictionary<string, string> _originalHeroNames = new Dictionary<string, string>();
+
+        public static void ApplyColourNamePrefixes()
+        {
+            _originalHeroNames.Clear();
+            if (Mission.Current == null) return;
+            foreach (Agent a in Mission.Current.Agents)
+            {
+                if (!a.IsActive() || !a.IsHero) continue;
+                Hero hero = (a.Character as CharacterObject)?.HeroObject;
+                if (hero == null) continue;
+                IEnumerable<ColorSchool> schools = ColourLordRegistry.GetColors(hero);
+                if (hero == Hero.MainHero && !schools.Any())
+                    schools = ColourKnowledge.AllSchools;
+                if (!schools.Any()) continue;
+                string prefix   = BuildSchoolPrefix(schools);
+                string original = hero.Name.ToString();
+                _originalHeroNames[hero.StringId] = original;
+                try { hero.SetName(new TextObject(prefix + original), hero.FirstName); } catch { }
+            }
+        }
+
+        public static void RestoreColourNamePrefixes()
+        {
+            foreach (var kvp in _originalHeroNames)
+            {
+                Hero hero = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == kvp.Key);
+                if (hero == null) continue;
+                try { hero.SetName(new TextObject(kvp.Value), hero.FirstName); } catch { }
+            }
+            _originalHeroNames.Clear();
+        }
+
+        private static string BuildSchoolPrefix(IEnumerable<ColorSchool> schools)
+        {
+            var sb = new System.Text.StringBuilder("[");
+            foreach (ColorSchool s in schools)
+            {
+                switch (s)
+                {
+                    case ColorSchool.Red:    sb.Append('R'); break;
+                    case ColorSchool.Orange: sb.Append('O'); break;
+                    case ColorSchool.Yellow: sb.Append('Y'); break;
+                    case ColorSchool.Green:  sb.Append('G'); break;
+                    case ColorSchool.Blue:   sb.Append('B'); break;
+                    case ColorSchool.Purple: sb.Append('P'); break;
+                }
+            }
+            sb.Append("] ");
+            return sb.ToString();
         }
 
         // ── Persistent area effects ────────────────────────────────────────────
@@ -4081,6 +4137,8 @@ namespace ColoursOfCalradia
                     $"✦ {unit.DisplayName} stirs with {ColorSchoolData.Info[unit.Schools[0]].Name} colour.",
                     ColorSchoolData.GetMessageColor(unit.Schools[0])));
             }
+
+            SpellEffects.ApplyColourNamePrefixes();
         }
 
         private static void CastUnitSpell(Agent agent, ColourUnitEntry unit)
