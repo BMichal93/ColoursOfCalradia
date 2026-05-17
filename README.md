@@ -8,14 +8,37 @@ A Mount & Blade II: Bannerlord magic overhaul built around six colour schools, n
 
 ```
 ColoursOfCalradia/
-├── SubModule.xml               mod manifest
+├── SubModule.xml                    mod manifest
 ├── ModuleData/
-│   ├── items.xml               (reserved for future spell items)
-│   └── troops.xml              (reserved for future mage troops)
-├── src/
-│   ├── MagicSystem.cs          all C# logic (~3 500 lines, one file)
-│   └── TheWitheringArt.csproj  build project (outputs ColoursOfCalradia.dll)
-└── README.md                   this file
+│   ├── items.xml                    (reserved for future spell items)
+│   └── troops.xml                   (reserved for future mage troops)
+├── src/                             ~4 400 lines across 18 source files
+│   ├── MagicSystem.cs               module entry point + mission behaviour
+│   ├── SchoolData.cs                ColorSchool enum + ColorSchoolData (glow colours, traits, attributes)
+│   ├── SpellDatabase.cs             SpellDatabase — 18 spell entries + Find/BySchool helpers
+│   ├── ColourKnowledge.cs           player school knowledge, limitations, and madness tracking
+│   ├── ActiveEffects.cs             ActiveEffectManager — timed callbacks for spell durations
+│   ├── MagicInputHandler.cs         keyboard combo detection (U/L/R buffer → spell execution)
+│   ├── CampaignBehavior.cs          MagicCampaignBehavior — school selection, daily effects, AI cast
+│   ├── Spells/                      spell implementations (partial SpellEffects)
+│   │   ├── SpellEffects.cs          core partial: fields, helpers, Execute switch, battle commands
+│   │   ├── BlastSpells.cs           UU-prefix spells (Crimson Torrent … Grey Harvest)
+│   │   ├── SelfSpells.cs            RL-prefix spells (Scarlet Ward … Grief's Veil)
+│   │   └── CreateSpells.cs          LR-prefix spells (Cinder Burst … Hollow Gaze)
+│   ├── Visual/                      visual + movement systems (partial SpellEffects)
+│   │   ├── AreaEffects.cs           AreaEffect nested class, tick/clear, spawn area light
+│   │   ├── GlowSystem.cs            per-school contour glow + cast sound
+│   │   ├── MoveSystem.cs            smooth agent movement queue (push/pull lerp)
+│   │   └── NamePrefixes.cs          [ROYGBP] hero name prefixes applied during battle
+│   ├── AI/                          lord and unit AI
+│   │   ├── ColourLordRegistry.cs    lord → school assignments (seeded per faction)
+│   │   ├── ColourLordAI.cs          per-tick lord spell casting in battle
+│   │   └── ColourUnitRegistry.cs    magical unit tracking and per-tick effects
+│   └── TheWitheringArt.csproj       build project (outputs ColoursOfCalradia.dll)
+├── tests/
+│   ├── ColoursOfCalradia.Tests.csproj  NUnit test project (net472)
+│   └── PureLogicTests.cs            pure logic tests (no game engine calls)
+└── README.md                        this file
 ```
 
 ---
@@ -103,7 +126,7 @@ dotnet build src\TheWitheringArt.csproj
 
 Output DLL: `src/bin/Debug/ColoursOfCalradia.dll`
 
-The project targets `.NET Framework 4.7.2` to match the game's runtime. All logic lives in the single file `MagicSystem.cs`.
+The project targets `.NET Framework 4.7.2` to match the game's runtime. Logic is split across 18 source files; `MagicSystem.cs` is the module entry point.
 
 ---
 
