@@ -142,8 +142,11 @@ namespace ColoursOfCalradia
                     DamageAgent(a, 12f);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
-                    try { a.SetMaximumSpeedLimit(0f, false); } catch { }
-                    _haltedAgents[a.Index] = (2.5f, a.Position);
+                    if (a.MountAgent == null)
+                    {
+                        try { a.SetMaximumSpeedLimit(0f, false); } catch { }
+                        _haltedAgents[a.Index] = (2.5f, a.Position);
+                    }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
@@ -154,7 +157,7 @@ namespace ColoursOfCalradia
                 try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                 try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
             }
-            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for 2 seconds and unseats riders.", ColorSchool.Blue);
+            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for 2.5 seconds and unseats riders.", ColorSchool.Blue);
         }
 
         // Grey Harvest — one random non-hero creature in cone fades and dies

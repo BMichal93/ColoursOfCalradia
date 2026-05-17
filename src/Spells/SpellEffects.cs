@@ -177,7 +177,7 @@ namespace ColoursOfCalradia
                 {
                     _haltedAgents[idx] = (remaining, frozenPos);
                     try { a.SetMaximumSpeedLimit(0f, false); } catch { }
-                    if (doTeleport) try { a.TeleportToPosition(frozenPos); } catch { }
+                    if (doTeleport && a.MountAgent == null) try { a.TeleportToPosition(frozenPos); } catch { }
                 }
             }
             foreach (int idx in _expiredHaltKeys) _haltedAgents.Remove(idx);
