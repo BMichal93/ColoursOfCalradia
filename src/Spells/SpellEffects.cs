@@ -65,6 +65,40 @@ namespace ColoursOfCalradia
         // 33 % chance used when casting in Dim light.
         internal static bool RollDimFizzle() => _rng.Next(3) == 0;
 
+        // True when the given school has a contextual affinity that upgrades Dark → Dim.
+        // Season: 84-day year, 21 days per season (Spring=0, Summer=1, Autumn=2, Winter=3).
+        internal static bool HasDarkAffinity(ColorSchool school)
+        {
+            try
+            {
+                var s = Settlement.CurrentSettlement;
+                if (s?.IsTown == true || s?.IsCastle == true) return true; // torchlight
+            }
+            catch { }
+
+            if (Campaign.Current == null) return false;
+            try
+            {
+                switch (CampaignTime.Now.GetSeasonOfYear)
+                {
+                    case CampaignTime.Seasons.Spring: return school == ColorSchool.Green;
+                    case CampaignTime.Seasons.Summer: return school == ColorSchool.Yellow || school == ColorSchool.Red;
+                    case CampaignTime.Seasons.Autumn: return school == ColorSchool.Orange || school == ColorSchool.Red;
+                    case CampaignTime.Seasons.Winter: return school == ColorSchool.Blue   || school == ColorSchool.Purple;
+                    default: return false;
+                }
+            }
+            catch { return false; }
+        }
+
+        // School-aware effective light level: upgrades Dark → Dim when the school has affinity.
+        internal static LightLevel GetEffectiveLightLevel(ColorSchool school)
+        {
+            var level = GetLightLevel();
+            if (level == LightLevel.Dark && HasDarkAffinity(school)) return LightLevel.Dim;
+            return level;
+        }
+
         public static bool IsDaytime() => GetLightLevel() == LightLevel.Bright;
 
         // Returns true only during actual combat missions (battles, sieges).
