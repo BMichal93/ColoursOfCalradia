@@ -257,88 +257,13 @@ namespace ColoursOfCalradia
 
         // ── Red Invoke march tracking ────────────────────────────────────────
         private static bool   _redMarchActive  = false;
-        private static double _redMarchEndHour = -1.0; // total campaign hours when march expires
-
-        // Lazy-resolved position setter for the party nudge. Tried once, result cached.
-        // Resolution order: named method → property with private setter → Vec2 field.
-        private static bool         _marchPosResolved;
-        private static MethodInfo   _marchPosMethod;    // SetMapPosition / TeleportToPoint(Vec2)
-        private static PropertyInfo _marchPosProp;      // Position2D property with private setter
-        private static FieldInfo    _marchPosField;     // Vec2 backing field for party position
-
-        // Tries to advance the party's map position 'nudge' units toward its current target.
-        // Returns true when position was actually moved.
-        private static bool TryNudgeParty(MobileParty party, float nudge)
-        {
-            if (!_marchPosResolved)
-            {
-                _marchPosResolved = true;
-                var bf = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-
-                // Method: look for a public/private SetMapPosition(Vec2) or similar
-                foreach (string mn in new[] { "SetMapPosition", "TeleportToPoint", "SetPosition2D" })
-                {
-                    _marchPosMethod = typeof(MobileParty).GetMethod(mn, bf, null, new[] { typeof(Vec2) }, null);
-                    if (_marchPosMethod != null) break;
-                }
-
-                if (_marchPosMethod == null)
-                {
-                    // Property: Position2D with a private setter
-                    var prop = typeof(MobileParty).GetProperty("Position2D", bf);
-                    if (prop?.GetSetMethod(nonPublic: true) != null && prop.PropertyType == typeof(Vec2))
-                        _marchPosProp = prop;
-                }
-
-                if (_marchPosMethod == null && _marchPosProp == null)
-                {
-                    // Field: a Vec2 field whose name suggests position (not a target/goal)
-                    foreach (FieldInfo fi in typeof(MobileParty).GetFields(bf))
-                    {
-                        if (fi.FieldType != typeof(Vec2)) continue;
-                        string nm = fi.Name.ToLowerInvariant();
-                        if ((nm.Contains("pos") || nm.Contains("location")) &&
-                            !nm.Contains("target") && !nm.Contains("goal") && !nm.Contains("prev"))
-                        { _marchPosField = fi; break; }
-                    }
-                }
-            }
-
-            // Find movement direction from current target
-            Vec2 cur = party.GetPosition2D;
-            Vec2 dst = cur;
-            bool hasDst = false;
-            try
-            {
-                if (party.TargetSettlement != null)
-                { dst = new Vec2(party.TargetSettlement.GatePosition.X, party.TargetSettlement.GatePosition.Y); hasDst = true; }
-                else if (party.TargetParty != null)
-                { dst = party.TargetParty.GetPosition2D; hasDst = true; }
-            }
-            catch { }
-            if (!hasDst) return false;
-
-            Vec2 diff = dst - cur;
-            float len = diff.Length;
-            if (len < 0.05f) return false; // at destination already
-            Vec2 newPos = cur + diff * (Math.Min(nudge, len) / len);
-
-            try
-            {
-                if (_marchPosMethod != null) { _marchPosMethod.Invoke(party, new object[] { newPos }); return true; }
-                if (_marchPosProp  != null) { _marchPosProp.SetValue(party, newPos); return true; }
-                if (_marchPosField != null) { _marchPosField.SetValue(party, newPos); return true; }
-            }
-            catch { }
-            return false;
-        }
+        private static double _redMarchEndHour = -1.0;
 
         // ── Red — Crimson March ──────────────────────────────────────────────
-        // Sacrifice 15% HP to start a forced march that lasts several hours.
-        // Each hourly tick: nudges the party's map position ~1.5 units toward its target
-        // (effectively +~1.5 km/h on top of normal speed), AND maintains morale above
-        // Bannerlord's speed-bonus threshold. Costs 5 HP per hour. No morale guard —
-        // the position nudge works regardless of current morale level.
+        // Sacrifice 8% HP to sustain a blood-fuelled march for several hours.
+        // Each hourly tick keeps party morale above Bannerlord's speed-bonus threshold
+        // (≥78) and drains 2 HP. Morale above 75 grants the engine's built-in +3%
+        // speed bonus; this spell keeps that bonus active continuously for the duration.
         private static void SpellInvokeRed()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -353,17 +278,16 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            float power = SpellPower(ColorSchool.Red);
-            int hpCost  = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.15f));
+            float power   = SpellPower(ColorSchool.Red);
+            int   hpCost  = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.08f));
             Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
 
             int hours = Math.Max(4, (int)(8f * power));
             try { _redMarchEndHour = CampaignTime.Now.ToHours + hours; } catch { return; }
             _redMarchActive = true;
 
-            // Immediate morale push as secondary benefit
             try { MobileParty.MainParty.RecentEventsMorale += 40f; } catch { }
-            Msg($"Crimson March — you bleed so they march. Position nudged toward destination each hour (+~1.5 km equivalent). {hours}h duration. HP −{hpCost}. 5 HP/hour.", ColorSchool.Red);
+            Msg($"Crimson March — a small wound, held open. Morale sustained above march threshold for {hours}h. HP −{hpCost}. 2 HP/hour.", ColorSchool.Red);
         }
 
         // Called from CampaignBehavior.OnHourlyTick.
@@ -386,12 +310,8 @@ namespace ColoursOfCalradia
                     Msg("Crimson March ends. The blood drive fades.", ColorSchool.Red);
                     return;
                 }
-                // Primary: nudge position toward destination (~1.5 map units per hour)
-                TryNudgeParty(party, 1.5f);
-                // Secondary: keep morale above Bannerlord's speed-bonus threshold
-                if (party.Morale < 78f) try { party.RecentEventsMorale += 15f; } catch { }
-                // Hourly HP drain
-                hero.HitPoints = Math.Max(1, hero.HitPoints - 5);
+                if (party.Morale < 78f) try { party.RecentEventsMorale += 20f; } catch { }
+                hero.HitPoints = Math.Max(1, hero.HitPoints - 2);
             }
             catch { }
         }

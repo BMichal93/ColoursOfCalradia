@@ -687,7 +687,7 @@ Invoke spells target heroes, rosters, and rival lords directly. No cooldowns —
 
 | Spell | Combo | School | Effect | Cost / Limiter |
 |-------|-------|--------|--------|----------------|
-| **Crimson March** | `LURR` | Red | Nudges party position ~1.5 km toward destination each hour; maintains morale ≥78 as a secondary bonus | −15% current HP on cast; −5 HP per hour; 4–8 h duration scaled by power; blocked at ≤5 HP |
+| **Crimson March** | `LURR` | Red | Sustains party morale above Bannerlord's march-speed threshold (≥78) each hour for the duration, keeping the engine's built-in +3% speed bonus active continuously | −8% current HP on cast; −2 HP per hour; 4–8 h duration scaled by power; blocked at ≤5 HP |
 | **Muster Call** | `LURU` | Orange | Recruit 2–4 tier-1 troops from nearest friendly settlement | Gold cost 100→200→400 (capped at 400), resets at midnight |
 | **Whispered Ruin** | `LULU` | Yellow | Nearest enemy lord (at war) clan renown −8 | −2 own clan renown per cast |
 | **Tend the Fallen** | `LULL` | Green | Heal 3+(power×2) wounded troops in own party | −5% current HP per cast; blocked at ≤5 HP |

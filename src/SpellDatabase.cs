@@ -112,7 +112,7 @@ namespace ColoursOfCalradia
             // ── INVOKE (LU prefix) — campaign map only, advanced forms ───────────
             new SpellEntry { Name="Crimson March",     Combo="LURR", School=ColorSchool.Red,
                 Context=SpellContext.Map,
-                Flavour="You bleed so they march harder. The road shortens beneath you — 5 HP each hour until the drive fades or your body gives out." },
+                Flavour="A small wound, left open. Not enough to slow you — just enough to remind the body what is at stake. The pace holds for as long as the blood does." },
             new SpellEntry { Name="Muster Call",      Combo="LURU", School=ColorSchool.Orange,
                 Context=SpellContext.Map,
                 Flavour="A warmth reaches outward to the nearest settlement. Voices answer before they know why they are moving." },
