@@ -46,63 +46,212 @@ ColoursOfCalradia/
 ## Installation
 
 ### Requirements
-- Mount & Blade II: Bannerlord — Steam or Xbox / Game Pass
 
-No build tools are needed for a normal install. Download the release ZIP, then use either method below.
+- **OS:** Windows 10 or Windows 11
+- **Game:** Mount & Blade II: Bannerlord — Steam or Xbox / Game Pass
+- **Version compatibility:** built against Bannerlord's current `.NET Framework 4.7.2` runtime; compatible with any game version that uses the same runtime
+
+No build tools are needed for a normal install.
 
 ---
 
-### Option A — Script install (recommended)
+### Step 1 — Download the mod
 
-The release ZIP contains `install.ps1` which auto-detects your Bannerlord location and copies the mod to the right place.
+Download the latest release ZIP from the Releases page. The ZIP contains:
 
-1. Extract the ZIP anywhere.
-2. Open PowerShell in the extracted folder and run:
+```
+ColoursOfCalradia/
+    SubModule.xml
+    install.ps1
+    README.md
+    ModuleData/
+    bin/
+        Win64_Shipping_Client/
+            ColoursOfCalradia.dll
+        Gaming.Desktop.x64_Shipping_Client/
+            ColoursOfCalradia.dll
+```
+
+Extract the ZIP to any temporary location (Desktop, Downloads, etc.). You should end up with a single `ColoursOfCalradia` folder.
+
+---
+
+### Step 2 — Install
+
+Choose whichever method you prefer. Both produce the same result.
+
+---
+
+#### Option A — Script install (recommended)
+
+The release ZIP includes `install.ps1`, a PowerShell script that finds your game automatically and copies all files to the correct location.
+
+**2a. Open PowerShell in the extracted folder**
+
+Right-click inside the extracted `ColoursOfCalradia` folder while holding **Shift**, then choose **Open PowerShell window here**. On Windows 11 you may need to select **Show more options** first.
+
+Alternatively: open PowerShell from the Start Menu, then navigate to the folder:
+
+```powershell
+cd "$env:USERPROFILE\Downloads\ColoursOfCalradia"
+```
+
+**2b. Allow the script to run (first-time only)**
+
+Windows blocks unsigned scripts by default. Run this once per PowerShell session to allow it — it does not permanently change your system policy:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+**2c. Run the installer**
 
 ```powershell
 .\install.ps1
 ```
 
-The script checks the Steam registry key, the default Steam path, and scans `C:\XboxGames\` automatically. If your game is in a non-standard location, pass the path explicitly:
+The script automatically checks:
+1. The Steam registry key (`HKLM\SOFTWARE\WOW6432Node\Valve\Steam` and `HKCU\Software\Valve\Steam`)
+2. The default Steam path (`C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord`)
+3. All subdirectories of `C:\XboxGames\` (Xbox / Game Pass installs)
+
+If detection succeeds you will see:
+
+```
+Detected Bannerlord at: C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord
+Platform bin: Win64_Shipping_Client
+Using DLL: ...\bin\Win64_Shipping_Client\ColoursOfCalradia.dll
+Installed successfully to: ...\Modules\ColoursOfCalradia
+```
+
+**Non-standard install location**
+
+If you installed Bannerlord outside the default Steam library (e.g. a second drive), pass the path explicitly:
 
 ```powershell
 .\install.ps1 -BannerlordPath "D:\Games\Mount & Blade II Bannerlord"
 ```
 
-3. Launch the game, click **Mods**, enable **Colours of Calradia**, click **Play**.
+For Xbox / Game Pass with a known GUID folder:
+
+```powershell
+.\install.ps1 -BannerlordPath "C:\XboxGames\Mount & Blade II- Bannerlord\Content"
+```
 
 ---
 
-### Option B — Manual install
+#### Option B — Manual install
 
-1. Extract the ZIP. You will get a `ColoursOfCalradia` folder.
+**2a. Find your Bannerlord root directory**
 
-2. Find your Bannerlord root directory:
-
-| Platform | Typical path |
-|----------|-------------|
+| Platform | How to find it |
+|----------|---------------|
 | Steam (default library) | `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord` |
-| Steam (custom library) | Open Steam → right-click the game → Manage → Browse local files |
-| Xbox / Game Pass | Open `C:\XboxGames\` in Explorer — Bannerlord is the folder whose `Content` subfolder contains a `bin` folder |
+| Steam (custom library) | Open Steam → right-click Bannerlord → Manage → Browse local files |
+| Xbox / Game Pass | Open `C:\XboxGames\` in Explorer; Bannerlord's folder contains a `Content` subfolder that has a `bin` folder inside it |
 
-3. Copy the entire `ColoursOfCalradia` folder into the `Modules` subfolder:
+The correct root is the folder that contains both a `bin` subfolder and a `Modules` subfolder.
+
+**2b. Copy the mod folder**
+
+Copy the entire `ColoursOfCalradia` folder (the one that contains `SubModule.xml`) into the `Modules` subfolder of your Bannerlord root.
+
+The final structure on disk must look exactly like this:
 
 ```
 <BannerlordRoot>\Modules\ColoursOfCalradia\
     SubModule.xml
+    install.ps1
+    README.md
     ModuleData\
+        items.xml
+        troops.xml
     bin\
         Win64_Shipping_Client\
             ColoursOfCalradia.dll
         Gaming.Desktop.x64_Shipping_Client\
             ColoursOfCalradia.dll
-    install.ps1
-    README.md
 ```
 
-4. Launch the game, click **Mods**, enable **Colours of Calradia**, click **Play**.
+> If `SubModule.xml` ends up one level too deep (e.g. `Modules\ColoursOfCalradia\ColoursOfCalradia\SubModule.xml`) the game will not see the mod. Flatten the folder so `SubModule.xml` sits directly inside `Modules\ColoursOfCalradia\`.
 
-> **Load order:** no special position required. The mod has no dependencies on other mods.
+---
+
+### Step 3 — Enable the mod in the launcher
+
+1. Launch **Mount & Blade II: Bannerlord**.
+2. In the launcher, click **Mods** in the left panel.
+3. Find **Colours of Calradia** in the list and tick the checkbox to enable it.
+4. Click **Play**.
+
+> **Load order:** no special position is required. Colours of Calradia has no dependencies on other mods and does not conflict with mods that do not touch the magic or personality systems.
+
+---
+
+### Step 4 — Verify the install worked
+
+Once in-game, start a new campaign. Shortly after the character creation screen you will be presented with **"The Colours of Calradia"** school selection menu. If this screen appears, the mod is installed correctly.
+
+If the screen does not appear:
+
+- Confirm the mod is ticked in the launcher mod list.
+- Confirm `SubModule.xml` exists at `<BannerlordRoot>\Modules\ColoursOfCalradia\SubModule.xml`.
+- Confirm `ColoursOfCalradia.dll` exists under the correct platform bin folder (see the folder tree above).
+
+---
+
+### Troubleshooting
+
+**Script reports "Could not auto-detect your Bannerlord installation"**
+
+Your game is installed in a non-standard location. Pass the path manually:
+
+```powershell
+.\install.ps1 -BannerlordPath "D:\Games\Mount & Blade II Bannerlord"
+```
+
+**Script reports "DLL not found"**
+
+You are running the script from inside the repository rather than from a release ZIP, and the project has not been built yet. Either download the release ZIP (which includes the pre-built DLL) or build from source first (see *Building from Source* below).
+
+**Script reports "cannot be loaded because running scripts is disabled"**
+
+Run the execution policy bypass command before calling the script:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\install.ps1
+```
+
+**The mod list in the launcher does not show Colours of Calradia**
+
+The game scans `<BannerlordRoot>\Modules\` for folders that contain a valid `SubModule.xml` at their root. Verify:
+
+1. The folder is named exactly `ColoursOfCalradia` (no spaces, capital C, capital of C).
+2. `SubModule.xml` is directly inside that folder, not in a subfolder.
+3. Restart the launcher after copying files — it does not hot-reload.
+
+**Game crashes on load**
+
+The DLL must match the game version's .NET runtime. If the game was recently patched and the crash started afterward, check the Releases page for a compatibility update.
+
+---
+
+### Updating the mod
+
+Re-run `install.ps1` from the new release ZIP. It overwrites all existing mod files automatically. No manual cleanup is needed between versions.
+
+---
+
+### Uninstalling
+
+Delete the folder:
+
+```
+<BannerlordRoot>\Modules\ColoursOfCalradia\
+```
+
+No registry entries, no save-game data, and no other files are created outside this folder. Removing it is a complete uninstall. Existing saves created with the mod active will continue to load but will not present the school selection screen and will have no magic effects.
 
 ---
 
@@ -538,17 +687,17 @@ Invoke spells target heroes, rosters, and rival lords directly. No cooldowns —
 
 | Spell | Combo | School | Effect | Cost / Limiter |
 |-------|-------|--------|--------|----------------|
-| **Bloodprice** | `LURR` | Red | Party morale +20×power | −20% current HP; blocked at ≤5 HP |
+| **Crimson March** | `LURR` | Red | Nudges party position ~1.5 km toward destination each hour; maintains morale ≥78 as a secondary bonus | −15% current HP on cast; −5 HP per hour; 4–8 h duration scaled by power; blocked at ≤5 HP |
 | **Muster Call** | `LURU` | Orange | Recruit 2–4 tier-1 troops from nearest friendly settlement | Gold cost 100→200→400 (capped at 400), resets at midnight |
 | **Whispered Ruin** | `LULU` | Yellow | Nearest enemy lord (at war) clan renown −8 | −2 own clan renown per cast |
 | **Tend the Fallen** | `LULL` | Green | Heal 3+(power×2) wounded troops in own party | −5% current HP per cast; blocked at ≤5 HP |
-| **Counter-Scheme** | `LUUL` | Blue | Nearest enemy lord clan influence −8 | −300 gold per cast; kingdom required |
+| **Scholar's Blueprint** | `LUUL` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | −500 gold + −3 clan renown per cast; requires active siege; no effect if nothing is under construction |
 | **Wither's Touch** | `LUUR` | Purple | Nearest enemy lord: party morale −15, clan renown −8 | 14 days aging (flat) per cast |
 
 ### Notes
 
 - **Orange Muster Call** gold cost is capped at 400 — once at the cap, each cast costs 400 gold for as many recruits as your power allows. The cap resets each campaign day.
-- **Yellow Whispered Ruin** and **Dread Whisper** require an active war with the target's faction. **Counter-Scheme** and **Wither's Touch** work against any non-player faction.
-- **Blue** campaign spells both require kingdom membership — influence has no meaning outside one.
+- **Yellow Whispered Ruin** and **Dread Whisper** require an active war with the target's faction. **Scholar's Blueprint** requires an active siege by the player's party. **Wither's Touch** works against any non-player faction.
+- **Scholar's Investment** requires kingdom membership — influence has no meaning outside one. **Scholar's Blueprint** requires no kingdom but does require an ongoing siege.
 - **Purple Grey Veil** session scaling resets on load (intentional — in-memory only). **Wither's Touch** aging is flat at 14 days regardless of how many times you cast it in a session.
 - **Red** HP costs apply to campaign HP, which carries into the next battle. Ember Drive during a raid means you fight the battle with reduced health.
