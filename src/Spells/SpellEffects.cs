@@ -139,6 +139,8 @@ namespace ColoursOfCalradia
         private static bool  _scarletWardActive   = false;
         public  static bool  ScarletWardActive    => _scarletWardActive;
         private static bool  _ceruleanMirrorActive = false;
+        public  static bool  CeruleanMirrorActive => _ceruleanMirrorActive;
+        private static int   _ceruleanMirrorBlocks = 0;
         private static bool  _shadowVeilActive     = false;
         private static Agent _hollowGazeTarget     = null;
         private static float _hollowGazeTimer      = 0f;
@@ -260,7 +262,7 @@ namespace ColoursOfCalradia
         public static void ClearSelfEffects()
         {
             if (_scarletWardActive)   { _scarletWardActive = false; }
-            if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; }
+            if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; _ceruleanMirrorBlocks = 0; }
             _shadowVeilActive  = false;
             _hollowGazeTarget  = null;
             _confusionRemaining = 0f;

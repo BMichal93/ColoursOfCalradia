@@ -84,7 +84,7 @@ namespace ColoursOfCalradia
                 Flavour="You lay hands upon yourself. The wounds knit closed." },
             new SpellEntry { Name="Cerulean Mirror",  Combo="RLUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
-                Flavour="Spells pass through you for 40 seconds. Steel does not." },
+                Flavour="Spells and missiles pass through you — three volleys at most, twelve seconds at most. Steel does not." },
             new SpellEntry { Name="Grief's Veil",     Combo="RLUR", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="The grey folds you from sight for 12 seconds. Nearby enemies lose track of you and pause. You cannot be touched while the veil holds." },

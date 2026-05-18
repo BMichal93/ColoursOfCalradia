@@ -64,6 +64,26 @@ namespace ColoursOfCalradia
             Msg($"Scarlet Ward shatters — iron turned the blow ({absorbed} absorbed).", ColorSchool.Red);
         }
 
+        // Called from OnAgentHit — deflects one missile; shatters after 3 blocks
+        public static void AbsorbCeruleanMissile(int absorbed)
+        {
+            if (!_ceruleanMirrorActive || Player == null || !Player.IsActive()) return;
+            if (absorbed > 0)
+                try { Player.Health = Math.Min(Player.HealthLimit, Player.Health + absorbed); } catch { }
+            _ceruleanMirrorBlocks--;
+            if (_ceruleanMirrorBlocks <= 0)
+            {
+                _ceruleanMirrorActive = false;
+                _ceruleanMirrorBlocks = 0;
+                BeginAgentGlow(Player, ColorSchool.Blue, 1f);
+                Msg("The Cerulean Mirror shatters — three volleys turned.", ColorSchool.Blue);
+            }
+            else
+            {
+                BeginAgentGlow(Player, ColorSchool.Blue, 0.5f);
+            }
+        }
+
         // Warm Beacon — teleport all nearby allies to your side
         private static void SpellSelfOrange()
         {
@@ -131,13 +151,14 @@ namespace ColoursOfCalradia
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Mirror — 40-second magic immunity (physical attacks still connect)
+        // Cerulean Mirror — 12-second magic immunity + up to 3 missile blocks, then shatters
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
-            const float Duration = 40f;
+            const float Duration = 12f;
             _ceruleanMirrorActive = true;
+            _ceruleanMirrorBlocks = 3;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
             SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
             ActiveEffectManager.Add(new ActiveEffect
@@ -145,11 +166,15 @@ namespace ColoursOfCalradia
                 Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
                 OnExpire = () =>
                 {
-                    _ceruleanMirrorActive = false;
-                    Msg("The Cerulean Mirror dims. Spells find you again.", ColorSchool.Blue);
+                    if (_ceruleanMirrorActive)
+                    {
+                        _ceruleanMirrorActive = false;
+                        _ceruleanMirrorBlocks = 0;
+                        Msg("The Cerulean Mirror dims. Spells and missiles find you again.", ColorSchool.Blue);
+                    }
                 }
             });
-            Msg("Cerulean Mirror — spells pass through you for 40 seconds.", ColorSchool.Blue);
+            Msg("Cerulean Mirror — spells and missiles deflected for 12 seconds or 3 volleys. Steel still finds flesh.", ColorSchool.Blue);
         }
 
         // Grief's Veil — the grey folds you from sight; nearby enemies lose nerve

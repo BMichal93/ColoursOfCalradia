@@ -130,9 +130,26 @@ namespace ColoursOfCalradia
             in MissionWeapon affectorWeapon, in Blow blow, in AttackCollisionData attackCollisionData)
         {
             // Scarlet Ward: first physical blow against the player shatters the ward and undoes the damage
+            bool wardHandled = false;
             if (affectedAgent == Agent.Main && affectorAgent != Agent.Main
                 && affectorAgent != null && SpellEffects.ScarletWardActive)
+            {
                 SpellEffects.AbsorbScarletWard(blow.InflictedDamage);
+                wardHandled = true;
+            }
+
+            // Cerulean Mirror: deflects missiles (arrows, bolts, javelins, thrown weapons); melee connects normally.
+            // Skip if Scarlet Ward already absorbed this hit to prevent double restoration.
+            if (!wardHandled && affectedAgent == Agent.Main && affectorAgent != Agent.Main
+                && affectorAgent != null && SpellEffects.CeruleanMirrorActive)
+            {
+                var wc = affectorWeapon.CurrentUsageItem?.WeaponClass ?? WeaponClass.Undefined;
+                bool isMissile = wc == WeaponClass.Arrow         || wc == WeaponClass.Bolt     ||
+                                 wc == WeaponClass.Javelin       || wc == WeaponClass.ThrowingAxe ||
+                                 wc == WeaponClass.ThrowingKnife || wc == WeaponClass.Stone;
+                if (isMissile)
+                    SpellEffects.AbsorbCeruleanMissile(blow.InflictedDamage);
+            }
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent,
