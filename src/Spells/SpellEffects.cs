@@ -55,8 +55,8 @@ namespace ColoursOfCalradia
             try
             {
                 float hour = (float)(CampaignTime.Now.ToHours % 24.0);
-                if (hour < 5f  || hour >= 22f) return LightLevel.Dark; // 22:00–05:00 deep night
-                if (hour < 7f  || hour >= 19f) return LightLevel.Dim;  // dawn / dusk
+                if (hour < 4f  || hour >= 22f) return LightLevel.Dark; // 22:00–05:00 deep night
+                if (hour < 6f  || hour >= 19f) return LightLevel.Dim;  // dawn / dusk
                 return LightLevel.Bright;                               // 07:00–19:00 full day
             }
             catch { return LightLevel.Bright; }
