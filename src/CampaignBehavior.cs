@@ -59,6 +59,8 @@ namespace ColoursOfCalradia
         // ── New game: present colour selection ───────────────────────────────
         private void OnNewGameCreated()
         {
+            ColourKnowledge.ResetForNewGame();
+
             var elements = _allSchoolsOrdered.Select(school =>
             {
                 var info = ColorSchoolData.Info[school];

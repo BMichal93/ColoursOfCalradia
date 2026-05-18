@@ -83,6 +83,14 @@ namespace ColoursOfCalradia
             _chosenSchools.Add(school);
         }
 
+        public static void ResetForNewGame()
+        {
+            _chosenSchools.Clear();
+            foreach (var key in _castCounters.Keys.ToList()) _castCounters[key] = 0;
+            _giftedChildIds.Clear();
+            _purpleFertilityLevel = 1.0f;
+        }
+
         public static bool IsChildGifted(string heroId) => _giftedChildIds.Contains(heroId);
         public static void AddGiftedChild(string heroId) => _giftedChildIds.Add(heroId);
 
