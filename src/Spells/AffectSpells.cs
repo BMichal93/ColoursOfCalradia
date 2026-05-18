@@ -216,61 +216,80 @@ namespace ColoursOfCalradia
         private static void SpellAffectBlue()
         {
             var party = MobileParty.MainParty;
-            if (party == null || Hero.MainHero == null) return;
-            if (_gazeActive)
-            {
-                Msg("Scholar's Gaze — the sight already holds. It cannot be extended.", ColorSchool.Blue);
-                return;
-            }
+            if (party == null) return;
 
-            float power        = SpellPower(ColorSchool.Blue);
-            float naturalRange = party.SeeingRange;
-            float doubledRange = naturalRange * 2f;
-            int   hours        = Math.Max(12, (int)(24f * power));
+            const float Radius = 80f;
+            Vec2 pos = party.GetPosition2D;
 
-            if (!TrySetSeeingRange(doubledRange))
-            {
-                Msg("Scholar's Gaze — the sight finds no purchase here.", ColorSchool.Blue);
-                return;
-            }
+            IFaction playerFaction = Hero.MainHero?.MapFaction;
 
-            _gazeActive = true;
-            _gazeRange  = doubledRange;
-            try { _gazeEndHour = CampaignTime.Now.ToHours + hours; } catch { return; }
-            Msg($"Scholar's Gaze — sight range doubled for {hours}h. The horizon opens.", ColorSchool.Blue);
-        }
-
-        private static bool TrySetSeeingRange(float value)
-        {
+            List<MobileParty> nearby;
             try
             {
-                var party = MobileParty.MainParty;
-                if (party == null) return false;
-
-                // Try the property setter (works if it's private/internal set)
-                if (_seeingRangeSetMethod == null)
-                    _seeingRangeSetMethod = typeof(MobileParty)
-                        .GetProperty("SeeingRange", BindingFlags.Public | BindingFlags.Instance)
-                        ?.GetSetMethod(nonPublic: true);
-                if (_seeingRangeSetMethod != null)
-                {
-                    _seeingRangeSetMethod.Invoke(party, new object[] { value });
-                    return true;
-                }
-
-                // Fall back to the backing field (computed-only property path)
-                if (_seeingRangeField == null)
-                    _seeingRangeField = typeof(MobileParty)
-                        .GetField("_seeingRange", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (_seeingRangeField != null)
-                {
-                    _seeingRangeField.SetValue(party, value);
-                    return true;
-                }
-
-                return false;
+                nearby = MobileParty.All
+                    .Where(p =>
+                    {
+                        if (p == party || p.LeaderHero == null) return false;
+                        if ((p.GetPosition2D - pos).Length > Radius) return false;
+                        var f = p.MapFaction;
+                        if (f == null) return false;
+                        bool allied = f == playerFaction;
+                        bool enemy  = playerFaction != null && playerFaction.IsAtWarWith(f);
+                        return allied || enemy;
+                    })
+                    .OrderBy(p => p.MapFaction == playerFaction ? 0 : 1)
+                    .ThenBy(p => p.MapFaction?.Name?.ToString() ?? "")
+                    .ThenBy(p => (p.GetPosition2D - pos).Length)
+                    .ToList();
             }
-            catch { return false; }
+            catch { Msg("Scholar's Gaze — the sight finds no purchase here.", ColorSchool.Blue); return; }
+
+            if (nearby.Count == 0)
+            {
+                Msg("Scholar's Gaze — no allies or enemies within range.", ColorSchool.Blue);
+                return;
+            }
+
+            var lines = new List<string>();
+            foreach (var grp in nearby.GroupBy(p => p.MapFaction == playerFaction ? "Allied" : p.MapFaction?.Name?.ToString() ?? "Enemy"))
+            {
+                lines.Add($"── {grp.Key} ──");
+                foreach (var p in grp)
+                {
+                    string dir   = CompassDir(pos, p.GetPosition2D);
+                    int    count = p.MemberRoster.TotalManCount;
+                    string name  = p.LeaderHero?.Name?.ToString() ?? p.Name.ToString();
+                    lines.Add($"  {name}  [{dir}]  —  {count} troops");
+                }
+                lines.Add("");
+            }
+            if (lines.Count > 0 && lines[lines.Count - 1] == "")
+                lines.RemoveAt(lines.Count - 1);
+
+            InformationManager.ShowInquiry(new InquiryData(
+                "Scholar's Gaze — Nearby Lords",
+                string.Join("\n", lines),
+                true, false, "Close", "",
+                () => { }, null
+            ), true, true);
+
+            Msg("Scholar's Gaze — the horizon opens.", ColorSchool.Blue);
+        }
+
+        private static string CompassDir(Vec2 from, Vec2 to)
+        {
+            float dx = to.x - from.x;
+            float dy = to.y - from.y;
+            double a = Math.Atan2(dx, dy) * 180.0 / Math.PI;
+            if (a < 0) a += 360.0;
+            if (a < 22.5  || a >= 337.5) return "N";
+            if (a < 67.5)  return "NE";
+            if (a < 112.5) return "E";
+            if (a < 157.5) return "SE";
+            if (a < 202.5) return "S";
+            if (a < 247.5) return "SW";
+            if (a < 292.5) return "W";
+            return "NW";
         }
 
         // =================================================================
@@ -294,12 +313,7 @@ namespace ColoursOfCalradia
         private static bool   _redMarchActive  = false;
         private static double _redMarchEndHour = -1.0;
 
-        // ── Blue Affect (Scholar's Gaze) tracking ────────────────────────────
-        private static bool       _gazeActive           = false;
-        private static double     _gazeEndHour          = -1.0;
-        private static float      _gazeRange            = 0f;
-        private static MethodInfo _seeingRangeSetMethod; // cached: private property setter
-        private static FieldInfo  _seeingRangeField;     // cached: backing field fallback
+        // ── Blue Affect (Scholar's Gaze) ─────────────────────────────────────
 
         // ── Red — Crimson March ──────────────────────────────────────────────
         // Sacrifice 8% HP to sustain a blood-fuelled march for several hours.
@@ -360,22 +374,6 @@ namespace ColoursOfCalradia
                 catch { }
             }
 
-            if (_gazeActive)
-            {
-                try
-                {
-                    if (MobileParty.MainParty == null || CampaignTime.Now.ToHours >= _gazeEndHour)
-                    {
-                        _gazeActive = false; _gazeEndHour = -1.0; _gazeRange = 0f;
-                        Msg("Scholar's Gaze fades. The horizon returns to normal.", ColorSchool.Blue);
-                    }
-                    else
-                    {
-                        TrySetSeeingRange(_gazeRange);
-                    }
-                }
-                catch { }
-            }
         }
 
         // ── Orange — Golden Word ──────────────────────────────────────────

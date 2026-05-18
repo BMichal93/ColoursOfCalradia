@@ -169,15 +169,16 @@ namespace ColoursOfCalradia
 
                 if (battle.Count > 0)
                 {
-                    lines.Add("  Battle");
+                    lines.Add("  [ Battle ]");
                     foreach (var s in battle)
-                        lines.Add($"    {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
+                        lines.Add($"      {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
                 }
                 if (map.Count > 0)
                 {
-                    lines.Add("  Campaign");
+                    if (battle.Count > 0) lines.Add("");
+                    lines.Add("  [ Campaign ]");
                     foreach (var s in map)
-                        lines.Add($"    {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
+                        lines.Add($"      {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
                 }
             }
 
@@ -193,7 +194,7 @@ namespace ColoursOfCalradia
                                + string.Join("\n", lines);
 
             InformationManager.ShowInquiry(new InquiryData(
-                "Spellbook — Colours of Calradia",
+                "Spell prism",
                 description,
                 true, false,
                 "Close", "",
