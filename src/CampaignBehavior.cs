@@ -120,8 +120,8 @@ namespace ColoursOfCalradia
                     ColorSchoolData.GetMessageColor(school)));
             }
 
-            // Madness — colours that are not adjacent on the ring (Red-Orange-Yellow-Green-Blue-Purple)
-            // create an internal conflict that fractures the mage's personality.
+            // Madness — colours that are not adjacent on the spectrum (Red-Orange-Yellow-Green-Blue-Purple)
+            // create an internal conflict that fractures the mage's personality. Red and Purple do not wrap.
             if (schools.Count >= 2 && !AreColoursContiguous(schools))
             {
                 ApplyMadness(player);
@@ -139,23 +139,17 @@ namespace ColoursOfCalradia
             }
         }
 
-        // Returns true if the chosen schools form a contiguous arc on the colour ring.
-        // Ring order: Red(0)-Orange(1)-Yellow(2)-Green(3)-Blue(4)-Purple(5), wraps around.
+        // Returns true if the chosen schools form a contiguous segment on the colour spectrum.
+        // Spectrum order: Red(0)-Orange(1)-Yellow(2)-Green(3)-Blue(4)-Purple(5) — linear, no wrap.
+        // Red and Purple are at opposite ends and are NOT adjacent.
         private bool AreColoursContiguous(List<ColorSchool> schools)
         {
             var positions = schools.Select(s => (int)s).ToHashSet();
-            int n = 6;
-            // Try each chosen colour as arc start; walk forward checking all are present
-            foreach (int start in positions)
-            {
-                bool allPresent = true;
-                for (int step = 0; step < positions.Count; step++)
-                {
-                    if (!positions.Contains((start + step) % n)) { allPresent = false; break; }
-                }
-                if (allPresent) return true;
-            }
-            return false;
+            int min = positions.Min();
+            int max = positions.Max();
+            for (int i = min; i <= max; i++)
+                if (!positions.Contains(i)) return false;
+            return true;
         }
 
         private static readonly TraitObject[] MadnessTraits =

@@ -62,15 +62,13 @@ namespace ColoursOfCalradia
             if (count >= 2)
             {
                 var positions = _chosenSchools.Select(s => (int)s).ToHashSet();
-                const int n = 6;
-                foreach (int start in positions)
-                {
-                    bool ok = true;
-                    for (int step = 0; step < positions.Count; step++)
-                        if (!positions.Contains((start + step) % n)) { ok = false; break; }
-                    if (ok) return 0; // contiguous — no order madness
-                }
-                return 5; // non-contiguous
+                int min = positions.Min();
+                int max = positions.Max();
+                bool contiguous = true;
+                for (int i = min; i <= max; i++)
+                    if (!positions.Contains(i)) { contiguous = false; break; }
+                if (contiguous) return 0;
+                return 5;
             }
             return 0;
         }
@@ -84,10 +82,7 @@ namespace ColoursOfCalradia
 
         public static void AddSchool(ColorSchool school)
         {
-            if (_chosenSchools.Add(school)) // Add returns false if already present
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"[DEBUG] School granted: {ColorSchoolData.Info[school].Name} — check the message above for context.",
-                    Color.FromUint(0xFFFF4400)));
+            _chosenSchools.Add(school);
         }
 
         public static bool IsChildGifted(string heroId) => _giftedChildIds.Contains(heroId);

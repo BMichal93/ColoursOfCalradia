@@ -170,11 +170,11 @@ namespace ColoursOfCalradia
                     {
                         _ceruleanMirrorActive = false;
                         _ceruleanMirrorBlocks = 0;
-                        Msg("The Cerulean Mirror dims. Spells and missiles find you again.", ColorSchool.Blue);
+                        Msg("The Cerulean Mirror dims. Missiles find you again.", ColorSchool.Blue);
                     }
                 }
             });
-            Msg("Cerulean Mirror — spells and missiles deflected for 12 seconds or 3 volleys. Steel still finds flesh.", ColorSchool.Blue);
+            Msg("Cerulean Mirror — missiles deflected for 12 seconds or 3 volleys. Steel still finds flesh.", ColorSchool.Blue);
         }
 
         // Grief's Veil — the grey folds you from sight; nearby enemies lose nerve
@@ -208,8 +208,23 @@ namespace ColoursOfCalradia
                         {
                             try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
                             _shadowVeilActive = false;
+                            // Post-veil: 2s stagger — the world snaps back hard
+                            try { if (Player?.IsActive() == true) Player.SetMaximumSpeedLimit(0f, false); } catch { }
+                            ActiveEffectManager.Add(new ActiveEffect
+                            {
+                                Name = "_veil_aftermath", Duration = 2f, IsMissionEffect = true,
+                                OnExpire = () =>
+                                {
+                                    try { if (Player?.IsActive() == true) Player.SetMaximumSpeedLimit(10f, false); } catch { }
+                                    Msg("The grey recedes. Your limbs return to you.", ColorSchool.Purple);
+                                }
+                            });
+                            Msg("Grief's Veil lifts. They see you again — and for a moment, you cannot move.", ColorSchool.Purple);
                         }
-                        Msg("Grief's Veil lifts. The purple recedes. They see again.", ColorSchool.Purple);
+                        else
+                        {
+                            Msg("Grief's Veil lifts. The purple recedes.", ColorSchool.Purple);
+                        }
                     }
                 });
             }

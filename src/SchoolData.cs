@@ -52,7 +52,7 @@ namespace ColoursOfCalradia
                 PersonalityEffect= "Repeated casting makes you less Calculating — more instinctive, more impulsive.",
                 LimitationA      = "Furious: Each Red spell automatically issues a Charge order to your formations.",
                 LimitationB      = "Blood Price: Each Red spell opens a wound on the caster — magic always takes its due.",
-                AttributePenalty = "-1 Control"
+                AttributePenalty = "-1 Cunning"
             },
             [ColorSchool.Orange] = new SchoolInfo
             {
@@ -61,7 +61,7 @@ namespace ColoursOfCalradia
                                    "Their indulgent nature, however, devours resources and sends the caster lurching with each casting.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
                 LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
-                LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions for a moment, lurching unpredictably across the field. The Golden Recoil creation spell turns the violence of others back on themselves.",
+                LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions, have a 33% chance of being thrown from your mount, and scatter 2 units of carried ammunition. The Golden Recoil creation spell turns the violence of others back on themselves.",
                 AttributePenalty = "-1 Intellect"
             },
             [ColorSchool.Yellow] = new SchoolInfo
@@ -82,7 +82,7 @@ namespace ColoursOfCalradia
                 PersonalityEffect= "Repeated casting increases your Mercy — slow to strike, quick to spare.",
                 LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon.",
                 LimitationB      = "Horse-Shy: Green magic cannot be worked from horseback — the living current will not flow through a mount's distress.",
-                AttributePenalty = "-1 Endurance"
+                AttributePenalty = "-1 Control"
             },
             [ColorSchool.Blue] = new SchoolInfo
             {
@@ -91,7 +91,7 @@ namespace ColoursOfCalradia
                                    "But knowledge is heavy, and stillness costs time — each casting strains the body and draws years from the mage without warning.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
                 LimitationA      = "Scholar's Weight: Each Blue spell makes your equipment feel heavier — movement slows with every cast and does not recover until the battle ends. Six stacks will slow you to a crawl.",
-                LimitationB      = "Timeless Toll: Each Blue spell drawn in battle costs the caster ~2 days — the Scholar's pursuit of perfect stillness quietly devours years.",
+                LimitationB      = "Timeless Toll: Each Blue spell costs the caster ~2 days — the Scholar's pursuit of perfect stillness quietly devours years.",
                 AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
@@ -100,9 +100,9 @@ namespace ColoursOfCalradia
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
                                    "The grey does not take violently — it takes steadily. Each working bleeds away standing, presence, and eventually the self.",
                 PersonalityEffect= "Repeated casting hollows out all personality — grief erodes every trait toward a silent zero.",
-                LimitationA      = "Hollow Standing: Each Purple spell costs renown and influence — the grey bleeds your presence from the world, quietly.",
+                LimitationA      = "Hollow Standing: Each Purple campaign map spell costs renown — the grey bleeds your presence from the world, quietly.",
                 LimitationB      = "The Slow Unravelling: Each Purple cast quietly reduces the caster's fertility — something within grows dimmer with every working. It never reaches zero, but it never comes back.",
-                AttributePenalty = "-1 Cunning"
+                AttributePenalty = "-1 Endurance"
             }
         };
 
@@ -130,9 +130,9 @@ namespace ColoursOfCalradia
                 case ColorSchool.Red:    return DefaultCharacterAttributes.Vigor;        // raw destructive force
                 case ColorSchool.Orange: return DefaultCharacterAttributes.Social;       // inspiring presence
                 case ColorSchool.Yellow: return DefaultCharacterAttributes.Cunning;      // manipulation of fear
-                case ColorSchool.Green:  return DefaultCharacterAttributes.Control;      // precise restorative touch
+                case ColorSchool.Green:  return DefaultCharacterAttributes.Endurance;    // healing draws on inner resilience
                 case ColorSchool.Blue:   return DefaultCharacterAttributes.Intelligence; // scholarly command of stillness
-                case ColorSchool.Purple: return DefaultCharacterAttributes.Endurance;    // enduring the weight of grief and time
+                case ColorSchool.Purple: return DefaultCharacterAttributes.Control;      // grief's precise, careful touch
                 default:                 return DefaultCharacterAttributes.Vigor;
             }
         }
@@ -142,12 +142,12 @@ namespace ColoursOfCalradia
         {
             switch (school)
             {
-                case ColorSchool.Red:    return DefaultCharacterAttributes.Control;
+                case ColorSchool.Red:    return DefaultCharacterAttributes.Cunning;
                 case ColorSchool.Orange: return DefaultCharacterAttributes.Intelligence;
                 case ColorSchool.Yellow: return DefaultCharacterAttributes.Social;
-                case ColorSchool.Green:  return DefaultCharacterAttributes.Endurance;
+                case ColorSchool.Green:  return DefaultCharacterAttributes.Control;
                 case ColorSchool.Blue:   return DefaultCharacterAttributes.Vigor;
-                case ColorSchool.Purple: return DefaultCharacterAttributes.Cunning;
+                case ColorSchool.Purple: return DefaultCharacterAttributes.Endurance;
                 default:                 return DefaultCharacterAttributes.Vigor;
             }
         }

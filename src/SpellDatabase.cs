@@ -25,7 +25,7 @@ using TaleWorlds.CampaignSystem.MapEvents;
 namespace ColoursOfCalradia
 {
     // =========================================================================
-    // 3. SPELL DATABASE  (18 battle spells + 6 campaign map Affect spells, 4-char combos)
+    // 3. SPELL DATABASE  (18 battle spells + 12 campaign map spells (6 Affect + 6 Invoke), 4-char combos)
     // =========================================================================
     public enum SpellContext { Mission, Map }
 
@@ -84,7 +84,7 @@ namespace ColoursOfCalradia
                 Flavour="You lay hands upon yourself. The wounds knit closed." },
             new SpellEntry { Name="Cerulean Mirror",  Combo="RLUL", School=ColorSchool.Blue,
                 Context=SpellContext.Mission,
-                Flavour="Spells and missiles pass through you — three volleys at most, twelve seconds at most. Steel does not." },
+                Flavour="Missiles pass through you — three volleys at most, twelve seconds at most. Steel does not." },
             new SpellEntry { Name="Grief's Veil",     Combo="RLUR", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
                 Flavour="The grey folds you from sight for 12 seconds. Nearby enemies lose track of you and pause. You cannot be touched while the veil holds." },
@@ -95,7 +95,7 @@ namespace ColoursOfCalradia
                 Flavour="The world around you ignites. All nearby pay the price of your fury." },
             new SpellEntry { Name="Golden Recoil",    Combo="LRRU", School=ColorSchool.Orange,
                 Context=SpellContext.Mission,
-                Flavour="A zone of warm retribution settles over the earth. Any soul that strikes while standing within it will feel the blow return in full. Cast again to dismiss." },
+                Flavour="A zone of warm retribution settles over the earth. Any soul that strikes while standing within it will feel a portion of the blow returned upon them. Cast again to dismiss." },
             new SpellEntry { Name="Creeping Dread",   Combo="LRLU", School=ColorSchool.Yellow,
                 Context=SpellContext.Mission,
                 Flavour="A cloud of formless revulsion drifts across the field. Those it passes through feel their skin crawl and their courage hollow out. Cast again to dismiss." },
@@ -113,9 +113,9 @@ namespace ColoursOfCalradia
             new SpellEntry { Name="Crimson March",     Combo="LURR", School=ColorSchool.Red,
                 Context=SpellContext.Map,
                 Flavour="A small wound, left open. Not enough to slow you — just enough to remind the body what is at stake. The pace holds for as long as the blood does." },
-            new SpellEntry { Name="Muster Call",      Combo="LURU", School=ColorSchool.Orange,
+            new SpellEntry { Name="Golden Word",       Combo="LURU", School=ColorSchool.Orange,
                 Context=SpellContext.Map,
-                Flavour="A warmth reaches outward to the nearest settlement. Voices answer before they know why they are moving." },
+                Flavour="Gold spent openly, before witnesses, in generous excess — it speaks louder than any title. The standing it buys is real." },
             new SpellEntry { Name="Whispered Ruin",   Combo="LULU", School=ColorSchool.Yellow,
                 Context=SpellContext.Map,
                 Flavour="A name repeated in the wrong ears becomes a wound. The target's standing bleeds quietly." },
@@ -129,10 +129,10 @@ namespace ColoursOfCalradia
                 Context=SpellContext.Map,
                 Flavour="The grey reaches into another life and takes something small. They will not know what is gone — only that it is." },
 
-            // ── AFFECT (UD prefix) — campaign map only, situation-dependent ─────
+            // ── AFFECT (UL prefix) — campaign map only, situation-dependent ─────
             new SpellEntry { Name="Ember Drive",       Combo="ULRR", School=ColorSchool.Red,
                 Context=SpellContext.Map,
-                Flavour="Only usable while raiding a village or clearing a hideout. The red urges your soldiers forward — the work goes faster." },
+                Flavour="Only usable while raiding a village or clearing a hideout. The red drives your soldiers forward — the plunder comes easier." },
             new SpellEntry { Name="Shared Feast",      Combo="ULRU", School=ColorSchool.Orange,
                 Context=SpellContext.Map,
                 Flavour="Consume one unit of food from your supplies to lift the spirit of those who march with you." },
@@ -142,12 +142,12 @@ namespace ColoursOfCalradia
             new SpellEntry { Name="Verdant Hour",      Combo="ULLL", School=ColorSchool.Green,
                 Context=SpellContext.Map,
                 Flavour="The green works quietly. A small harvest of grain appears, coaxed from the earth by patience and living magic." },
-            new SpellEntry { Name="Scholar's Investment", Combo="ULUL", School=ColorSchool.Blue,
+            new SpellEntry { Name="Scholar's Gaze",    Combo="ULUL", School=ColorSchool.Blue,
                 Context=SpellContext.Map,
-                Flavour="Knowledge, properly channelled, buys more than gold. Spend coin; gain standing." },
+                Flavour="The Scholar turns the mind's eye outward. For a time, the horizon doubles — no ridge hides a column, no valley conceals an approach." },
             new SpellEntry { Name="Grey Veil",         Combo="ULUR", School=ColorSchool.Purple,
                 Context=SpellContext.Map,
-                Flavour="The grey hides you — at a price. Nearby enemies lose your trail. The years it costs are gone for good." },
+                Flavour="The grey hides you — at a price. Nearby enemies lose your trail. Something of your standing bleeds away with it." },
         };
 
         public static SpellEntry Find(string combo) =>

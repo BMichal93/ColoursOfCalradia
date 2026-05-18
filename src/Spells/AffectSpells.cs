@@ -37,8 +37,8 @@ namespace ColoursOfCalradia
         //   Orange food cost doubles each cast within 24h (1→2→4→8…)
         //   Yellow self-morale drain escalates +5 each cast within 24h (5→10→15…)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   no extra penalty (aging is the mission-cast cost)
-        //   Purple aging scales per session: 7→14→21→… days
+        //   Blue   one active at a time (blocked if the gaze is already running)
+        //   Purple renown −5 per cast (no daily reset)
         // =================================================================
 
         // ── Orange escalation tracking ──────────────────────────────────────
@@ -49,8 +49,6 @@ namespace ColoursOfCalradia
         private static int _yellowCastCount   = 0;
         private static int _yellowFirstCastDay = -1;
 
-        // ── Purple session tracking (resets on load — intentional) ──────────
-        private static int _purpleCastCount = 0;
 
         // ── Red — Ember Drive ─────────────────────────────────────────────
         // During raid or hideout assault: +100×power gold per cast.
@@ -183,7 +181,7 @@ namespace ColoursOfCalradia
         }
 
         // ── Green — Verdant Hour ─────────────────────────────────────────
-        // Produce 1–4 grain (scales with Control attribute).
+        // Produce 1–4 grain (scales with Endurance attribute).
         // Cost: −5% current HP per cast. Forcing nature drains life from the caster.
         private static void SpellAffectGreen()
         {
@@ -211,30 +209,52 @@ namespace ColoursOfCalradia
             catch { Msg("Verdant Hour — the green stirs, but nothing takes form.", ColorSchool.Green); }
         }
 
-        // ── Blue — Scholar's Investment ───────────────────────────────────
-        // Spend 500 gold → +15×power influence.
-        // Each cast also costs −3 renown: buying influence taints your reputation.
-        // Requires membership in a kingdom — influence has no meaning outside one.
+        // ── Blue — Scholar's Gaze ─────────────────────────────────────────
+        // Double the party's sight range for several hours (scales with power).
+        // Sight is re-enforced each hourly tick; expires naturally at end time.
+        // Only one gaze may be active at a time.
         private static void SpellAffectBlue()
         {
-            if (Hero.MainHero == null) return;
-            if (Hero.MainHero.Clan?.Kingdom == null)
+            var party = MobileParty.MainParty;
+            if (party == null || Hero.MainHero == null) return;
+            if (_gazeActive)
             {
-                Msg("Scholar's Investment — you must belong to a kingdom for influence to mean anything.", ColorSchool.Blue);
-                return;
-            }
-            const int Cost = 500;
-            if (Hero.MainHero.Gold < Cost)
-            {
-                Msg($"Scholar's Investment — you need at least {Cost} gold to convert.", ColorSchool.Blue);
+                Msg("Scholar's Gaze — the sight already holds. It cannot be extended.", ColorSchool.Blue);
                 return;
             }
 
-            float power = SpellPower(ColorSchool.Blue);
-            int influence = (int)(15f * power);
-            Hero.MainHero.ChangeHeroGold(-Cost);
-            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, influence); } catch { }
-            Msg($"Scholar's Investment — {Cost} gold spent. Influence: +{influence}.", ColorSchool.Blue);
+            float power        = SpellPower(ColorSchool.Blue);
+            float naturalRange = party.SeeingRange;
+            float doubledRange = naturalRange * 2f;
+            int   hours        = Math.Max(12, (int)(24f * power));
+
+            if (!TrySetSeeingRange(doubledRange))
+            {
+                Msg("Scholar's Gaze — the sight finds no purchase here.", ColorSchool.Blue);
+                return;
+            }
+
+            _gazeActive = true;
+            _gazeRange  = doubledRange;
+            try { _gazeEndHour = CampaignTime.Now.ToHours + hours; } catch { return; }
+            Msg($"Scholar's Gaze — sight range doubled for {hours}h. The horizon opens.", ColorSchool.Blue);
+        }
+
+        private static bool TrySetSeeingRange(float value)
+        {
+            try
+            {
+                var party = MobileParty.MainParty;
+                if (party == null) return false;
+                if (_seeingRangeSetMethod == null)
+                    _seeingRangeSetMethod = typeof(MobileParty)
+                        .GetProperty("SeeingRange", BindingFlags.Public | BindingFlags.Instance)
+                        ?.GetSetMethod(true);
+                if (_seeingRangeSetMethod == null) return false;
+                _seeingRangeSetMethod.Invoke(party, new object[] { value });
+                return true;
+            }
+            catch { return false; }
         }
 
         // =================================================================
@@ -246,17 +266,23 @@ namespace ColoursOfCalradia
         //   Orange gold cost 100→200→400 (capped), resets at campaign midnight
         //   Yellow −2 own clan renown per cast (self-limiting)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   no extra penalty (aging is the mission-cast cost); siege required
-        //   Purple flat 14-day aging per cast
+        //   Blue   ~2 days aging per cast; siege required
+        //   Purple renown −10 per cast (no daily reset)
         // =================================================================
 
-        // ── Orange Invoke tracking ──────────────────────────────────────────
-        private static int _orangeCallCount    = 0;
-        private static int _orangeCallFirstDay = -1;
+        // ── Orange Invoke (Golden Word) tracking ────────────────────────────
+        private static int _wordCastCount    = 0;
+        private static int _wordFirstCastDay = -1;
 
         // ── Red Invoke march tracking ────────────────────────────────────────
         private static bool   _redMarchActive  = false;
         private static double _redMarchEndHour = -1.0;
+
+        // ── Blue Affect (Scholar's Gaze) tracking ────────────────────────────
+        private static bool       _gazeActive          = false;
+        private static double     _gazeEndHour         = -1.0;
+        private static float      _gazeRange           = 0f;
+        private static MethodInfo _seeingRangeSetMethod; // cached after first resolution
 
         // ── Red — Crimson March ──────────────────────────────────────────────
         // Sacrifice 8% HP to sustain a blood-fuelled march for several hours.
@@ -292,102 +318,89 @@ namespace ColoursOfCalradia
         // Called from CampaignBehavior.OnHourlyTick.
         public static void TickHourlyMapEffects()
         {
-            if (!_redMarchActive) return;
-            try
+            if (_redMarchActive)
             {
-                var hero  = Hero.MainHero;
-                var party = MobileParty.MainParty;
-                if (hero == null || party == null || hero.HitPoints <= 1)
+                try
                 {
-                    _redMarchActive = false; _redMarchEndHour = -1.0;
-                    Msg("Crimson March collapses — you have nothing left to bleed.", ColorSchool.Red);
-                    return;
+                    var hero  = Hero.MainHero;
+                    var party = MobileParty.MainParty;
+                    if (hero == null || party == null || hero.HitPoints <= 1)
+                    {
+                        _redMarchActive = false; _redMarchEndHour = -1.0;
+                        Msg("Crimson March collapses — you have nothing left to bleed.", ColorSchool.Red);
+                    }
+                    else if (CampaignTime.Now.ToHours >= _redMarchEndHour)
+                    {
+                        _redMarchActive = false; _redMarchEndHour = -1.0;
+                        Msg("Crimson March ends. The blood drive fades.", ColorSchool.Red);
+                    }
+                    else
+                    {
+                        if (party.Morale < 78f) try { party.RecentEventsMorale += 20f; } catch { }
+                        hero.HitPoints = Math.Max(1, hero.HitPoints - 2);
+                    }
                 }
-                if (CampaignTime.Now.ToHours >= _redMarchEndHour)
-                {
-                    _redMarchActive = false; _redMarchEndHour = -1.0;
-                    Msg("Crimson March ends. The blood drive fades.", ColorSchool.Red);
-                    return;
-                }
-                if (party.Morale < 78f) try { party.RecentEventsMorale += 20f; } catch { }
-                hero.HitPoints = Math.Max(1, hero.HitPoints - 2);
+                catch { }
             }
-            catch { }
+
+            if (_gazeActive)
+            {
+                try
+                {
+                    if (MobileParty.MainParty == null || CampaignTime.Now.ToHours >= _gazeEndHour)
+                    {
+                        _gazeActive = false; _gazeEndHour = -1.0; _gazeRange = 0f;
+                        Msg("Scholar's Gaze fades. The horizon returns to normal.", ColorSchool.Blue);
+                    }
+                    else
+                    {
+                        TrySetSeeingRange(_gazeRange);
+                    }
+                }
+                catch { }
+            }
         }
 
-        // ── Orange — Muster Call ─────────────────────────────────────────
-        // Instantly recruit 2–4 tier-1 troops from the nearest friendly settlement.
+        // ── Orange — Golden Word ──────────────────────────────────────────
+        // Spend gold as generous patronage → gain influence.
         // Gold cost: 100→200→400 (capped at 400), resets at campaign midnight.
+        // Requires kingdom membership — influence has no meaning outside one.
         private static void SpellInvokeOrange()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
+            if (Hero.MainHero.Clan?.Kingdom == null)
+            {
+                Msg("Golden Word — you must belong to a kingdom for influence to mean anything.", ColorSchool.Orange);
+                return;
+            }
 
             try
             {
                 int today = (int)CampaignTime.Now.ToDays;
-                if (_orangeCallFirstDay >= 0 && today > _orangeCallFirstDay)
-                { _orangeCallCount = 0; _orangeCallFirstDay = -1; }
+                if (_wordFirstCastDay >= 0 && today > _wordFirstCastDay)
+                { _wordCastCount = 0; _wordFirstCastDay = -1; }
             }
             catch { }
 
             const int MaxGold = 400;
-            int goldCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _orangeCallCount));
+            int goldCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _wordCastCount));
 
             if (Hero.MainHero.Gold < goldCost)
             {
-                Msg($"Muster Call — not enough gold ({goldCost} needed).", ColorSchool.Orange);
+                Msg($"Golden Word — not enough gold ({goldCost} needed).", ColorSchool.Orange);
                 return;
             }
 
-            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
-            Settlement nearest = null;
-            float minDist = float.MaxValue;
-            try
-            {
-                foreach (Settlement s in Settlement.All)
-                {
-                    if (!s.IsVillage && !s.IsTown && !s.IsCastle) continue;
-                    if (s.MapFaction != Hero.MainHero.MapFaction) continue;
-                    float d = (new Vec2(s.GatePosition.X, s.GatePosition.Y) - playerPos).Length;
-                    if (d < minDist) { minDist = d; nearest = s; }
-                }
-            }
-            catch { }
-
-            if (nearest == null)
-            {
-                Msg("Muster Call — no friendly settlement found to draw from.", ColorSchool.Orange);
-                return;
-            }
-
-            CharacterObject recruit = null;
-            try
-            {
-                string culture = Hero.MainHero.Culture?.StringId ?? nearest.Culture?.StringId ?? "";
-                foreach (CharacterObject c in CharacterObject.All)
-                {
-                    if (!c.IsHero && c.Tier == 1 && c.Culture?.StringId == culture)
-                    { recruit = c; break; }
-                }
-            }
-            catch { }
-
-            if (recruit == null)
-            {
-                Msg("Muster Call — no recruits available.", ColorSchool.Orange);
-                return;
-            }
-
-            float power = SpellPower(ColorSchool.Orange);
-            int count = 2 + _rng.Next(Math.Max(1, (int)(power * 2f)));
+            float power     = SpellPower(ColorSchool.Orange);
+            int   influence = (int)(15f * power);
             Hero.MainHero.ChangeHeroGold(-goldCost);
-            try { MobileParty.MainParty.MemberRoster.AddToCounts(recruit, count); } catch { return; }
+            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, influence); } catch { return; }
 
-            if (_orangeCallFirstDay < 0) try { _orangeCallFirstDay = (int)CampaignTime.Now.ToDays; } catch { }
-            _orangeCallCount++;
+            if (_wordFirstCastDay < 0) try { _wordFirstCastDay = (int)CampaignTime.Now.ToDays; } catch { }
+            _wordCastCount++;
 
-            int nextCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _orangeCallCount));
-            Msg($"Muster Call — {count} recruits from {nearest.Name}. −{goldCost} gold. (Next: {nextCost}g)", ColorSchool.Orange);
+            int nextCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _wordCastCount));
+            Msg($"Golden Word — {goldCost} gold spent as generous patronage. Influence: +{influence}. (Next: {nextCost}g)", ColorSchool.Orange);
         }
 
         // ── Yellow — Whispered Ruin ──────────────────────────────────────
@@ -576,17 +589,13 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            const int DaysToAge = 14;
-            try { Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(DaysToAge)); } catch { }
             try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 15f; } catch { }
             try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            int age = (int)Hero.MainHero.Age;
-            Msg($"Wither's Touch — {DaysToAge} days paid. {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km). Age: {age}.", ColorSchool.Purple);
+            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km).", ColorSchool.Purple);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
-        // Aging cost scales per session: 7→14→21→… days (resets on load).
-        // Scatter radius 2 map units.
+        // Scatter radius 2 map units. Cost: −5 renown + fertility reduction.
         private static void SpellAffectPurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -608,16 +617,10 @@ namespace ColoursOfCalradia
                 try { p.SetMoveGoToPoint(new CampaignVec2(target, true), MobileParty.NavigationType.Default); scattered++; } catch { }
             }
 
-            int daysToAge = 7 * (_purpleCastCount + 1); // 7, 14, 21…
-            _purpleCastCount++;
-
-            try { Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(daysToAge)); } catch { }
-
-            int age = (int)(Hero.MainHero.Age);
             string effect = scattered > 0
                 ? $"{scattered} nearby {(scattered == 1 ? "party loses" : "parties lose")} your trail."
                 : "No enemies were close enough to scatter.";
-            Msg($"Grey Veil — {effect} {daysToAge} days paid. | Age: {age}", ColorSchool.Purple);
+            Msg($"Grey Veil — {effect}", ColorSchool.Purple);
         }
     }
 }

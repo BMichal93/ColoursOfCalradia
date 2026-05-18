@@ -27,8 +27,8 @@ namespace ColoursOfCalradia
     // =========================================================================
     // 10. COLOUR LORD AI
     //     Finds hero agents with colour schools and has them cast spells in battle.
-    //     NPC limitations apply: E1 Grounded (Blue, no horse),
-    //     D1 Pacifist (Green, no weapon), F1 Proud (Purple, needs allies).
+    //     NPC limitations apply: Blue → aging per cast, Green → no weapon + no horseback,
+    //     Purple → renown/influence loss per cast.
     // =========================================================================
     public static class ColourLordAI
     {
@@ -98,14 +98,14 @@ namespace ColoursOfCalradia
             // 8% random wild cast
             if (_rng.Next(100) < 8) { TryCastRandom(agent, hero, colors); return; }
 
-            // Enemies swarming — Cinder Burst (Red) or Grey Harvest (Purple)
+            // Enemies swarming — Cinder Burst (Red) or Grey Tide (Purple)
             int closeEnemies = CountEnemiesNear(agent, 8f);
             if (closeEnemies >= 3)
             {
                 if (colors.Contains(ColorSchool.Purple))
                 {
                     float purplePower = SpellEffects.SpellPower(ColorSchool.Purple, hero);
-                    CastWithGlow(agent, hero, ColorSchool.Purple, "Cinder Burst", () =>
+                    CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Tide", () =>
                     {
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                         {
@@ -114,7 +114,7 @@ namespace ColoursOfCalradia
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                         }
                     });
-                    ApplyPurpleAging(hero);
+                    ApplyPurpleHollowStanding(hero);
                     return;
                 }
                 if (colors.Contains(ColorSchool.Red))
@@ -175,6 +175,7 @@ namespace ColoursOfCalradia
                         foreach (Formation f in formations)
                             try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                     });
+                    ApplyBlueAging(hero);
                     return;
                 }
             }
@@ -326,6 +327,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 30f).ToList())
                             try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f); } catch { }
                     });
+                    ApplyBlueAging(hero);
                     break;
                 case ColorSchool.Yellow:
                 {
@@ -348,7 +350,7 @@ namespace ColoursOfCalradia
                             SpellEffects.KillAgent(t);
                         }
                     });
-                    ApplyPurpleAging(hero);
+                    ApplyPurpleHollowStanding(hero);
                     break;
             }
         }
@@ -369,6 +371,7 @@ namespace ColoursOfCalradia
         private static bool CanUseGreen(Agent agent)
         {
             if (agent == null) return false;
+            try { if (agent.MountAgent != null) return false; } catch { }
             try { return agent.WieldedWeapon.IsEmpty || agent.WieldedWeapon.CurrentUsageItem?.IsShield == true; }
             catch { return true; }
         }
@@ -396,10 +399,17 @@ namespace ColoursOfCalradia
             if (agent == null) return;
             try { agent.Health = Math.Max(1f, agent.Health - 8f); } catch { }
         }
-        private static void ApplyPurpleAging(Hero hero)
+        private static void ApplyBlueAging(Hero hero)
         {
             if (hero == null) return;
-            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Years(1f / 365f)); } catch { }
+            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Days(2)); } catch { }
+        }
+
+        private static void ApplyPurpleHollowStanding(Hero hero)
+        {
+            if (hero == null) return;
+            try { hero.Clan?.AddRenown(-5f); } catch { }
+            try { if (hero.Clan?.Kingdom != null) GainKingdomInfluenceAction.ApplyForDefault(hero, -2f); } catch { }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

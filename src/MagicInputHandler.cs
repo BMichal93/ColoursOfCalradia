@@ -282,21 +282,48 @@ namespace ColoursOfCalradia
             }
 
 
-            // Orange — Generous Hunger: stagger the caster in random directions
+            // Orange — Generous Flood: stagger + 33% horseback throw + ammo drain
             if (spell.School == ColorSchool.Orange && inMission)
-                SpellEffects.TriggerConfusion();
-
-            // Blue — Scholar's Weight: equipment grows heavier each cast, limiting speed
-            // Timeless Toll: each Blue cast also ages the caster ~2 days
-            if (spell.School == ColorSchool.Blue && inMission)
             {
-                SpellEffects.ApplyBlueWeight();
+                SpellEffects.TriggerConfusion();
                 try
                 {
-                    Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(1f / 365f));
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        $"Timeless Toll: The Scholar's pursuit of stillness costs years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
-                        ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+                    if (Agent.Main?.MountAgent != null && _rng.Next(3) == 0)
+                    {
+                        Agent.Main.Formation?.SetRidingOrder(RidingOrder.RidingOrderDismount);
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "Generous Flood: The warmth startles your mount — you are thrown from the saddle.",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Orange)));
+                    }
+                }
+                catch { }
+                for (var ammoSlot = EquipmentIndex.Weapon0; ammoSlot <= EquipmentIndex.ExtraWeaponSlot; ammoSlot++)
+                {
+                    try
+                    {
+                        MissionWeapon w = Agent.Main.Equipment[ammoSlot];
+                        if (w.IsEmpty || w.Amount <= 0) continue;
+                        Agent.Main.SetWeaponAmountInSlot(ammoSlot, (short)Math.Max(0, w.Amount - 2), false);
+                    }
+                    catch { }
+                }
+            }
+
+            // Blue — Scholar's Weight: battle only; Timeless Toll aging applies everywhere
+            if (spell.School == ColorSchool.Blue && inMission)
+                SpellEffects.ApplyBlueWeight();
+
+            if (spell.School == ColorSchool.Blue)
+            {
+                try
+                {
+                    if (Hero.MainHero != null)
+                    {
+                        Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(2));
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"Timeless Toll: The Scholar's pursuit costs years. | Age: {(int)Hero.MainHero.Age}",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+                    }
                 }
                 catch { }
             }

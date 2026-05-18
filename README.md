@@ -310,11 +310,11 @@ When a new campaign starts you will see a multi-selection screen titled **"The C
 
 ### Adjacency and Madness
 
-The six colours form a ring: **Red — Orange — Yellow — Green — Blue — Purple** (wrapping back to Red).
+The six colours form a **spectrum**: **Red — Orange — Yellow — Green — Blue — Purple**. This is a line, not a ring — Red and Purple are at opposite ends and are not adjacent to each other.
 
-If you pick two or more colours that are **not contiguous** on the ring (e.g. Red and Yellow, skipping Orange), the incompatible natures fracture your sense of self. **Madness** is applied at game start: two random personality traits shift by ±1, chosen from Mercy, Valor, Honor, Generosity, and Calculating.
+If you pick two or more colours that are **not contiguous** on the spectrum (e.g. Red and Yellow, skipping Orange), the incompatible natures fracture your sense of self. **Madness** is applied at game start: two random personality traits shift by ±1, chosen from Mercy, Valor, Honor, Generosity, and Calculating.
 
-Contiguous selections (e.g. Red + Orange + Yellow, or Blue + Purple + Red wrapping around) carry no madness penalty from adjacency — but a second rule applies regardless:
+Contiguous selections (e.g. Red + Orange + Yellow, or Yellow + Green + Blue) carry no madness penalty from adjacency — but a second rule applies regardless:
 
 **Picking more than 4 colours** triggers **The Fracture** in addition to any adjacency madness:
 - Two further random traits shift at game start (stacking on top of adjacency madness if applicable).
@@ -338,12 +338,12 @@ When an order is scrambled, the formation receives a random command (Charge or H
 
 | Colour | Identity | Attribute penalty | Personality drift |
 |--------|----------|-------------------|-------------------|
-| **Red** | Blood Price — violent, fiery | Control | Calculating −1 |
+| **Red** | Blood Price — violent, fiery | Cunning | Calculating −1 |
 | **Orange** | Generous Hunger — joyful, open-handed | Intelligence | Generosity +1 |
 | **Yellow** | The Fearful Eye — dread, revulsion | Social | Mercy −1 |
-| **Green** | Gentle Burden — kind, restorative | Endurance | Mercy +1 |
+| **Green** | Gentle Burden — kind, restorative | Control | Mercy +1 |
 | **Blue** | Scholar's Weight — cold, ordered | Vigor | Calculating +1 |
-| **Purple** | The Waning Art — melancholic, fading | Cunning | Valor −1 |
+| **Purple** | The Waning Art — melancholic, fading | Endurance | All traits → 0 |
 
 ### Limitations by School
 
@@ -367,10 +367,10 @@ Each school carries two permanent limitations. The first category (A) applies ev
 
 **Blue — Scholar's Weight**
 - **(A) Scholar's Weight:** Each Blue spell makes your equipment feel heavier — your maximum movement speed decreases with every cast and does not recover until the battle ends. Up to 6 stacks; at the cap you slow to a crawl.
-- **(B) Heavy Knowledge:** Cerulean Mirror shields you from spells and magic effects for 40 seconds — but steel still finds you.
+- **(B) Timeless Toll:** Each Blue spell costs the caster approximately 2 days — the Scholar's pursuit of perfect stillness quietly devours years. Applies to all Blue spells in battle and on the campaign map.
 
 **Purple — The Waning Art**
-- **(A) Waning Cost:** Each Purple spell ages the caster by approximately 2 days — the grey draws time inward, quietly.
+- **(A) Hollow Standing:** Each Purple campaign map spell costs renown — the grey bleeds your presence from the world, quietly.
 - **(B) The Slow Unravelling:** Each Purple cast quietly reduces the caster's fertility by 5 percentage points (minimum 1%). The current level is shown in the message log after every cast. It never reaches zero — but it never comes back. This value persists across saves.
 
 ---
@@ -529,7 +529,7 @@ Every **25 casts** of the same school shifts one personality trait — but only 
 | Yellow | Mercy | −1 |
 | Green | Mercy | +1 |
 | Blue | Calculating | +1 |
-| Purple | Valor | −1 |
+| Purple | *All traits* | → 0 (each trait moves one step toward zero) |
 
 ---
 
@@ -641,19 +641,13 @@ A message announces how many colours they carry when they join.
 
 ---
 
-## Colour Ring Reference
+## Colour Spectrum Reference
 
 ```
-         Red (0)
-        /        \
-  Purple (5)    Orange (1)
-      |               |
-  Blue (4)      Yellow (2)
-        \        /
-         Green (3)
+Red (0) — Orange (1) — Yellow (2) — Green (3) — Blue (4) — Purple (5)
 ```
 
-Adjacent colours on the ring do not cause Madness. Non-adjacent combinations (e.g. Red + Yellow, or Green + Red) do.
+The colours form a **spectrum**, not a ring. Adjacent colours on the spectrum do not cause Madness. Non-adjacent combinations (e.g. Red + Yellow, or Red + Purple) do. Red and Purple are at opposite ends — they are never adjacent regardless of what else you pick.
 
 ---
 
@@ -668,7 +662,7 @@ Two additional spell forms work exclusively on the campaign map and require the 
 | `UL` | **Affect** | W then A (U then L) |
 | `LU` | **Invoke** | A then W (L then U) |
 
-### Affect Spells (UD prefix) — situation-based
+### Affect Spells (UL prefix) — situation-based
 
 Each Affect spell is tied to a specific situation or resource. No cooldowns — all costs are mechanical.
 
@@ -678,8 +672,8 @@ Each Affect spell is tied to a specific situation or resource. No cooldowns — 
 | **Shared Feast** | `ULRU` | Orange | Consume food → party morale +8×power | Food cost doubles each cast within the day (1→2→4→8…), resets at midnight |
 | **Dread Whisper** | `ULLU` | Yellow | Nearest enemy party loses 15×power morale | Self-morale drain escalates +5 per cast within the day (5→10→15…) plus Yellow limitation −8 |
 | **Verdant Hour** | `ULLL` | Green | Produce 1–4 grain | −5% current HP per cast; blocked at ≤5 HP |
-| **Scholar's Investment** | `ULUL` | Blue | Spend 500 gold → +15×power influence | −3 clan renown per cast; kingdom required |
-| **Grey Veil** | `ULUR` | Purple | Scatter nearby enemy parties (radius 2); enemies lose your trail | Age scales per session: 7→14→21→… days |
+| **Scholar's Gaze** | `ULUL` | Blue | Double party sight range for 12–24 h (scales with power) | One active at a time; blocked if already gazing |
+| **Grey Veil** | `ULUR` | Purple | Scatter nearby enemy parties (radius 2); enemies lose your trail | Renown −5 per cast; fertility reduction |
 
 ### Invoke Spells (LU prefix) — advanced campaign effects
 
@@ -688,16 +682,16 @@ Invoke spells target heroes, rosters, and rival lords directly. No cooldowns —
 | Spell | Combo | School | Effect | Cost / Limiter |
 |-------|-------|--------|--------|----------------|
 | **Crimson March** | `LURR` | Red | Sustains party morale above Bannerlord's march-speed threshold (≥78) each hour for the duration, keeping the engine's built-in +3% speed bonus active continuously | −8% current HP on cast; −2 HP per hour; 4–8 h duration scaled by power; blocked at ≤5 HP |
-| **Muster Call** | `LURU` | Orange | Recruit 2–4 tier-1 troops from nearest friendly settlement | Gold cost 100→200→400 (capped at 400), resets at midnight |
+| **Golden Word** | `LURU` | Orange | Spend gold as patronage → +15×power influence | Gold cost 100→200→400 (capped at 400), resets at midnight; kingdom required |
 | **Whispered Ruin** | `LULU` | Yellow | Nearest enemy lord (at war) clan renown −8 | −2 own clan renown per cast |
 | **Tend the Fallen** | `LULL` | Green | Heal 3+(power×2) wounded troops in own party | −5% current HP per cast; blocked at ≤5 HP |
-| **Scholar's Blueprint** | `LUUL` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | −500 gold + −3 clan renown per cast; requires active siege; no effect if nothing is under construction |
-| **Wither's Touch** | `LUUR` | Purple | Nearest enemy lord: party morale −15, clan renown −8 | 14 days aging (flat) per cast |
+| **Scholar's Blueprint** | `LUUL` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | ~2 days aging per cast; requires active siege; no effect if nothing is under construction |
+| **Wither's Touch** | `LUUR` | Purple | Nearest enemy lord: party morale −15, clan renown −8 | Own clan renown −10 per cast |
 
 ### Notes
 
-- **Orange Muster Call** gold cost is capped at 400 — once at the cap, each cast costs 400 gold for as many recruits as your power allows. The cap resets each campaign day.
+- **Orange Golden Word** gold cost is capped at 400 — once at the cap, each cast costs 400 gold. The cap resets each campaign day. Kingdom membership required.
 - **Yellow Whispered Ruin** and **Dread Whisper** require an active war with the target's faction. **Scholar's Blueprint** requires an active siege by the player's party. **Wither's Touch** works against any non-player faction.
-- **Scholar's Investment** requires kingdom membership — influence has no meaning outside one. **Scholar's Blueprint** requires no kingdom but does require an ongoing siege.
-- **Purple Grey Veil** session scaling resets on load (intentional — in-memory only). **Wither's Touch** aging is flat at 14 days regardless of how many times you cast it in a session.
+- **Scholar's Gaze** re-enforces the doubled sight range each hour (the game resets SeeingRange periodically). Effect is in-memory only and cancels on save/load. **Scholar's Blueprint** requires no kingdom but does require an ongoing siege.
+- **Blue Timeless Toll** applies to every Blue spell — Azure Arrest, Cerulean Mirror, and Sapphire Bastion in battle, plus Scholar's Blueprint on the campaign map. Scholar's Gaze has no aging cost (it is blocked while already active instead). **Wither's Touch** and **Grey Veil** cost clan renown, not aging.
 - **Red** HP costs apply to campaign HP, which carries into the next battle. Ember Drive during a raid means you fight the battle with reduced health.

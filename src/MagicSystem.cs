@@ -151,12 +151,15 @@ namespace ColoursOfCalradia
                     SpellEffects.AbsorbCeruleanMissile(blow.InflictedDamage);
             }
 
-            // Golden Recoil: any attacker (not the player) who deals damage while inside the orange aura takes it back.
-            // Direct health assignment (not DamageAgent/KillAgent) — calling Die() inside OnAgentHit is unsafe.
+            // Golden Recoil: enemies who deal damage while inside the orange aura take 25% back.
+            // Allies and the player are exempt. Direct health assignment — Die() inside OnAgentHit is unsafe.
             if (blow.InflictedDamage > 0 && affectorAgent != null && affectorAgent != Agent.Main
-                && affectorAgent.IsActive() && SpellEffects.IsInsideOrangeAura(affectorAgent.Position))
+                && affectorAgent.IsActive()
+                && affectorAgent.Team != Agent.Main?.Team
+                && SpellEffects.IsInsideOrangeAura(affectorAgent.Position))
             {
-                try { affectorAgent.Health = Math.Max(1f, affectorAgent.Health - blow.InflictedDamage); } catch { }
+                int recoil = Math.Max(1, blow.InflictedDamage / 4);
+                try { affectorAgent.Health = Math.Max(1f, affectorAgent.Health - recoil); } catch { }
             }
         }
 
