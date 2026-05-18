@@ -43,8 +43,6 @@ namespace ColoursOfCalradia
             };
         private static readonly HashSet<string> _giftedChildIds = new HashSet<string>();
 
-        private static int   _grimoirePage         = 0;
-        private const  int   GrimoirePageSize       = 4;
         private static float _purpleFertilityLevel  = 1.0f;
 
         public static bool  HasAnySchool            => _chosenSchools.Count > 0;
@@ -141,6 +139,18 @@ namespace ColoursOfCalradia
             catch { }
         }
 
+        private static string ComboToArrows(string combo) =>
+            combo.Replace("U", "↑").Replace("D", "↓").Replace("L", "←").Replace("R", "→");
+
+        // Gauntlet rich-text colour prefix — works if the widget has IsRichText enabled.
+        private static string GauntletColorTag(Color c)
+        {
+            byte r = (byte)(c.Red   * 255f);
+            byte g = (byte)(c.Green * 255f);
+            byte b = (byte)(c.Blue  * 255f);
+            return $"{{\\C:{r:X2}{g:X2}{b:X2}FF}}";
+        }
+
         public static void ShowGrimoire(bool inMission = false)
         {
             if (!HasAnySchool)
@@ -150,41 +160,66 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            var context = inMission ? SpellContext.Mission : SpellContext.Map;
-            var known = SpellDatabase.All
-                .Where(s => HasSchool(s.School) && s.Context == context)
-                .ToList();
+            bool inBattle = inMission && SpellEffects.IsBattleMission();
+            var elements  = new List<InquiryElement>();
 
-            if (known.Count == 0)
+            var allKnown = SpellDatabase.All
+                .Where(s => HasSchool(s.School))
+                .OrderBy(s => (int)s.School).ToList();
+
+            foreach (var grp in allKnown.GroupBy(s => s.School))
             {
-                string where = inMission ? "battle" : "campaign map";
+                string schoolName = ColorSchoolData.Info[grp.Key].Name;
+                string schoolTag  = GauntletColorTag(ColorSchoolData.GetMessageColor(grp.Key));
+                elements.Add(new InquiryElement($"__hs_{grp.Key}__", $"{schoolTag}── {schoolName} ──", null, false, ""));
+
+                var battle = grp.Where(s => s.Context == SpellContext.Mission).ToList();
+                var map    = grp.Where(s => s.Context == SpellContext.Map).ToList();
+
+                if (battle.Count > 0)
+                {
+                    elements.Add(new InquiryElement($"__hb_{grp.Key}__", "    Battle", null, false, ""));
+                    foreach (var s in battle)
+                    {
+                        string arrows = ComboToArrows(s.Combo);
+                        string hint   = $"{s.Flavour}\n\nSchool: {schoolName}  |  Combo: [{arrows}]";
+                        string tag    = GauntletColorTag(ColorSchoolData.GetMessageColor(s.School));
+                        elements.Add(new InquiryElement(s.Combo, $"  {tag}[{arrows}]   {s.Name}", null, true, hint));
+                    }
+                }
+
+                if (map.Count > 0)
+                {
+                    elements.Add(new InquiryElement($"__hm_{grp.Key}__", "    Campaign", null, false, ""));
+                    foreach (var s in map)
+                    {
+                        string arrows = ComboToArrows(s.Combo);
+                        string hint   = $"{s.Flavour}\n\nSchool: {schoolName}  |  Combo: [{arrows}]";
+                        string tag    = GauntletColorTag(ColorSchoolData.GetMessageColor(s.School));
+                        elements.Add(new InquiryElement(s.Combo, $"  {tag}[{arrows}]   {s.Name}", null, true, hint));
+                    }
+                }
+            }
+
+            if (elements.Count == 0)
+            {
                 InformationManager.DisplayMessage(new InformationMessage(
-                    $"No spells available for the {where}.", Color.FromUint(0xFFAAAAAA)));
+                    "No spells available.", Color.FromUint(0xFFAAAAAA)));
                 return;
             }
 
-            string header = inMission ? "Battle Spells" : "Campaign Spells";
-            int totalPages = (known.Count + GrimoirePageSize - 1) / GrimoirePageSize;
-            _grimoirePage  = _grimoirePage % totalPages;
-            var page       = known.Skip(_grimoirePage * GrimoirePageSize).Take(GrimoirePageSize).ToList();
+            string active      = inBattle ? "battle" : "campaign map";
+            string description = $"Hold Left Alt and input a 4-key combo (W/A/D), then release.\nCurrently active: {active} spells.";
 
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"══ Spellbook — {header} — Page {_grimoirePage + 1}/{totalPages} ══",
-                new Color(0.8f, 0.8f, 0.8f)));
-
-            foreach (SpellEntry s in page)
-            {
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"  [{s.Combo}]  {s.Name}  ({ColorSchoolData.Info[s.School].Name})",
-                    ColorSchoolData.GetMessageColor(s.School)));
-            }
-
-            if (totalPages > 1)
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "[ Press S / L3 again for next page ]",
-                    new Color(0.5f, 0.5f, 0.5f)));
-
-            _grimoirePage = (_grimoirePage + 1) % totalPages;
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                "Spellbook — Colours of Calradia",
+                description,
+                elements,
+                false, 0, elements.Count,
+                "Close", "",
+                _ => { }, null,
+                "", false
+            ), false, true);
         }
 
         public static void Save(IDataStore store)
