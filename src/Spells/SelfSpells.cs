@@ -38,6 +38,7 @@ namespace ColoursOfCalradia
             const float Duration = 8f;
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
+            SpawnTempLight(Player.Position, ColorSchool.Red, 6f, 1.5f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_scarlet_ward", Duration = Duration, IsMissionEffect = true,
@@ -81,11 +82,13 @@ namespace ColoursOfCalradia
                     Vec3 dest   = Player.Position + offset; dest.z = Player.Position.z;
                     QueueMove(a, dest, 0.4f);
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Orange, 6f, 1.5f);
                 }
                 catch { }
                 angle += step;
             }
             BeginAgentGlow(Player, ColorSchool.Orange, 1.5f);
+            SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
             Msg($"Warm Beacon — {nearAllies.Count} {(nearAllies.Count == 1 ? "ally slides" : "allies slide")} to your side.", ColorSchool.Orange);
         }
 
@@ -103,6 +106,7 @@ namespace ColoursOfCalradia
                 Power = SpellPower(ColorSchool.Yellow)
             });
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Yellow, 6f, 1.5f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_nausea_bloom", Duration = 30f, IsMissionEffect = true,
@@ -123,6 +127,7 @@ namespace ColoursOfCalradia
             float heal = Math.Min(20f * power, Player.HealthLimit - Player.Health);
             Player.Health = Math.Min(Player.Health + 20f * power, Player.HealthLimit);
             BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
+            SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
@@ -134,6 +139,7 @@ namespace ColoursOfCalradia
             const float Duration = 40f;
             _ceruleanMirrorActive = true;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
+            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
@@ -159,6 +165,7 @@ namespace ColoursOfCalradia
                 try
                 {
                     BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Purple, 6f, 1.5f);
                     try { a.SetMorale(0f); } catch { }
                     if (a.Formation != null) halted.Add(a.Formation);
                 } catch { }
@@ -182,6 +189,7 @@ namespace ColoursOfCalradia
                 });
             }
             BeginAgentGlow(Player, ColorSchool.Purple, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
             string haltedMsg = halted.Count > 0
                 ? $" {halted.Count} nearby {(halted.Count == 1 ? "formation pauses" : "formations pause")}."
                 : string.Empty;

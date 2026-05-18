@@ -49,6 +49,7 @@ namespace ColoursOfCalradia
                 {
                     DamageAgent(a, 50f * power);
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Red, 6f, 1.5f);
                     count++;
                 }
                 catch { }
@@ -105,6 +106,7 @@ namespace ColoursOfCalradia
                         if (a.Position.Distance(pos) <= NodeRadius) { _snarePrevInside.Add(a.Index); break; }
                 }
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
             Msg("Golden Snare laid — a patch of arcane pressure. The first formation to step in receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
         }
 
@@ -153,6 +155,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Yellow, 6f, 1.5f);
             Msg("Creeping Dread takes shape — nine clouds of formless terror drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
         }
 
@@ -191,6 +194,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Green, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
             Msg("The Emerald Font opens — two pools of living light, mending all who stand within. Cast again to dismiss.", ColorSchool.Green);
         }
 
@@ -237,6 +241,7 @@ namespace ColoursOfCalradia
             }
 
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
             Msg("Sapphire Bastion rises — four pillars of force seal the line. None shall cross. Fades in 4 minutes.", ColorSchool.Blue);
         }
 
@@ -259,6 +264,7 @@ namespace ColoursOfCalradia
             _hollowGazeTarget = candidates[_rng.Next(candidates.Count)];
             _hollowGazeTimer  = 0f;
             BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, 3f);
+            SpawnTempLight(_hollowGazeTarget.Position, ColorSchool.Purple, 6f, 1.5f);
             Msg($"Hollow Gaze — {_hollowGazeTarget.Name} empties out. They stand and wait for nothing.", ColorSchool.Purple);
         }
 

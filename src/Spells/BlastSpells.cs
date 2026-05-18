@@ -53,6 +53,7 @@ namespace ColoursOfCalradia
                         QueueMove(a, dest, 0.4f);
                     }
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Red, 6f, 1.5f);
                     affected++;
                 }
                 catch { }
@@ -77,6 +78,7 @@ namespace ColoursOfCalradia
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Orange, 6f, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
                 catch { }
@@ -101,6 +103,7 @@ namespace ColoursOfCalradia
                     DamageAgent(a, 14f * power);
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 55f * power)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Yellow, 6f, 1.5f);
                 }
                 catch { }
             }
@@ -124,6 +127,7 @@ namespace ColoursOfCalradia
                     float h = Math.Min(15f * power, a.HealthLimit - a.Health);
                     if (h > 0f) { a.Health += h; healed++; }
                     BeginAgentGlow(a, ColorSchool.Green, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Green, 6f, 1.5f);
                 }
                 catch { }
             }
@@ -154,6 +158,7 @@ namespace ColoursOfCalradia
                         _haltedAgents[a.Index] = (haltDuration, a.Position);
                     }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 1.5f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
                 catch { }
@@ -176,7 +181,7 @@ namespace ColoursOfCalradia
             if (inCone.Count == 0) { Msg("No common souls in the cone — the purple passes over champions.", ColorSchool.Purple); return; }
             Agent target = inCone[_rng.Next(inCone.Count)];
             BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-            SpawnTempLight(target.Position, ColorSchool.Purple, 6f, 2f);
+            SpawnTempLight(target.Position, ColorSchool.Purple, 6f, 1.5f);
             KillAgent(target);
             Msg($"Grey Harvest — {target.Name} fades. The purple was always going to take them.", ColorSchool.Purple);
         }
