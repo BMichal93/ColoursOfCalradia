@@ -33,9 +33,14 @@ namespace ColoursOfCalradia
         private static bool   _wasFocusing         = false;
         private static string _lastDisplayedBuffer = "";
         private const  int    MaxLen               = 10;
+        private static readonly Random _rng = new Random();
 
         // Previous-frame state for L-stick directions (IsKeyPressed unreliable for analog axes)
         private static bool _prevLUp, _prevLDown, _prevLLeft, _prevLRight;
+
+        // Form prefixes that can be released early to trigger a random known spell of that form
+        private static readonly HashSet<string> _formPrefixes =
+            new HashSet<string> { "UU", "RL", "LR", "UL", "LU" };
 
         public static bool InputSuppressed { get; private set; }
 
@@ -112,6 +117,8 @@ namespace ColoursOfCalradia
 
                 if (_buffer.Length >= 4)
                     TryCast(_buffer, inMission);
+                else if (_buffer.Length == 2 && _formPrefixes.Contains(_buffer))
+                    TryRandomFormCast(_buffer, inMission);
                 else if (_buffer.Length > 0)
                     Fizzle("Incantation too short — colour magic requires four keys.");
 
@@ -185,6 +192,30 @@ namespace ColoursOfCalradia
                     Color.FromUint(0xFFFF4444)));
                 try { SpellEffects.KillAgent(Agent.Main); } catch { }
                 return;
+            }
+
+            // ── Madness redirect ─────────────────────────────────────────────
+            // Chance to misfire as a random different-colour spell of the same form.
+            // Uses the same threshold as battle-order scrambling.
+            int madnessChance = ColourKnowledge.GetMadnessOrderChance();
+            if (madnessChance > 0 && _rng.Next(100) < madnessChance)
+            {
+                string prefix = combo.Substring(0, 2);
+                var alts = SpellDatabase.All
+                    .Where(s => s.Combo.StartsWith(prefix)
+                             && s.School != spell.School
+                             && ColourKnowledge.HasSchool(s.School)
+                             && s.Context == spell.Context)
+                    .ToList();
+                if (alts.Count > 0)
+                {
+                    SpellEntry redirect = alts[_rng.Next(alts.Count)];
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"Madness twists the weave — {spell.Name} unravels into {redirect.Name}!",
+                        Color.FromUint(0xFFAA44FF)));
+                    combo = redirect.Combo;
+                    spell = redirect;
+                }
             }
 
             // ── Cast ─────────────────────────────────────────────────────────
@@ -286,6 +317,43 @@ namespace ColoursOfCalradia
 
             // Personality drift
             ColourKnowledge.RecordCast(spell.School);
+        }
+
+        // Picks a random known spell whose combo starts with `prefix` and matches context,
+        // then casts it via TryCast (which applies all normal validation + madness checks).
+        private static void TryRandomFormCast(string prefix, bool inMission)
+        {
+            var context = inMission ? SpellContext.Mission : SpellContext.Map;
+            var candidates = SpellDatabase.All
+                .Where(s => s.Combo.StartsWith(prefix)
+                         && ColourKnowledge.HasSchool(s.School)
+                         && s.Context == context)
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                Fizzle($"No known {FormName(prefix)} spells for this context.");
+                return;
+            }
+
+            SpellEntry chosen = candidates[_rng.Next(candidates.Count)];
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"[ {prefix} → {chosen.Combo} ]",
+                new Color(0.7f, 0.7f, 0.7f)));
+            TryCast(chosen.Combo, inMission);
+        }
+
+        private static string FormName(string prefix)
+        {
+            switch (prefix)
+            {
+                case "UU": return "Blast";
+                case "RL": return "Self";
+                case "LR": return "Create";
+                case "UL": return "Affect";
+                case "LU": return "Invoke";
+                default:   return prefix;
+            }
         }
 
         private static bool IsInTournament()
