@@ -62,7 +62,7 @@ namespace ColoursOfCalradia
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
                 LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
                 LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions, have a 33% chance of being thrown from your mount, and scatter 2 units of carried ammunition. The Golden Recoil creation spell turns the violence of others back on themselves.",
-                AttributePenalty = "-1 Intellect"
+                AttributePenalty = "-1 Intelligence"
             },
             [ColorSchool.Yellow] = new SchoolInfo
             {

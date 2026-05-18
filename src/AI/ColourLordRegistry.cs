@@ -53,6 +53,10 @@ namespace ColoursOfCalradia
         private static readonly List<(string message, Color color)> _pendingAnnouncements
             = new List<(string, Color)>();
 
+        // Prism lord — carries all 6 colours, personality shifts weekly, casts very often
+        private static string _prismLordId = null;
+        private static int    _prismRespawnHours = 0;
+
         // Desired trait level per colour school — applied when colours are assigned
         // Key: trait to set; Value: target level (positive or negative)
         private static readonly Dictionary<ColorSchool, List<(TraitObject Trait, int Level)>> _colourTraits =
@@ -69,6 +73,12 @@ namespace ColoursOfCalradia
         // ── Public access ─────────────────────────────────────────────────────
         public static bool IsColourLord(Hero hero) =>
             hero != null && _lordColors.ContainsKey(hero.StringId);
+
+        public static bool IsPrismLord(Hero hero) =>
+            hero != null && _prismLordId != null && hero.StringId == _prismLordId;
+
+        public static Hero GetPrismLord() =>
+            _prismLordId == null ? null : Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == _prismLordId);
 
         public static IReadOnlyList<ColorSchool> GetColors(Hero hero)
         {
@@ -89,6 +99,34 @@ namespace ColoursOfCalradia
             {
                 foreach (Kingdom kingdom in Campaign.Current.Kingdoms)
                     SeedFaction(kingdom);
+                SeedPrismLord();
+                ApplyAllRelationships();
+            }
+            catch { }
+        }
+
+        private static void SeedPrismLord()
+        {
+            if (_prismLordId != null) return;
+            try
+            {
+                var candidates = Hero.AllAliveHeroes
+                    .Where(h => h.IsLord && h != Hero.MainHero && h.IsAlive
+                             && h.MapFaction is Kingdom && !IsPrismLord(h))
+                    .ToList();
+                if (candidates.Count == 0) return;
+
+                Hero prism = candidates[_rng.Next(candidates.Count)];
+                _prismLordId = prism.StringId;
+                _lordColors[prism.StringId] = new List<ColorSchool>
+                {
+                    ColorSchool.Red, ColorSchool.Orange, ColorSchool.Yellow,
+                    ColorSchool.Green, ColorSchool.Blue, ColorSchool.Purple
+                };
+                ApplyColourTraits(prism, _lordColors[prism.StringId]);
+                _pendingAnnouncements.Add((
+                    $"The Prism walks — {prism.Name} of {prism.MapFaction?.Name} carries all six colours. Their nature shifts without warning.",
+                    new Color(0.9f, 0.7f, 1.0f)));
             }
             catch { }
         }
@@ -269,6 +307,7 @@ namespace ColoursOfCalradia
             if (hero == null || schools == null || schools.Count == 0) return;
             _lordColors[hero.StringId] = new List<ColorSchool>(schools);
             ApplyColourTraits(hero, schools);
+            ApplyColorRelationships(hero, schools);
         }
 
         // ── Companions ────────────────────────────────────────────────────────
@@ -283,6 +322,7 @@ namespace ColoursOfCalradia
 
             _lordColors[companion.StringId] = PickColors(count);
             ApplyColourTraits(companion, _lordColors[companion.StringId]);
+            ApplyColorRelationships(companion, _lordColors[companion.StringId]);
             string colorNames = string.Join(", ", _lordColors[companion.StringId]
                 .Select(c => ColorSchoolData.Info[c].Name));
             InformationManager.DisplayMessage(new InformationMessage(
@@ -293,7 +333,19 @@ namespace ColoursOfCalradia
         // ── Death / Respawn ───────────────────────────────────────────────────
         public static void OnLordDied(Hero hero)
         {
+            bool wasPrism = IsPrismLord(hero);
             _lordColors.Remove(hero.StringId);
+
+            if (wasPrism)
+            {
+                _prismLordId = null;
+                _prismRespawnHours = 720; // 1 month
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"The Prism has fallen — {hero.Name} is dead. The six colours scatter. A new Prism will rise within a month.",
+                    new Color(0.9f, 0.7f, 1.0f)));
+                return;
+            }
+
             string factionId = (hero.MapFaction as Kingdom)?.StringId;
             if (factionId == null) return;
 
@@ -305,6 +357,42 @@ namespace ColoursOfCalradia
 
         public static void CheckRespawnTimers()
         {
+            // Prism respawn
+            if (_prismLordId == null && _prismRespawnHours > 0)
+            {
+                _prismRespawnHours--;
+                if (_prismRespawnHours <= 0)
+                {
+                    _prismRespawnHours = 0;
+                    try
+                    {
+                        var candidates = Hero.AllAliveHeroes
+                            .Where(h => h.IsLord && h != Hero.MainHero && h.IsAlive
+                                     && h.MapFaction is Kingdom)
+                            .ToList();
+                        if (candidates.Count > 0)
+                        {
+                            Hero prism = candidates[_rng.Next(candidates.Count)];
+                            _prismLordId = prism.StringId;
+                            _lordColors[prism.StringId] = new List<ColorSchool>
+                            {
+                                ColorSchool.Red, ColorSchool.Orange, ColorSchool.Yellow,
+                                ColorSchool.Green, ColorSchool.Blue, ColorSchool.Purple
+                            };
+                            ApplyColourTraits(prism, _lordColors[prism.StringId]);
+                            ApplyColorRelationships(prism, _lordColors[prism.StringId]);
+                            InformationManager.DisplayMessage(new InformationMessage(
+                                $"The Prism rises again — {prism.Name} of {prism.MapFaction?.Name} has been chosen by all six colours.",
+                                new Color(0.9f, 0.7f, 1.0f)));
+                        }
+                        else
+                            _prismRespawnHours = 24; // retry in 1 day
+                    }
+                    catch { }
+                }
+            }
+
+            // Normal lord respawn (per faction)
             foreach (string factionId in _respawnHours.Keys.ToList())
             {
                 _respawnHours[factionId]--;
@@ -318,20 +406,79 @@ namespace ColoursOfCalradia
 
                 var candidates = Hero.AllAliveHeroes
                     .Where(h => h.MapFaction == kingdom && h.IsLord && !IsColourLord(h) &&
-                                h.Age < 50f) // prefer younger lords
+                                h.Age < 50f)
                     .ToList();
                 if (candidates.Count == 0)
                 {
-                    _respawnHours[factionId] = 24; // no candidates yet — try again in 1 day
+                    _respawnHours[factionId] = 24;
                     continue;
                 }
 
                 Hero chosen = candidates[_rng.Next(candidates.Count)];
                 _lordColors[chosen.StringId] = PickColors(1 + _rng.Next(2));
                 ApplyColourTraits(chosen, _lordColors[chosen.StringId]);
+                ApplyColorRelationships(chosen, _lordColors[chosen.StringId]);
                 InformationManager.DisplayMessage(new InformationMessage(
                     FormatAnnouncement(chosen, _lordColors[chosen.StringId]),
                     new Color(0.7f, 0.5f, 0.8f)));
+            }
+        }
+
+        // ── Colour relationship system ────────────────────────────────────────
+        // Called once after all lords are seeded to apply initial relationships.
+        private static void ApplyAllRelationships()
+        {
+            try
+            {
+                var lords = _lordColors.Keys
+                    .Select(id => Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == id))
+                    .Where(h => h != null)
+                    .ToList();
+
+                for (int i = 0; i < lords.Count; i++)
+                {
+                    for (int j = i + 1; j < lords.Count; j++)
+                    {
+                        ApplyRelationBetween(lords[i], _lordColors[lords[i].StringId],
+                                             lords[j], _lordColors[lords[j].StringId]);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // Applied when a new lord gets colours later (respawn, companion, child).
+        private static void ApplyColorRelationships(Hero hero, IReadOnlyList<ColorSchool> colors)
+        {
+            try
+            {
+                foreach (var kvp in _lordColors)
+                {
+                    if (kvp.Key == hero.StringId) continue;
+                    Hero other = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == kvp.Key);
+                    if (other == null) continue;
+                    ApplyRelationBetween(hero, colors, other, kvp.Value);
+                }
+            }
+            catch { }
+        }
+
+        private static void ApplyRelationBetween(
+            Hero a, IReadOnlyList<ColorSchool> aColors,
+            Hero b, IReadOnlyList<ColorSchool> bColors)
+        {
+            // 5+ colours → penalty with all colour lords (regardless of shared colour)
+            if (aColors.Count >= 5 || bColors.Count >= 5)
+            {
+                try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(a, b, -5, false); } catch { }
+                return;
+            }
+            // 1–2 colours on each side + at least one shared colour → bonus
+            if (aColors.Count <= 2 && bColors.Count <= 2)
+            {
+                bool shared = aColors.Any(s => bColors.Contains(s));
+                if (shared)
+                    try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(a, b, 5, false); } catch { }
             }
         }
 
@@ -343,10 +490,24 @@ namespace ColoursOfCalradia
             int castsToday = 0;
             foreach (var kvp in _lordColors.ToList())
             {
-                if (castsToday >= MaxLordMapCastsPerDay) break;
-
                 Hero hero = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == kvp.Key);
                 if (hero == null || !hero.IsAlive) continue;
+
+                // Battle morale floor — maintained daily so it's in place before any battle resolves.
+                // Sets a minimum, not an addition, so it cannot accumulate unboundedly.
+                // 1 colour → 8 floor, 6 colours → 48 floor (hard cap 50).
+                if (hero.PartyBelongedTo != null)
+                {
+                    float floor = Math.Min(60f, kvp.Value.Count * 10f);
+                    try
+                    {
+                        if (hero.PartyBelongedTo.RecentEventsMorale < floor)
+                            hero.PartyBelongedTo.RecentEventsMorale = floor;
+                    }
+                    catch { }
+                }
+
+                if (castsToday >= MaxLordMapCastsPerDay) continue;
 
                 if (_campaignCooldowns.TryGetValue(kvp.Key, out int cd) && cd > 0)
                 { _campaignCooldowns[kvp.Key] = cd - 1; continue; }
@@ -568,6 +729,8 @@ namespace ColoursOfCalradia
             var ccKeys         = _campaignCooldowns.Keys.ToList();
             var ccVals         = _campaignCooldowns.Values.ToList();
             bool seeded        = _seeded;
+            var prismIdList    = _prismLordId != null ? new List<string> { _prismLordId } : new List<string>();
+            int prismRespawn   = _prismRespawnHours;
 
             store.SyncData("COC_LordIds",        ref lordIds);
             store.SyncData("COC_LordSchoolCnts", ref lordSchoolCnts);
@@ -577,8 +740,12 @@ namespace ColoursOfCalradia
             store.SyncData("COC_CdKeys",         ref ccKeys);
             store.SyncData("COC_CdVals",         ref ccVals);
             store.SyncData("COC_LordSeeded",     ref seeded);
+            store.SyncData("COC_PrismId",        ref prismIdList);
+            store.SyncData("COC_PrismRespawn",   ref prismRespawn);
 
             _seeded = seeded;
+            _prismLordId = prismIdList?.Count > 0 ? prismIdList[0] : null;
+            _prismRespawnHours = prismRespawn;
 
             _lordColors.Clear();
             if (lordIds != null && lordSchoolCnts != null && lordSchoolFlat != null)

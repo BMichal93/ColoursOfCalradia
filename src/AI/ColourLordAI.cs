@@ -32,7 +32,8 @@ namespace ColoursOfCalradia
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval = 12f;
+        private const float CastInterval      = 12f;
+        private const float PrismCastInterval = 4f;
         private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
         private static readonly Random _rng = new Random();
 
@@ -73,6 +74,13 @@ namespace ColoursOfCalradia
                 // Green lords fight unarmed — sheathe weapon every tick so CanUseGreen passes
                 if (colors.Contains(ColorSchool.Green))
                     TrySheathWeapon(agent);
+
+                // Prism lord casts randomly and very often
+                if (ColourLordRegistry.IsPrismLord(hero))
+                {
+                    TryCastRandom(agent, hero, colors);
+                    continue;
+                }
 
                 DecideAndCast(agent, hero, colors);
             }
@@ -454,6 +462,7 @@ namespace ColoursOfCalradia
         }
 
         private static void SetCooldown(Hero hero) =>
-            _cooldowns[hero.StringId] = CastInterval;
+            _cooldowns[hero.StringId] = ColourLordRegistry.IsPrismLord(hero)
+                ? PrismCastInterval : CastInterval;
     }
 }

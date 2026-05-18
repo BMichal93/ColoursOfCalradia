@@ -49,6 +49,7 @@ namespace ColoursOfCalradia
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
             CampaignEvents.WeeklyTickEvent.AddNonSerializedListener(this, OnWeeklyTick);
             CampaignEvents.OnMissionEndedEvent.AddNonSerializedListener(this, OnMissionEnded);
+            CampaignEvents.MapEventEnded.AddNonSerializedListener(this, OnMapEventEnded);
             CampaignEvents.HeroKilledEvent.AddNonSerializedListener(this, OnHeroKilled);
             CampaignEvents.OnCharacterCreationIsOverEvent.AddNonSerializedListener(this, OnNewGameCreated);
             CampaignEvents.HeroCreated.AddNonSerializedListener(this, OnHeroCreated);
@@ -187,7 +188,7 @@ namespace ColoursOfCalradia
         private void ShowStartingSpells(List<ColorSchool> schools)
         {
             InformationManager.DisplayMessage(new InformationMessage(
-                "Your colours are chosen. Hold Left Alt and type a 4-key combo (WASD) then release to cast. S opens spellbook.",
+                "Your colours are chosen. Hold Left Alt and type a 5-key combo (WASD) then release to cast. S opens spellbook.",
                 new Color(0.8f, 0.8f, 0.8f)));
 
             foreach (ColorSchool school in schools)
@@ -268,30 +269,52 @@ namespace ColoursOfCalradia
         // ── Weekly tick ──────────────────────────────────────────────────────
         private void OnWeeklyTick()
         {
-            if (ColourKnowledge.AllSchools.Count() <= 4) return;
-            Hero player = Hero.MainHero;
-            if (player == null) return;
-            // Five or more colours — the fracture never heals; traits shift without warning each week
             var rng = new Random();
-            bool anyChanged = false;
-            foreach (TraitObject trait in MadnessTraits)
+
+            // Five or more colours on the player — the fracture never heals
+            if (ColourKnowledge.AllSchools.Count() > 4)
             {
-                try
+                Hero player = Hero.MainHero;
+                if (player != null)
                 {
-                    int next    = rng.Next(5) - 2; // −2 to +2
-                    int current = player.GetTraitLevel(trait);
-                    if (next != current)
+                    bool anyChanged = false;
+                    foreach (TraitObject trait in MadnessTraits)
                     {
-                        player.SetTraitLevel(trait, next);
-                        anyChanged = true;
+                        try
+                        {
+                            int next    = rng.Next(5) - 2;
+                            int current = player.GetTraitLevel(trait);
+                            if (next != current) { player.SetTraitLevel(trait, next); anyChanged = true; }
+                        }
+                        catch { }
                     }
+                    if (anyChanged)
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "The Fracture: Five colours tear at your sense of self — your personality shifts without warning.",
+                            Color.FromUint(0xFFCC44FF)));
                 }
-                catch { }
             }
-            if (anyChanged)
-                InformationManager.DisplayMessage(new InformationMessage(
-                    "The Fracture: Five colours tear at your sense of self — your personality shifts without warning.",
-                    Color.FromUint(0xFFCC44FF)));
+
+            // Prism lord — personality shifts every week regardless
+            Hero prism = ColourLordRegistry.GetPrismLord();
+            if (prism != null)
+            {
+                bool prismChanged = false;
+                foreach (TraitObject trait in MadnessTraits)
+                {
+                    try
+                    {
+                        int next    = rng.Next(5) - 2;
+                        int current = prism.GetTraitLevel(trait);
+                        if (next != current) { prism.SetTraitLevel(trait, next); prismChanged = true; }
+                    }
+                    catch { }
+                }
+                if (prismChanged)
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"The Prism — {prism.Name}'s personality fractures again. Their nature bends without reason.",
+                        new Color(0.9f, 0.7f, 1.0f)));
+            }
         }
 
         // ── Mission ended ────────────────────────────────────────────────────
@@ -305,6 +328,47 @@ namespace ColoursOfCalradia
             SpellEffects.ClearMoves();         // releases stale agent refs from Bastion pushes
             SpellEffects.RestoreColourNamePrefixes();
             ColourUnitRegistry.OnMissionEnded();
+        }
+
+        // ── Battle bonus: colour lords heal a fraction of wounded after each battle ──
+        private void OnMapEventEnded(MapEvent mapEvent)
+        {
+            if (mapEvent == null) return;
+            try { ApplyBattleBonus(mapEvent.AttackerSide); } catch { }
+            try { ApplyBattleBonus(mapEvent.DefenderSide); } catch { }
+        }
+
+        private void ApplyBattleBonus(MapEventSide side)
+        {
+            if (side == null) return;
+            try
+            {
+                foreach (var meparty in side.Parties)
+                {
+                    try
+                    {
+                        PartyBase party = meparty?.Party;
+                        Hero leader = party?.LeaderHero;
+                        if (leader == null || !ColourLordRegistry.IsColourLord(leader)) continue;
+
+                        var colors = ColourLordRegistry.GetColors(leader);
+                        if (colors.Count == 0) continue;
+
+                        // Post-battle wound recovery — colour magic mends the injured
+                        float healFraction = colors.Count * 0.05f;
+                        foreach (var element in party.MemberRoster.GetTroopRoster().ToList())
+                        {
+                            int wounded = element.WoundedNumber;
+                            if (wounded <= 0) continue;
+                            int toHeal = Math.Max(1, (int)Math.Round(wounded * healFraction));
+                            toHeal = Math.Min(toHeal, wounded);
+                            party.MemberRoster.AddToCounts(element.Character, 0, false, -toHeal);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         // ── Hero killed ──────────────────────────────────────────────────────

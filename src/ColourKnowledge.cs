@@ -55,8 +55,8 @@ namespace ColoursOfCalradia
         public static int GetMadnessOrderChance()
         {
             int count = _chosenSchools.Count;
-            if (count == 6) return 20;
-            if (count == 5) return 10;
+            if (count == 6) return 7;
+            if (count == 5) return 5;
             if (count >= 2)
             {
                 var positions = _chosenSchools.Select(s => (int)s).ToHashSet();
@@ -66,7 +66,7 @@ namespace ColoursOfCalradia
                 for (int i = min; i <= max; i++)
                     if (!positions.Contains(i)) { contiguous = false; break; }
                 if (contiguous) return 0;
-                return 5;
+                return 3;
             }
             return 0;
         }
@@ -207,9 +207,69 @@ namespace ColoursOfCalradia
             InformationManager.ShowInquiry(new InquiryData(
                 "Spell prism",
                 description,
-                true, false,
-                "Close", "",
-                () => { }, null
+                true, true,
+                "Close", "Guide",
+                () => { }, () => ShowGuide(inMission, usingController)
+            ), true, true);
+        }
+
+        private static void ShowGuide(bool inMission, bool usingController)
+        {
+            const string guide =
+"HOW TO CAST\n" +
+"  Hold focus key, input a 5-key combo, release to cast.\n" +
+"  Keyboard : Hold Left Alt + W/A/D (S with empty buffer opens spellbook).\n" +
+"  Controller: Hold LT + left stick. L3 opens spellbook.\n" +
+"  Shortcut  : Release after 2-key form prefix for a random known spell of that form.\n" +
+"\n" +
+"COMBO STRUCTURE  (first 2 keys = Form | last 3 keys = Colour)\n" +
+"  ↑↑  Blast  — cone attack forward\n" +
+"  →←  Self   — aura on caster\n" +
+"  ←→  Create — area effect, toggleable\n" +
+"  ↑←  Affect — campaign map, situational\n" +
+"  ←↑  Invoke — campaign map, advanced\n" +
+"\n" +
+"COLOUR SUFFIXES (last 3 keys)\n" +
+"  Red →→→  Orange →←→  Yellow ↓←↓  Green ←↓←  Blue ↑←↑  Purple ↓↓↓\n" +
+"\n" +
+"COLOUR LIMITATIONS\n" +
+"  Red    — Furious (charges formations), Blood Price (−8 HP per cast)\n" +
+"  Orange — Generous Flood (confusion/mount/ammo), Overindulgent (daily food drain)\n" +
+"  Yellow — Suspicious (morale loss, crime rise), Uncharismatic (morale drain near cap)\n" +
+"  Green  — Pacifist (no weapon), Horse-Shy (no horseback casting)\n" +
+"  Blue   — Scholar's Weight (battle encumbrance), Timeless Toll (age +2 days per cast)\n" +
+"  Purple — Hollow Standing (renown −5, influence −2), Slow Unravelling (fertility fades)\n" +
+"\n" +
+"PERSONALITY DRIFT\n" +
+"  Every 25 casts nudges the school's associated trait by 1. Purple hollows all toward 0.\n" +
+"\n" +
+"MADNESS\n" +
+"  Non-adjacent colour schools conflict. On each cast:\n" +
+"  Non-contiguous mix — 3% chance the spell fires as a random other-colour spell.\n" +
+"  5 schools — 5% chance. Weekly trait fracture.\n" +
+"  6 schools — 7% chance. Weekly trait fracture.\n" +
+"  Adjacent colours (e.g. Red+Orange+Yellow) never trigger madness.\n" +
+"\n" +
+"DAY / NIGHT\n" +
+"  Bright (07:00–20:00) — full casting.\n" +
+"  Dim   (05:00–07:00 and 20:00–22:00) — 33% fizzle chance.\n" +
+"  Dark  (22:00–05:00) — casting blocked entirely.\n" +
+"\n" +
+"LORDS & COLOURS\n" +
+"  Colour lords cast in battle and on the campaign map.\n" +
+"  Lords sharing a colour (1–2 schools each) are drawn together — higher relations.\n" +
+"  Lords with 5+ schools are feared and distrusted by all magical peers.\n" +
+"  Colour lords maintain a morale floor before battle (10 per colour, max 60) and recover\n" +
+"  wounded troops after battle (5% per colour of wounded healed).\n" +
+"  The Prism — one lord always carries all six colours. They cast constantly and\n" +
+"  their personality shifts each week. When slain, a new Prism rises within a month.";
+
+            InformationManager.ShowInquiry(new InquiryData(
+                "Mechanics — Colours of Calradia",
+                guide,
+                true, true,
+                "Close", "Back",
+                () => { }, () => ShowGrimoire(inMission, usingController)
             ), true, true);
         }
 
