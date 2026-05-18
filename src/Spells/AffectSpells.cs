@@ -246,13 +246,29 @@ namespace ColoursOfCalradia
             {
                 var party = MobileParty.MainParty;
                 if (party == null) return false;
+
+                // Try the property setter (works if it's private/internal set)
                 if (_seeingRangeSetMethod == null)
                     _seeingRangeSetMethod = typeof(MobileParty)
                         .GetProperty("SeeingRange", BindingFlags.Public | BindingFlags.Instance)
-                        ?.GetSetMethod(true);
-                if (_seeingRangeSetMethod == null) return false;
-                _seeingRangeSetMethod.Invoke(party, new object[] { value });
-                return true;
+                        ?.GetSetMethod(nonPublic: true);
+                if (_seeingRangeSetMethod != null)
+                {
+                    _seeingRangeSetMethod.Invoke(party, new object[] { value });
+                    return true;
+                }
+
+                // Fall back to the backing field (computed-only property path)
+                if (_seeingRangeField == null)
+                    _seeingRangeField = typeof(MobileParty)
+                        .GetField("_seeingRange", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (_seeingRangeField != null)
+                {
+                    _seeingRangeField.SetValue(party, value);
+                    return true;
+                }
+
+                return false;
             }
             catch { return false; }
         }
@@ -279,10 +295,11 @@ namespace ColoursOfCalradia
         private static double _redMarchEndHour = -1.0;
 
         // ── Blue Affect (Scholar's Gaze) tracking ────────────────────────────
-        private static bool       _gazeActive          = false;
-        private static double     _gazeEndHour         = -1.0;
-        private static float      _gazeRange           = 0f;
-        private static MethodInfo _seeingRangeSetMethod; // cached after first resolution
+        private static bool       _gazeActive           = false;
+        private static double     _gazeEndHour          = -1.0;
+        private static float      _gazeRange            = 0f;
+        private static MethodInfo _seeingRangeSetMethod; // cached: private property setter
+        private static FieldInfo  _seeingRangeField;     // cached: backing field fallback
 
         // ── Red — Crimson March ──────────────────────────────────────────────
         // Sacrifice 8% HP to sustain a blood-fuelled march for several hours.

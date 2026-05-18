@@ -142,15 +142,6 @@ namespace ColoursOfCalradia
         private static string ComboToArrows(string combo) =>
             combo.Replace("U", "↑").Replace("D", "↓").Replace("L", "←").Replace("R", "→");
 
-        // Gauntlet rich-text colour prefix — works if the widget has IsRichText enabled.
-        private static string GauntletColorTag(Color c)
-        {
-            byte r = (byte)(c.Red   * 255f);
-            byte g = (byte)(c.Green * 255f);
-            byte b = (byte)(c.Blue  * 255f);
-            return $"{{\\C:{r:X2}{g:X2}{b:X2}FF}}";
-        }
-
         public static void ShowGrimoire(bool inMission = false)
         {
             if (!HasAnySchool)
@@ -161,7 +152,7 @@ namespace ColoursOfCalradia
             }
 
             bool inBattle = inMission && SpellEffects.IsBattleMission();
-            var elements  = new List<InquiryElement>();
+            var lines     = new List<string>();
 
             var allKnown = SpellDatabase.All
                 .Where(s => HasSchool(s.School))
@@ -169,39 +160,28 @@ namespace ColoursOfCalradia
 
             foreach (var grp in allKnown.GroupBy(s => s.School))
             {
+                if (lines.Count > 0) lines.Add("");
                 string schoolName = ColorSchoolData.Info[grp.Key].Name;
-                string schoolTag  = GauntletColorTag(ColorSchoolData.GetMessageColor(grp.Key));
-                elements.Add(new InquiryElement($"__hs_{grp.Key}__", $"{schoolTag}── {schoolName} ──", null, false, ""));
+                lines.Add($"── {schoolName} ──");
 
                 var battle = grp.Where(s => s.Context == SpellContext.Mission).ToList();
                 var map    = grp.Where(s => s.Context == SpellContext.Map).ToList();
 
                 if (battle.Count > 0)
                 {
-                    elements.Add(new InquiryElement($"__hb_{grp.Key}__", "    Battle", null, false, ""));
+                    lines.Add("  Battle");
                     foreach (var s in battle)
-                    {
-                        string arrows = ComboToArrows(s.Combo);
-                        string hint   = $"{s.Flavour}\n\nSchool: {schoolName}  |  Combo: [{arrows}]";
-                        string tag    = GauntletColorTag(ColorSchoolData.GetMessageColor(s.School));
-                        elements.Add(new InquiryElement(s.Combo, $"  {tag}[{arrows}]   {s.Name}", null, true, hint));
-                    }
+                        lines.Add($"    {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
                 }
-
                 if (map.Count > 0)
                 {
-                    elements.Add(new InquiryElement($"__hm_{grp.Key}__", "    Campaign", null, false, ""));
+                    lines.Add("  Campaign");
                     foreach (var s in map)
-                    {
-                        string arrows = ComboToArrows(s.Combo);
-                        string hint   = $"{s.Flavour}\n\nSchool: {schoolName}  |  Combo: [{arrows}]";
-                        string tag    = GauntletColorTag(ColorSchoolData.GetMessageColor(s.School));
-                        elements.Add(new InquiryElement(s.Combo, $"  {tag}[{arrows}]   {s.Name}", null, true, hint));
-                    }
+                        lines.Add($"    {s.Name} [{ComboToArrows(s.Combo)}]: {s.ShortDesc}");
                 }
             }
 
-            if (elements.Count == 0)
+            if (lines.Count == 0)
             {
                 InformationManager.DisplayMessage(new InformationMessage(
                     "No spells available.", Color.FromUint(0xFFAAAAAA)));
@@ -209,17 +189,16 @@ namespace ColoursOfCalradia
             }
 
             string active      = inBattle ? "battle" : "campaign map";
-            string description = $"Hold Left Alt and input a 4-key combo (W/A/D), then release.\nCurrently active: {active} spells.";
+            string description = $"Hold Left Alt + combo (W/A/D keys), then release.  Active: {active}.\n\n"
+                               + string.Join("\n", lines);
 
-            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+            InformationManager.ShowInquiry(new InquiryData(
                 "Spellbook — Colours of Calradia",
                 description,
-                elements,
-                false, 0, elements.Count,
+                true, false,
                 "Close", "",
-                _ => { }, null,
-                "", false
-            ), false, true);
+                () => { }, null
+            ), true, true);
         }
 
         public static void Save(IDataStore store)
