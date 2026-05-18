@@ -473,10 +473,10 @@ All 18 battle spells follow a strict **Form + Colour** combo structure:
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
 | **Cinder Burst** | `LRRR` | Red | Instant 45 damage to all creatures within 10 m. |
-| **Golden Snare** | `LRRU` | Orange | Places a golden patch (radius 10 m) at the caster's feet. The first enemy formation to step into it receives one random command — **Halt**, **Charge**, **Dismount**, or **Scatter** — then the trap vanishes. Expires after 60 s if untriggered; cast again to dismiss early. |
-| **Creeping Dread** | `LRLU` | Yellow | Toggle: releases a wandering cloud (radius 7 m) that roams the field, dealing 25 damage every 2 s to creatures it passes through. Changes direction randomly every ~3 s. Cast again to dismiss. |
+| **Golden Snare** | `LRRU` | Orange | Places four golden nodes (radius 6 m each) in a 2×2 grid around the caster. The first enemy formation to step into any node receives one random command — **Panic**, **Enrage**, **Dismount**, or **Scatter** — then all nodes vanish. Expires after 60 s if untriggered; cast again to dismiss early. |
+| **Creeping Dread** | `LRLU` | Yellow | Toggle: releases nine wandering clouds (radius 7 m each) in a 3×3 grid that roam the field independently, dealing 30×power damage every 2 s to creatures they pass through. Each cloud changes direction randomly every ~3 s. Cast again to dismiss. |
 | **Emerald Font** | `LRLL` | Green | Toggle: creates a healing circle (radius 8 m) that restores 10 HP every 2 s to all within it — friend and foe alike. Cast again to dismiss. |
-| **Sapphire Bastion** | `LRUL` | Blue | Raises three pillars of force (radius 3 m each) in a line perpendicular to your facing, forming a wall ~13 m wide. Creatures that cross into any pillar are pushed outward every 0.5 s. Fades after 2 minutes. Cast again to dismiss early. |
+| **Sapphire Bastion** | `LRUL` | Blue | Raises four pillars of force (radius 3 m each) in a line perpendicular to your facing, forming a wall ~18 m wide. Creatures that cross into any pillar are pushed outward every 0.5 s. Fades after 4 minutes. Cast again to dismiss early. |
 | **Hollow Gaze** | `LRUR` | Purple | Pins one random nearby non-hero enemy (within 15 m) into a catatonic state — they stand still and do nothing. The effect is maintained until cancelled. Cast again to release them. |
 
 ### Notes on Create Spells

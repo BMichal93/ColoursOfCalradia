@@ -163,7 +163,7 @@ namespace ColoursOfCalradia
                 try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                 try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
             }
-            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for 2.5 seconds and unseats riders.", ColorSchool.Blue);
+            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for {haltDuration:F1}s and unseats riders.", ColorSchool.Blue);
         }
 
         // Grey Harvest — one random non-hero creature in cone fades and dies

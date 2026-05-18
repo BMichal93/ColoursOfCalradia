@@ -108,7 +108,7 @@ namespace ColoursOfCalradia
             Msg("Golden Snare laid — a patch of arcane pressure. The first formation to step in receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
         }
 
-        // Creeping Dread — moving cloud of revulsion that damages agents it passes through
+        // Creeping Dread — moving clouds of revulsion that damage agents they pass through
         private static void SpellCreateYellow()
         {
             if (Player == null) return;
@@ -119,18 +119,24 @@ namespace ColoursOfCalradia
                 return;
             }
             float power = SpellPower(ColorSchool.Yellow);
-            const float NodeRadius  = 5f;
-            const float HalfSpacing = 4f;
+            const float NodeRadius = 7f;
+            const float Spacing    = 5f;
             Vec3 fwd   = Player.LookDirection.NormalizedCopy();
             Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
             if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
             else right = right.NormalizedCopy();
             Vec3 centre = Player.Position;
+            // 3×3 grid of nine drifting nodes
             Vec3[] nodePos = {
-                centre - right * HalfSpacing - fwd * HalfSpacing,
-                centre + right * HalfSpacing - fwd * HalfSpacing,
-                centre - right * HalfSpacing + fwd * HalfSpacing,
-                centre + right * HalfSpacing + fwd * HalfSpacing,
+                centre - right * Spacing - fwd * Spacing,
+                centre                  - fwd * Spacing,
+                centre + right * Spacing - fwd * Spacing,
+                centre - right * Spacing,
+                centre,
+                centre + right * Spacing,
+                centre - right * Spacing + fwd * Spacing,
+                centre                  + fwd * Spacing,
+                centre + right * Spacing + fwd * Spacing,
             };
             foreach (Vec3 pos in nodePos)
             {
@@ -147,7 +153,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
-            Msg("Creeping Dread takes shape — four clouds of formless terror drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
+            Msg("Creeping Dread takes shape — nine clouds of formless terror drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
         }
 
         // Emerald Font — two healing pools side by side, perpendicular to caster's look direction
@@ -188,7 +194,7 @@ namespace ColoursOfCalradia
             Msg("The Emerald Font opens — two pools of living light, mending all who stand within. Cast again to dismiss.", ColorSchool.Green);
         }
 
-        // Sapphire Bastion — three repulsion nodes in a line perpendicular to the caster's look direction,
+        // Sapphire Bastion — four repulsion nodes in a line perpendicular to the caster's look direction,
         // forming a wall of force across the battlefield.
         private static void SpellCreateBlue()
         {
@@ -200,9 +206,9 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            const float Duration     = 120f;
-            const float NodeRadius   = 3f;
-            const float NodeSpacing  = 4.5f; // distance between adjacent node centres
+            const float Duration    = 240f;
+            const float NodeRadius  = 3f;
+            const float NodeSpacing = 4f; // distance between adjacent node centres
 
             // Wall runs perpendicular to the player's look direction
             Vec3 fwd   = Player.LookDirection.NormalizedCopy();
@@ -212,9 +218,10 @@ namespace ColoursOfCalradia
 
             Vec3 centre = Player.Position;
             Vec3[] nodePos = {
-                centre - right * NodeSpacing,
-                centre,
-                centre + right * NodeSpacing
+                centre - right * (NodeSpacing * 1.5f),
+                centre - right * (NodeSpacing * 0.5f),
+                centre + right * (NodeSpacing * 0.5f),
+                centre + right * (NodeSpacing * 1.5f)
             };
 
             foreach (Vec3 pos in nodePos)
@@ -230,7 +237,7 @@ namespace ColoursOfCalradia
             }
 
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
-            Msg("Sapphire Bastion rises — three pillars of force seal the line. None shall cross. Fades in 2 minutes.", ColorSchool.Blue);
+            Msg("Sapphire Bastion rises — four pillars of force seal the line. None shall cross. Fades in 4 minutes.", ColorSchool.Blue);
         }
 
         // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect
