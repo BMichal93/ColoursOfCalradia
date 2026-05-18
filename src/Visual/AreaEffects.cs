@@ -43,7 +43,6 @@ namespace ColoursOfCalradia
             public GameEntity LightEntity; // coloured point light marking the effect area
         }
         private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
-        private static readonly HashSet<int> _snarePrevInside   = new HashSet<int>();
         // AgentIndex → (seconds remaining, position frozen at cast time) for Azure Arrest halt
         private static readonly Dictionary<int, (float Remaining, Vec3 FrozenPos)> _haltedAgents
             = new Dictionary<int, (float, Vec3)>();
@@ -61,7 +60,6 @@ namespace ColoursOfCalradia
             {
                 try { _areaEffects[idx].LightEntity?.Remove(0); } catch { }
                 _areaEffects.RemoveAt(idx);
-                if (id == "create_orange") _snarePrevInside.Clear();
                 return;
             }
             if (newEffect != null)
@@ -69,6 +67,15 @@ namespace ColoursOfCalradia
                 newEffect.LightEntity = SpawnAreaLight(newEffect.Position, newEffect.School, newEffect.Radius);
                 _areaEffects.Add(newEffect);
             }
+        }
+
+        // Returns true if the given position is inside any active Orange retributive aura node.
+        public static bool IsInsideOrangeAura(Vec3 pos)
+        {
+            foreach (var e in _areaEffects)
+                if (e.Id == "create_orange" && e.Position.Distance(pos) <= e.Radius)
+                    return true;
+            return false;
         }
 
         public static void RemoveAreaEffect(string id)
@@ -176,65 +183,14 @@ namespace ColoursOfCalradia
                 // Apply the area effect this tick
                 switch (e.Id)
                 {
-                    case "create_orange": // Golden Snare — one-shot random command on first contact
+                    case "create_orange": // Golden Recoil — glow agents inside; retribution handled in OnAgentHit
                     {
-                        // Glow agents inside this node
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
-                            try { BeginAgentGlow(a, e.School, 1.5f); } catch { }
+                            try { BeginAgentGlow(a, e.School, 2f); } catch { }
                         }
-
-                        // Find the first enemy inside this node not exempted at cast time.
-                        // _snarePrevInside is set once at cast and never updated — one-shot trap.
-                        Agent contact = null;
-                        foreach (Agent a in Mission.Current.Agents)
-                        {
-                            if (!a.IsActive() || a.IsMount || a == Player) continue;
-                            if (a.Team == Player?.Team) continue;
-                            if (a.Position.Distance(e.Position) > e.Radius) continue;
-                            if (_snarePrevInside.Contains(a.Index)) continue;
-                            contact = a; break;
-                        }
-                        if (contact == null) break;
-
-                        // Apply a random command to their formation
-                        Formation f = contact.Formation;
-                        var formationAgents = f == null ? new List<Agent>() :
-                            Mission.Current.Agents.Where(a => a.IsActive() && a.Formation == f).ToList();
-                        string cmdName;
-                        switch (_rng.Next(4))
-                        {
-                            case 0: // Panic — drain morale (enemy AI cannot override morale)
-                                foreach (Agent a in formationAgents) try { a.SetMorale(0f); } catch { }
-                                cmdName = "Panic";
-                                break;
-                            case 1: // Enrage — max morale + charge order
-                                foreach (Agent a in formationAgents) try { a.SetMorale(100f); } catch { }
-                                if (f != null) try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
-                                cmdName = "Enrage";
-                                break;
-                            case 2: // Dismount — unseat riders
-                                foreach (Agent a in Mission.Current.Agents
-                                    .Where(a => a.IsActive() && a.Formation == f && a.MountAgent != null).ToList())
-                                {
-                                    Vec3 dest = a.Position + new Vec3(1.5f, 0f, 0f);
-                                    dest.z = a.Position.z;
-                                    try { a.TeleportToPosition(dest); } catch { }
-                                }
-                                cmdName = "Dismount";
-                                break;
-                            default: // Scatter — full morale drain
-                                foreach (Agent a in formationAgents) try { a.SetMorale(0f); } catch { }
-                                cmdName = "Scatter";
-                                break;
-                        }
-                        BeginAgentGlow(contact, e.School, 2f);
-                        Msg($"Golden Snare — {contact.Name}'s formation receives a sudden command: {cmdName}!", ColorSchool.Orange);
-                        // Expire all orange nodes (not just this one — 2x2 grid shares one ID)
-                        foreach (var oe in _areaEffects.Where(x => x.Id == "create_orange").ToList())
-                            oe.Remaining = 0.001f;
                         break;
                     }
 
@@ -337,7 +293,6 @@ namespace ColoursOfCalradia
             foreach (var e in _areaEffects)
                 try { e.LightEntity?.Remove(0); } catch { }
             _areaEffects.Clear();
-            _snarePrevInside.Clear();
             _haltedAgents.Clear();
         }
     }

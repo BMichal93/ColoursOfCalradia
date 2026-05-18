@@ -150,27 +150,19 @@ namespace ColoursOfCalradia
                 if (isMissile)
                     SpellEffects.AbsorbCeruleanMissile(blow.InflictedDamage);
             }
+
+            // Golden Recoil: any attacker (not the player) who deals damage while inside the orange aura takes it back
+            if (blow.InflictedDamage > 0 && affectorAgent != null && affectorAgent != Agent.Main
+                && affectorAgent.IsActive() && SpellEffects.IsInsideOrangeAura(affectorAgent.Position))
+            {
+                SpellEffects.DamageAgent(affectorAgent, blow.InflictedDamage);
+            }
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent,
             AgentState agentState, KillingBlow blow)
         {
             ColourUnitRegistry.OnAgentRemoved(affectedAgent);
-
-            // Green — Gentle Burden: dealing a killing blow wounds the caster
-            if (affectorAgent == Agent.Main && affectorAgent.IsActive()
-                && ColourKnowledge.HasSchool(ColorSchool.Green)
-                && affectedAgent != Agent.Main)
-            {
-                try
-                {
-                    Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 8f);
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        "Gentle Burden: A life ends by your hand. The cost falls on you.",
-                        ColorSchoolData.GetMessageColor(ColorSchool.Green)));
-                }
-                catch { }
-            }
         }
     }
 }

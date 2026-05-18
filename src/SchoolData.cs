@@ -61,7 +61,7 @@ namespace ColoursOfCalradia
                                    "Their indulgent nature, however, devours resources and sends the caster lurching with each casting.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
                 LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
-                LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions for a moment, lurching unpredictably across the field.",
+                LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions for a moment, lurching unpredictably across the field. The Golden Recoil creation spell turns the violence of others back on themselves.",
                 AttributePenalty = "-1 Intellect"
             },
             [ColorSchool.Yellow] = new SchoolInfo
@@ -78,29 +78,29 @@ namespace ColoursOfCalradia
             {
                 Name             = "Green",
                 FlavorText       = "Gentle Burden — Kind, mending magic of life and restoration. Green mages sustain their companions through battle. " +
-                                   "Their pacifist heart cannot act while holding a blade, and the weight of nearby violence seeps back into their body.",
+                                   "Their pacifist heart cannot act while holding a blade, and the living current they channel will not flow through a mount's distress.",
                 PersonalityEffect= "Repeated casting increases your Mercy — slow to strike, quick to spare.",
                 LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon.",
-                LimitationB      = "Gentle Burden: Each killing blow you land costs you — Green magic does not forgive the taking of life.",
+                LimitationB      = "Horse-Shy: Green magic cannot be worked from horseback — the living current will not flow through a mount's distress.",
                 AttributePenalty = "-1 Endurance"
             },
             [ColorSchool.Blue] = new SchoolInfo
             {
                 Name             = "Blue",
                 FlavorText       = "Scholar's Weight — Cold, distanced magic of order and stillness. Blue mages freeze formations and conjure spectral shields. " +
-                                   "But knowledge is heavy — each casting strains the body, adding invisible weight to armour and limb.",
+                                   "But knowledge is heavy, and stillness costs time — each casting strains the body and draws years from the mage without warning.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
                 LimitationA      = "Scholar's Weight: Each Blue spell makes your equipment feel heavier — movement slows with every cast and does not recover until the battle ends. Six stacks will slow you to a crawl.",
-                LimitationB      = "Grounded: Casting Blue magic from horseback has a chance to throw you from the saddle — the Scholar's Weight unbalances you mid-cast.",
+                LimitationB      = "Timeless Toll: Each Blue spell drawn in battle costs the caster ~2 days — the Scholar's pursuit of perfect stillness quietly devours years.",
                 AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
             {
                 Name             = "Purple",
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
-                                   "The grey does not take violently — it takes slowly, steadily. Each working bleeds away a little of the mage's time, presence, and will to be.",
-                PersonalityEffect= "Repeated casting drains your Valor — grief and resignation make it harder to believe anything is worth the fight.",
-                LimitationA      = "Waning Cost: Each Purple spell ages the caster by ~2 days — the grey draws time inward, quietly.",
+                                   "The grey does not take violently — it takes steadily. Each working bleeds away standing, presence, and eventually the self.",
+                PersonalityEffect= "Repeated casting hollows out all personality — grief erodes every trait toward a silent zero.",
+                LimitationA      = "Hollow Standing: Each Purple spell costs renown and influence — the grey bleeds your presence from the world, quietly.",
                 LimitationB      = "The Slow Unravelling: Each Purple cast quietly reduces the caster's fertility — something within grows dimmer with every working. It never reaches zero, but it never comes back.",
                 AttributePenalty = "-1 Cunning"
             }

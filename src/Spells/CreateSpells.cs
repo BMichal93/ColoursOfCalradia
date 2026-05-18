@@ -60,54 +60,30 @@ namespace ColoursOfCalradia
                           : "The burst finds nothing nearby.", ColorSchool.Red);
         }
 
-        // Golden Snare — one-shot patch; triggers on first contact with a random formation command
+        // Golden Recoil — retributive aura; any agent who deals damage inside takes the same damage back
         private static void SpellCreateOrange()
         {
             if (Player == null) return;
             if (HasAreaEffect("create_orange"))
             {
                 RemoveAreaEffect("create_orange");
-                _snarePrevInside.Clear();
-                Msg("The Golden Snare fades before it could spring.", ColorSchool.Orange);
+                Msg("The Golden Recoil fades. The aura of retribution dissolves.", ColorSchool.Orange);
                 return;
             }
-            const float NodeRadius  = 6f;
-            const float HalfSpacing = 4f;
-            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
-            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
-            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
-            else right = right.NormalizedCopy();
-            Vec3 centre = Player.Position;
-            Vec3[] nodePos = {
-                centre - right * HalfSpacing - fwd * HalfSpacing,
-                centre + right * HalfSpacing - fwd * HalfSpacing,
-                centre - right * HalfSpacing + fwd * HalfSpacing,
-                centre + right * HalfSpacing + fwd * HalfSpacing,
-            };
-            _snarePrevInside.Clear();
-            foreach (Vec3 pos in nodePos)
+            const float NodeRadius = 10f;
+            Vec3 centre = Player.Position + Player.LookDirection.NormalizedCopy() * 5f;
+            centre.z = Player.Position.z;
+            var node = new AreaEffect
             {
-                var node = new AreaEffect
-                {
-                    Id = "create_orange", School = ColorSchool.Orange,
-                    Position = pos, Radius = NodeRadius,
-                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 60f
-                };
-                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
-                _areaEffects.Add(node);
-            }
-            // Snapshot agents inside any node so they don't trigger the snare immediately.
-            // _snarePrevInside is set once at cast time and not updated during ticks (one-shot trap).
-            if (Mission.Current != null)
-                foreach (Agent a in Mission.Current.Agents)
-                {
-                    if (!a.IsActive() || a.IsMount) continue;
-                    foreach (Vec3 pos in nodePos)
-                        if (a.Position.Distance(pos) <= NodeRadius) { _snarePrevInside.Add(a.Index); break; }
-                }
+                Id = "create_orange", School = ColorSchool.Orange,
+                Position = centre, Radius = NodeRadius,
+                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+            };
+            node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+            _areaEffects.Add(node);
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
-            Msg("Golden Snare laid — a patch of arcane pressure. The first formation to step in receives a random command and the trap vanishes. Cast again to dismiss.", ColorSchool.Orange);
+            Msg("Golden Recoil — a zone of retribution takes shape. Any who strike while standing within it will feel the blow return. Cast again to dismiss.", ColorSchool.Orange);
         }
 
         // Creeping Dread — moving clouds of revulsion that damage agents they pass through
@@ -210,7 +186,6 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            const float Duration    = 240f;
             const float NodeRadius  = 3f;
             const float NodeSpacing = 4f; // distance between adjacent node centres
 
@@ -234,7 +209,7 @@ namespace ColoursOfCalradia
                 {
                     Id = "create_blue", School = ColorSchool.Blue,
                     Position = pos, Radius = NodeRadius,
-                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = Duration
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = -1f
                 };
                 node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
                 _areaEffects.Add(node);
@@ -242,7 +217,7 @@ namespace ColoursOfCalradia
 
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
-            Msg("Sapphire Bastion rises — four pillars of force seal the line. None shall cross. Fades in 4 minutes.", ColorSchool.Blue);
+            Msg("Sapphire Bastion rises — four pillars of force seal the line. None shall cross. Cast again to dismiss.", ColorSchool.Blue);
         }
 
         // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect

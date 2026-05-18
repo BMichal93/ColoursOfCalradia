@@ -101,7 +101,33 @@ namespace ColoursOfCalradia
 
             if (_castCounters[school] % 25 != 0) return;
 
-            // Shift personality trait
+            if (school == ColorSchool.Purple)
+            {
+                // Purple hollows out all personality — each threshold nudges every trait toward 0
+                try
+                {
+                    if (Hero.MainHero == null) return;
+                    var traits = new[] { DefaultTraits.Calculating, DefaultTraits.Generosity,
+                                         DefaultTraits.Mercy, DefaultTraits.Valor };
+                    bool anyChanged = false;
+                    foreach (var trait in traits)
+                    {
+                        int current = Hero.MainHero.GetTraitLevel(trait);
+                        if (current == 0) continue;
+                        int next = current > 0 ? current - 1 : current + 1;
+                        Hero.MainHero.SetTraitLevel(trait, next);
+                        anyChanged = true;
+                    }
+                    if (anyChanged)
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "The grey hollows you out. Your personality fades toward nothing.",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
+                }
+                catch { }
+                return;
+            }
+
+            // All other schools shift their associated trait in one direction
             try
             {
                 var (trait, direction) = ColorSchoolData.GetTraitEffect(school);

@@ -37,7 +37,7 @@ namespace ColoursOfCalradia
         //   Orange food cost doubles each cast within 24h (1→2→4→8…)
         //   Yellow self-morale drain escalates +5 each cast within 24h (5→10→15…)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   −3 renown per cast (buying influence damages reputation)
+        //   Blue   no extra penalty (aging is the mission-cast cost)
         //   Purple aging scales per session: 7→14→21→… days
         // =================================================================
 
@@ -234,8 +234,7 @@ namespace ColoursOfCalradia
             int influence = (int)(15f * power);
             Hero.MainHero.ChangeHeroGold(-Cost);
             try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, influence); } catch { }
-            try { Hero.MainHero.Clan?.AddRenown(-3f); } catch { }
-            Msg($"Scholar's Investment — {Cost} gold spent. Influence: +{influence}. Renown: −3.", ColorSchool.Blue);
+            Msg($"Scholar's Investment — {Cost} gold spent. Influence: +{influence}.", ColorSchool.Blue);
         }
 
         // =================================================================
@@ -247,7 +246,7 @@ namespace ColoursOfCalradia
         //   Orange gold cost 100→200→400 (capped), resets at campaign midnight
         //   Yellow −2 own clan renown per cast (self-limiting)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   −300 gold per cast; kingdom required
+        //   Blue   no extra penalty (aging is the mission-cast cost); siege required
         //   Purple flat 14-day aging per cast
         // =================================================================
 
@@ -489,13 +488,6 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            const int Cost = 500;
-            if (Hero.MainHero.Gold < Cost)
-            {
-                Msg($"Scholar's Blueprint — you need at least {Cost} gold to fund the work.", ColorSchool.Blue);
-                return;
-            }
-
             float power = SpellPower(ColorSchool.Blue);
             float bonus = 150f * power; // construction progress units to add
 
@@ -550,9 +542,7 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            Hero.MainHero.ChangeHeroGold(-Cost);
-            try { Hero.MainHero.Clan?.AddRenown(-3f); } catch { }
-            Msg($"Scholar's Blueprint — {Cost}g spent. Construction progress +{(int)bonus}. Renown −3.", ColorSchool.Blue);
+            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}.", ColorSchool.Blue);
         }
 
         // ── Purple — Wither's Touch ──────────────────────────────────────

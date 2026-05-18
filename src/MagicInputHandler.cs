@@ -166,9 +166,18 @@ namespace ColoursOfCalradia
             }
 
 
-            // Green — Pacifist: no weapon in hand
+            // Green — Pacifist: no weapon in hand; Horse-Shy: no casting from horseback
             if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
             {
+                try
+                {
+                    if (Agent.Main.MountAgent != null)
+                    {
+                        Fizzle("Horse-Shy: Green magic will not flow through a mount's distress — dismount first.");
+                        return;
+                    }
+                }
+                catch { }
                 try
                 {
                     var wielded = Agent.Main.WieldedWeapon;
@@ -278,32 +287,40 @@ namespace ColoursOfCalradia
                 SpellEffects.TriggerConfusion();
 
             // Blue — Scholar's Weight: equipment grows heavier each cast, limiting speed
+            // Timeless Toll: each Blue cast also ages the caster ~2 days
             if (spell.School == ColorSchool.Blue && inMission)
             {
                 SpellEffects.ApplyBlueWeight();
-                // Grounded: 50 % chance to be thrown when casting from horseback
-                try
-                {
-                    if (Agent.Main?.MountAgent != null && new Random().Next(2) == 0)
-                    {
-                        Agent.Main.Formation?.SetRidingOrder(RidingOrder.RidingOrderDismount);
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "Grounded: The Scholar's Weight unsettles your mount — you are thrown from the saddle.",
-                            ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
-                    }
-                }
-                catch { }
-            }
-
-            // Purple — Waning Cost: ages the caster ~2 days; also quietly reduces fertility
-            if (spell.School == ColorSchool.Purple)
-            {
                 try
                 {
                     Hero.MainHero?.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Years(1f / 365f));
                     InformationManager.DisplayMessage(new InformationMessage(
-                        $"Waning Cost: The grey takes its years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
+                        $"Timeless Toll: The Scholar's pursuit of stillness costs years. | Age: {(int)(Hero.MainHero?.Age ?? 0)}",
+                        ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
+                }
+                catch { }
+            }
+
+            // Purple — Hollow Standing: each cast costs renown and influence
+            if (spell.School == ColorSchool.Purple)
+            {
+                try
+                {
+                    Hero.MainHero?.Clan?.AddRenown(-5f);
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        "Hollow Standing: The grey bleeds your presence. Renown −5.",
                         ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
+                }
+                catch { }
+                try
+                {
+                    if (Hero.MainHero?.Clan?.Kingdom != null)
+                    {
+                        GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, -2f);
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "Hollow Standing: Influence −2.",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
+                    }
                 }
                 catch { }
                 if (ColourKnowledge.ReducePurpleFertility())
