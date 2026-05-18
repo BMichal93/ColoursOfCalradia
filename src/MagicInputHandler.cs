@@ -34,8 +34,8 @@ namespace ColoursOfCalradia
         private static string _lastDisplayedBuffer = "";
         private const  int    MaxLen               = 10;
 
-        // Previous-frame state for R-stick directions (IsKeyPressed unreliable for analog axes)
-        private static bool _prevRUp, _prevRDown, _prevRLeft, _prevRRight;
+        // Previous-frame state for L-stick directions (IsKeyPressed unreliable for analog axes)
+        private static bool _prevLUp, _prevLDown, _prevLLeft, _prevLRight;
 
         public static bool InputSuppressed { get; private set; }
 
@@ -74,21 +74,21 @@ namespace ColoursOfCalradia
                     }
                 }
 
-                // Gamepad: R-stick directions via manual edge detection (IsKeyDown + prev-state)
+                // Gamepad: L-stick directions via manual edge detection (IsKeyDown + prev-state)
                 // Only runs when L-trigger is the focus key.
                 if (focusingPad)
                 {
-                    bool rUp    = Input.IsKeyDown(InputKey.ControllerRStickUp);
-                    bool rDown  = Input.IsKeyDown(InputKey.ControllerRStickDown);
-                    bool rLeft  = Input.IsKeyDown(InputKey.ControllerRStickLeft);
-                    bool rRight = Input.IsKeyDown(InputKey.ControllerRStickRight);
+                    bool lUp    = Input.IsKeyDown(InputKey.ControllerLStickUp);
+                    bool lDown  = Input.IsKeyDown(InputKey.ControllerLStickDown);
+                    bool lLeft  = Input.IsKeyDown(InputKey.ControllerLStickLeft);
+                    bool lRight = Input.IsKeyDown(InputKey.ControllerLStickRight);
 
-                    if (rUp    && !_prevRUp)   Append("U");
-                    if (rDown  && !_prevRDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(inMission); else Append("D"); }
-                    if (rLeft  && !_prevRLeft) Append("L");
-                    if (rRight && !_prevRRight) Append("R");
+                    if (lUp    && !_prevLUp)   Append("U");
+                    if (lDown  && !_prevLDown) { if (_buffer.Length == 0) ColourKnowledge.ShowGrimoire(inMission); else Append("D"); }
+                    if (lLeft  && !_prevLLeft) Append("L");
+                    if (lRight && !_prevLRight) Append("R");
 
-                    _prevRUp = rUp; _prevRDown = rDown; _prevRLeft = rLeft; _prevRRight = rRight;
+                    _prevLUp = lUp; _prevLDown = lDown; _prevLLeft = lLeft; _prevLRight = lRight;
 
                     if (Input.IsKeyPressed(InputKey.ControllerLThumb)) ColourKnowledge.ShowGrimoire(inMission);
                 }
@@ -103,7 +103,7 @@ namespace ColoursOfCalradia
             else if (_wasFocusing)
             {
                 _wasFocusing = false;
-                _prevRUp = _prevRDown = _prevRLeft = _prevRRight = false;
+                _prevLUp = _prevLDown = _prevLLeft = _prevLRight = false;
 
                 if (!inMission && Campaign.Current != null)
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;

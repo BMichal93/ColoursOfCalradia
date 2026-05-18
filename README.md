@@ -402,9 +402,9 @@ NPC mage lords require full daylight and will not cast during dim or dark condit
 ### Gamepad
 
 1. Hold **Left Trigger** to enter spell mode.
-2. Push the **right stick** in a direction:
+2. Push the **left stick** in a direction:
    - Stick Up → U
-   - Stick Down → D
+   - Stick Down → Open spellbook (same as S on keyboard)
    - Stick Left → L
    - Stick Right → R
 3. Press **L3 (left stick click)** to open the spellbook (instead of casting).
@@ -412,7 +412,7 @@ NPC mage lords require full daylight and will not cast during dim or dark condit
 
 ### Spellbook
 
-Press **S** (keyboard, empty buffer) or **L3** (gamepad, while holding Alt/LT) to cycle through your known spells. The spellbook shows each spell's name, combo, and effect.
+Press **S** (keyboard) or **Left stick Down / L3** (gamepad) while holding the focus key to open the spellbook. The spellbook shows each spell's name, combo, and effect.
 
 ---
 
