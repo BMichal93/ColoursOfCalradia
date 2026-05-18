@@ -46,85 +46,105 @@ ColoursOfCalradia/
 ## Installation
 
 ### Requirements
-- Mount & Blade II: Bannerlord (any platform — Steam or Xbox/Game Pass)
-- .NET SDK 6 or later (for building) — download from https://dotnet.microsoft.com/download
+- Mount & Blade II: Bannerlord — Steam or Xbox / Game Pass
 
-### Step 1 — Locate your Bannerlord directory
+No build tools are needed for a normal install. Download the release ZIP, then use either method below.
 
-| Platform | Default path |
+---
+
+### Option A — Script install (recommended)
+
+The release ZIP contains `install.ps1` which auto-detects your Bannerlord location and copies the mod to the right place.
+
+1. Extract the ZIP anywhere.
+2. Open PowerShell in the extracted folder and run:
+
+```powershell
+.\install.ps1
+```
+
+The script checks the Steam registry key, the default Steam path, and scans `C:\XboxGames\` automatically. If your game is in a non-standard location, pass the path explicitly:
+
+```powershell
+.\install.ps1 -BannerlordPath "D:\Games\Mount & Blade II Bannerlord"
+```
+
+3. Launch the game, click **Mods**, enable **Colours of Calradia**, click **Play**.
+
+---
+
+### Option B — Manual install
+
+1. Extract the ZIP. You will get a `ColoursOfCalradia` folder.
+
+2. Find your Bannerlord root directory:
+
+| Platform | Typical path |
 |----------|-------------|
-| Steam | `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord` |
-| Xbox / Game Pass | `C:\XboxGames\<GameGUID>\Content` — open `C:\XboxGames\` in Explorer to find the folder with the GUID name |
+| Steam (default library) | `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord` |
+| Steam (custom library) | Open Steam → right-click the game → Manage → Browse local files |
+| Xbox / Game Pass | Open `C:\XboxGames\` in Explorer — Bannerlord is the folder whose `Content` subfolder contains a `bin` folder |
 
-This directory is referred to as `<BannerlordRoot>` below.
-
-### Step 2 — Copy the mod folder
-
-Copy the entire `ColoursOfCalradia` folder into:
-
-```
-<BannerlordRoot>\Modules\ColoursOfCalradia\
-```
-
-The result should look like:
+3. Copy the entire `ColoursOfCalradia` folder into the `Modules` subfolder:
 
 ```
 <BannerlordRoot>\Modules\ColoursOfCalradia\
     SubModule.xml
     ModuleData\
-    src\
+    bin\
+        Win64_Shipping_Client\
+            ColoursOfCalradia.dll
+        Gaming.Desktop.x64_Shipping_Client\
+            ColoursOfCalradia.dll
+    install.ps1
     README.md
 ```
 
-### Step 3 — Build the DLL
-
-See the **Build** section below. This produces `ColoursOfCalradia.dll`.
-
-### Step 4 — Place the DLL
-
-Copy the built DLL into the correct subfolder inside the mod:
-
-| Platform | Destination |
-|----------|-------------|
-| Steam | `<BannerlordRoot>\Modules\ColoursOfCalradia\bin\Win64_Shipping_Client\ColoursOfCalradia.dll` |
-| Xbox / Game Pass | `<BannerlordRoot>\Modules\ColoursOfCalradia\bin\Gaming.Desktop.x64_Shipping_Client\ColoursOfCalradia.dll` |
-
-Create the `bin\<subfolder>\` directory if it does not exist.
-
-### Step 5 — Enable in the launcher
-
-1. Launch Mount & Blade II: Bannerlord.
-2. Click **Mods** in the launcher.
-3. Find **Colours of Calradia** in the list and tick the checkbox.
-4. Click **Play**.
+4. Launch the game, click **Mods**, enable **Colours of Calradia**, click **Play**.
 
 > **Load order:** no special position required. The mod has no dependencies on other mods.
 
 ---
 
-## Build
+## Building from Source
 
-Set two environment variables before building:
+Required only if you are contributing or packaging a new release. End users do not need this.
+
+### Requirements
+
+- .NET SDK 6 or later — https://dotnet.microsoft.com/download
+- A local Bannerlord installation (the build references the game's DLLs)
+
+### Environment variables
 
 | Variable | Steam | Xbox / Game Pass |
 |----------|-------|-----------------|
-| `BannerlordPath` | `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord` | `C:\XboxGames\<GameGUID>\Content` — the GUID varies; find it under `C:\XboxGames\` |
-| `BannerlordBin` | `Win64_Shipping_Client` | `Gaming.Desktop.x64_Shipping_Client` |
-
-`BannerlordBin` defaults to `Win64_Shipping_Client` if omitted, so Steam users only need to set `BannerlordPath`.
+| `BannerlordPath` | `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord` | Path to the `Content` folder — find it under `C:\XboxGames\` |
+| `BannerlordBin` | `Win64_Shipping_Client` *(default, can be omitted)* | `Gaming.Desktop.x64_Shipping_Client` |
 
 ```powershell
-# Steam
+# Steam (BannerlordBin defaults to Win64_Shipping_Client)
 $env:BannerlordPath = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
 dotnet build src\TheWitheringArt.csproj
 
-# Xbox / Game Pass (replace the GUID with the folder under C:\XboxGames\)
-$env:BannerlordPath = "C:\XboxGames\<GameGUID>\Content"
+# Xbox / Game Pass
+$env:BannerlordPath = "C:\XboxGames\<GUIDFolder>\Content"
 $env:BannerlordBin  = "Gaming.Desktop.x64_Shipping_Client"
 dotnet build src\TheWitheringArt.csproj
 ```
 
-Output DLL: `src/bin/Debug/ColoursOfCalradia.dll`
+The build auto-deploys `ColoursOfCalradia.dll` into `<BannerlordRoot>\Modules\ColoursOfCalradia\bin\<platform>\` on every successful compile.
+
+Output DLL: `src\bin\Debug\ColoursOfCalradia.dll`
+
+### Creating a release package
+
+```powershell
+$env:BannerlordPath = "..."   # must point to a valid Bannerlord install
+.\tools\pack.ps1
+```
+
+This builds in Release mode and produces `dist\ColoursOfCalradia_v<version>.zip` — the file you upload to Nexus Mods or GitHub Releases. The ZIP includes DLLs for both platforms and the `install.ps1` script.
 
 The project targets `.NET Framework 4.7.2` to match the game's runtime. Logic is split across 18 source files; `MagicSystem.cs` is the module entry point.
 
