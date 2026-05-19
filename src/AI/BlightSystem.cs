@@ -157,23 +157,26 @@ namespace ColoursOfCalradia
             catch { }
         }
 
-        private static Vec2 GetSpawnPos(Kingdom kingdom)
+        private static CampaignVec2 GetSpawnPos(Kingdom kingdom)
         {
             try
             {
                 var capital = kingdom.Settlements.FirstOrDefault(s => s.IsTown)
                            ?? kingdom.Settlements.FirstOrDefault();
                 if (capital != null)
-                    return new Vec2(
-                        capital.Position2D.X + (float)(_rng.NextDouble() - 0.5) * 30f,
-                        capital.Position2D.Y + (float)(_rng.NextDouble() - 0.5) * 30f);
+                {
+                    Vec2 capitalPos = capital.GetPosition2D;
+                    return new CampaignVec2(new Vec2(
+                        capitalPos.X + (float)(_rng.NextDouble() - 0.5) * 30f,
+                        capitalPos.Y + (float)(_rng.NextDouble() - 0.5) * 30f), true);
+                }
             }
             catch { }
-            return new Vec2(400f + (float)(_rng.NextDouble() - 0.5) * 50f,
-                            400f + (float)(_rng.NextDouble() - 0.5) * 50f);
+            return new CampaignVec2(new Vec2(400f + (float)(_rng.NextDouble() - 0.5) * 50f,
+                                               400f + (float)(_rng.NextDouble() - 0.5) * 50f), true);
         }
 
-        private static void TryCreateParty(Hero blight, ColorSchool school, Vec2 pos)
+        private static void TryCreateParty(Hero blight, ColorSchool school, CampaignVec2 pos)
         {
             try
             {
@@ -195,10 +198,11 @@ namespace ColoursOfCalradia
                 }
                 catch { }
 
-                MobileParty party = MobileParty.CreateParty("coc_blight_" + (int)school, template, blight);
+                MobileParty party = TaleWorlds.CampaignSystem.Party.PartyComponents.LordPartyComponent.CreateLordParty(
+                    "coc_blight_" + (int)school, blight, pos, 0f, null, blight);
                 if (party == null) return;
 
-                try { party.InitializeMobilePartyAroundPosition(template, pos, 0f); } catch { }
+                try { party.InitializeMobilePartyAroundPosition(template, pos, 0f, 0f); } catch { }
 
                 // Replace template troops with the blight hero
                 try { party.MemberRoster.Clear(); } catch { }
