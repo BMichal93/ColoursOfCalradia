@@ -257,7 +257,7 @@ namespace ColoursOfCalradia
             // Yellow — Suspicious: party morale loss + criminal rating increase
             if (spell.School == ColorSchool.Yellow)
             {
-                try { if (MobileParty.MainParty != null) MobileParty.MainParty.RecentEventsMorale -= 8f; }
+                try { if (MobileParty.MainParty != null) MobileParty.MainParty.RecentEventsMorale -= 5f; }
                 catch { }
                 // Increase criminal rating in the kingdom where the spell is used
                 try
