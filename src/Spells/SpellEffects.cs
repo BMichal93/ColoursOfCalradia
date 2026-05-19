@@ -604,6 +604,7 @@ namespace ColoursOfCalradia
         }
 
         private static readonly ActionIndexCache _castAnimCache = ActionIndexCache.Create("act_cheer_1");
+        private static readonly ActionIndexCache _castAnimClearCache = ActionIndexCache.Create("act_none");
 
         private static readonly List<(Agent agent, float remaining)> _animClearTimers
             = new List<(Agent, float)>();
@@ -617,8 +618,7 @@ namespace ColoursOfCalradia
                 {
                     var a = _animClearTimers[i].agent;
                     if (a != null && a.IsActive())
-                        // Seek to final frame + instant blend-out: terminates the loop cleanly
-                        try { a.SetActionChannel(1, _castAnimCache, true, 0UL, 0f, 1f, 0f, 0f, 1f); } catch { }
+                        try { a.SetActionChannel(1, _castAnimClearCache, true, 0UL); } catch { }
                     _animClearTimers.RemoveAt(i);
                 }
                 else
