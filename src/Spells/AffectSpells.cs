@@ -614,10 +614,10 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-10f); } catch { }
+            try { Hero.MainHero.Clan?.AddRenown(-6f); } catch { }
             try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 15f; } catch { }
             try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km). Own renown −10.", ColorSchool.Purple);
+            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km). Own renown −5.", ColorSchool.Purple);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────

@@ -277,7 +277,7 @@ namespace ColoursOfCalradia
                     }
                     crimKingdom = crimKingdom ?? Hero.MainHero?.Clan?.Kingdom;
                     if (crimKingdom != null)
-                        ChangeCrimeRatingAction.Apply(crimKingdom, 3f, true);
+                        ChangeCrimeRatingAction.Apply(crimKingdom, 1f, true);
                 }
                 catch { }
             }
@@ -334,9 +334,9 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    Hero.MainHero?.Clan?.AddRenown(-5f);
+                    Hero.MainHero?.Clan?.AddRenown(-1f);
                     InformationManager.DisplayMessage(new InformationMessage(
-                        "Hollow Standing: The grey bleeds your presence. Renown −5.",
+                        "Hollow Standing: The grey bleeds your presence. Renown −1.",
                         ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
                 }
                 catch { }
