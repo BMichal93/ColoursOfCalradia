@@ -37,7 +37,7 @@ namespace ColoursOfCalradia
         //   Orange food cost doubles each cast within 24h (1→2→4→8…)
         //   Yellow self-morale drain escalates +5 each cast within 24h (5→10→15…)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   one active at a time (blocked if the gaze is already running)
+        //   Blue   no cost — reveals nearby parties in a popup (no cooldown or HP cost)
         //   Purple renown −5 per cast (no daily reset)
         // =================================================================
 

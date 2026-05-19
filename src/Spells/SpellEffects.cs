@@ -435,46 +435,46 @@ namespace ColoursOfCalradia
 
         // ── Execute switch ───────────────────────────────────────────────────
         // Combos: first 2 chars = form (UU=Blast, RL=Self, LR=Create, UL=Affect, LU=Invoke),
-        //         last 2 chars = colour (RR=Red, RU=Orange, LU=Yellow, LL=Green, UL=Blue, UR=Purple)
+        //         last 3 chars = colour (RRR=Red, RLR=Orange, DLD=Yellow, LDL=Green, ULU=Blue, DDD=Purple)
         public static bool Execute(string combo)
         {
             switch (combo)
             {
                 // BLAST (UU)
-                case "UURR": SpellBlastRed();    break;
-                case "UURU": SpellBlastOrange(); break;
-                case "UULU": SpellBlastYellow(); break;
-                case "UULL": SpellBlastGreen();  break;
-                case "UUUL": SpellBlastBlue();   break;
-                case "UUUR": SpellBlastPurple(); break;
+                case "UURRR": SpellBlastRed();    break;
+                case "UURLR": SpellBlastOrange(); break;
+                case "UUDLD": SpellBlastYellow(); break;
+                case "UULDL": SpellBlastGreen();  break;
+                case "UUULU": SpellBlastBlue();   break;
+                case "UUDDD": SpellBlastPurple(); break;
                 // SELF (RL)
-                case "RLRR": SpellSelfRed();     break;
-                case "RLRU": SpellSelfOrange();  break;
-                case "RLLU": SpellSelfYellow();  break;
-                case "RLLL": SpellSelfGreen();   break;
-                case "RLUL": SpellSelfBlue();    break;
-                case "RLUR": SpellSelfPurple();  break;
+                case "RLRRR": SpellSelfRed();     break;
+                case "RLRLR": SpellSelfOrange();  break;
+                case "RLDLD": SpellSelfYellow();  break;
+                case "RLLDL": SpellSelfGreen();   break;
+                case "RLULU": SpellSelfBlue();    break;
+                case "RLDDD": SpellSelfPurple();  break;
                 // CREATE (LR)
-                case "LRRR": SpellCreateRed();    break;
-                case "LRRU": SpellCreateOrange(); break;
-                case "LRLU": SpellCreateYellow(); break;
-                case "LRLL": SpellCreateGreen();  break;
-                case "LRUL": SpellCreateBlue();   break;
-                case "LRUR": SpellCreatePurple(); break;
+                case "LRRRR": SpellCreateRed();    break;
+                case "LRRLR": SpellCreateOrange(); break;
+                case "LRDLD": SpellCreateYellow(); break;
+                case "LRLDL": SpellCreateGreen();  break;
+                case "LRULU": SpellCreateBlue();   break;
+                case "LRDDD": SpellCreatePurple(); break;
                 // AFFECT (UL)
-                case "ULRR": SpellAffectRed();    break;
-                case "ULRU": SpellAffectOrange(); break;
-                case "ULLU": SpellAffectYellow(); break;
-                case "ULLL": SpellAffectGreen();  break;
-                case "ULUL": SpellAffectBlue();   break;
-                case "ULUR": SpellAffectPurple(); break;
+                case "ULRRR": SpellAffectRed();    break;
+                case "ULRLR": SpellAffectOrange(); break;
+                case "ULDLD": SpellAffectYellow(); break;
+                case "ULLDL": SpellAffectGreen();  break;
+                case "ULULU": SpellAffectBlue();   break;
+                case "ULDDD": SpellAffectPurple(); break;
                 // INVOKE (LU)
-                case "LURR": SpellInvokeRed();    break;
-                case "LURU": SpellInvokeOrange(); break;
-                case "LULU": SpellInvokeYellow(); break;
-                case "LULL": SpellInvokeGreen();  break;
-                case "LUUL": SpellInvokeBlue();   break;
-                case "LUUR": SpellInvokePurple(); break;
+                case "LURRR": SpellInvokeRed();    break;
+                case "LURLR": SpellInvokeOrange(); break;
+                case "LUDLD": SpellInvokeYellow(); break;
+                case "LULDL": SpellInvokeGreen();  break;
+                case "LUULU": SpellInvokeBlue();   break;
+                case "LUDDD": SpellInvokePurple(); break;
                 default: return false;
             }
             return true;

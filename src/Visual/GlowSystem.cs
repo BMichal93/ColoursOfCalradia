@@ -70,7 +70,7 @@ namespace ColoursOfCalradia
                     ?.SetContourColor(ColorSchoolData.GetGlowColor(school), true);
                 int idx = _glowTimers.FindIndex(x => x.agent == agent);
                 if (idx >= 0) _glowTimers.RemoveAt(idx);
-                _glowTimers.Add((agent, 1f)); // always clear after 1 seconds
+                _glowTimers.Add((agent, duration));
             }
             catch { }
         }
