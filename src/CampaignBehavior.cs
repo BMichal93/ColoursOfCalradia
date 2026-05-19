@@ -61,6 +61,7 @@ namespace ColoursOfCalradia
         private void OnNewGameCreated()
         {
             ColourKnowledge.ResetForNewGame();
+            SpellEffects.ResetCampaignCounters();
 
             var elements = _allSchoolsOrdered.Select(school =>
             {

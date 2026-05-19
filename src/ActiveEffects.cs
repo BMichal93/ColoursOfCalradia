@@ -41,7 +41,7 @@ namespace ColoursOfCalradia
     public static class ActiveEffectManager
     {
         private static readonly List<ActiveEffect> _effects = new List<ActiveEffect>();
-        private const int MaxEffects = 20;
+        private const int MaxEffects = 50;
 
         public static void Add(ActiveEffect e)
         {

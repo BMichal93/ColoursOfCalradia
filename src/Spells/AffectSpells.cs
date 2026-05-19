@@ -297,7 +297,7 @@ namespace ColoursOfCalradia
         // Combos: LU prefix + colour (LU = A then W)
         //
         // Spam limiters (no cooldowns — all mechanical):
-        //   Red    −20% current HP per cast; blocked at ≤5 HP
+        //   Red    −8% current HP per cast; blocked at ≤5 HP
         //   Orange gold cost 100→200→400 (capped), resets at campaign midnight
         //   Yellow −2 own clan renown per cast (self-limiting)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
@@ -570,7 +570,17 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}.", ColorSchool.Blue);
+            try { Hero.MainHero.Clan?.AddRenown(-3f); } catch { }
+            try
+            {
+                var prop = typeof(Hero).GetProperty("BirthDay",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var setter = prop?.GetSetMethod(nonPublic: true);
+                if (setter != null)
+                    setter.Invoke(Hero.MainHero, new object[] { Hero.MainHero.BirthDay - CampaignTime.Days(2f) });
+            }
+            catch { }
+            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −3, aged 2 days)", ColorSchool.Blue);
         }
 
         // ── Purple — Wither's Touch ──────────────────────────────────────
@@ -604,9 +614,10 @@ namespace ColoursOfCalradia
                 return;
             }
 
+            try { Hero.MainHero.Clan?.AddRenown(-10f); } catch { }
             try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 15f; } catch { }
             try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km).", ColorSchool.Purple);
+            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km). Own renown −10.", ColorSchool.Purple);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
@@ -632,10 +643,11 @@ namespace ColoursOfCalradia
                 try { p.SetMoveGoToPoint(new CampaignVec2(target, true), MobileParty.NavigationType.Default); scattered++; } catch { }
             }
 
+            try { Hero.MainHero.Clan?.AddRenown(-5f); } catch { }
             string effect = scattered > 0
                 ? $"{scattered} nearby {(scattered == 1 ? "party loses" : "parties lose")} your trail."
                 : "No enemies were close enough to scatter.";
-            Msg($"Grey Veil — {effect}", ColorSchool.Purple);
+            Msg($"Grey Veil — {effect} (Renown −5)", ColorSchool.Purple);
         }
     }
 }

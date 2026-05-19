@@ -101,7 +101,8 @@ namespace ColoursOfCalradia
                 try
                 {
                     DamageAgent(a, 14f * power);
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 55f * power)); } catch { }
+                    if (!a.IsActive()) continue;
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f * power)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                     SpawnTempLight(a.Position, ColorSchool.Yellow, 6f, 1.5f);
                 }
@@ -144,7 +145,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Blue);
-            float haltDuration = 2.5f + (power - 1f) * 0.5f; // 2.3 s – 2.75 s, very gentle
+            float haltDuration = 2f + power * 1.5f; // attr 1 ≈ 2.9 s, attr 5 ≈ 3.5 s, attr 10 ≈ 4.25 s
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
             var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Blue); return; }
@@ -172,10 +173,11 @@ namespace ColoursOfCalradia
                 try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                 try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
             }
-            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for {haltDuration:F1}s and unseats riders.", ColorSchool.Blue);
+            Msg($"Azure Arrest freezes {inCone.Count} {(inCone.Count == 1 ? "creature" : "creatures")} for {haltDuration:F1}s. Riders unseated.", ColorSchool.Blue);
         }
 
-        // Grey Harvest — one random non-hero creature in cone fades and dies
+        // Grey Harvest — 1–3 non-hero creatures in cone fade and die (scales with Purple attribute)
+        // attr 1–4 (power <1.0): 1 kill; attr 5–7 (power 1.0–1.2): 2 kills; attr 8–10 (power ≥1.3): 3 kills
         private static void SpellBlastPurple()
         {
             if (Player == null) return;
@@ -183,11 +185,24 @@ namespace ColoursOfCalradia
             // Exclude heroes — Die() with OwnerId=-1 on a hero crashes Bannerlord's death processing
             var inCone = ConeAgents(Player.Position, fwd, 15f, 0.6f).Where(a => !a.IsHero).ToList();
             if (inCone.Count == 0) { Msg("No common souls in the cone — the purple passes over champions.", ColorSchool.Purple); return; }
-            Agent target = inCone[_rng.Next(inCone.Count)];
-            BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-            SpawnTempLight(target.Position, ColorSchool.Purple, 6f, 1.5f);
-            KillAgent(target);
-            Msg($"Grey Harvest — {target.Name} fades. The purple was always going to take them.", ColorSchool.Purple);
+            float power = SpellPower(ColorSchool.Purple);
+            int killCount = Math.Min(inCone.Count, power >= 1.3f ? 3 : power >= 1.0f ? 2 : 1);
+            // Pick killCount distinct targets via partial Fisher-Yates
+            for (int i = 0; i < killCount; i++)
+            {
+                int j = i + _rng.Next(inCone.Count - i);
+                Agent tmp = inCone[i]; inCone[i] = inCone[j]; inCone[j] = tmp;
+            }
+            for (int i = 0; i < killCount; i++)
+            {
+                BeginAgentGlow(inCone[i], ColorSchool.Purple, 1.5f);
+                SpawnTempLight(inCone[i].Position, ColorSchool.Purple, 6f, 1.5f);
+                KillAgent(inCone[i]);
+            }
+            if (killCount == 1)
+                Msg($"Grey Harvest — {inCone[0].Name} fades. The purple was always going to take them.", ColorSchool.Purple);
+            else
+                Msg($"Grey Harvest — {killCount} souls fade. The purple does not discriminate.", ColorSchool.Purple);
         }
 
         // Helper: returns all active non-mount agents in a cone (both allies and enemies)
