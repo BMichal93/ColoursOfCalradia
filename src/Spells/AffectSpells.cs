@@ -570,7 +570,7 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-3f); } catch { }
+            try { Hero.MainHero.Clan?.AddRenown(-2f); } catch { }
             try
             {
                 var prop = typeof(Hero).GetProperty("BirthDay",
@@ -580,7 +580,7 @@ namespace ColoursOfCalradia
                     setter.Invoke(Hero.MainHero, new object[] { Hero.MainHero.BirthDay - CampaignTime.Days(2f) });
             }
             catch { }
-            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −3, aged 2 days)", ColorSchool.Blue);
+            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −2, aged 2 days)", ColorSchool.Blue);
         }
 
         // ── Purple — Wither's Touch ──────────────────────────────────────
@@ -614,10 +614,10 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-6f); } catch { }
-            try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 15f; } catch { }
+            try { Hero.MainHero.Clan?.AddRenown(-8f); } catch { }
+            try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 10f; } catch { }
             try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            Msg($"Wither's Touch — {targetLord.Name}: morale −15, renown −8 ({minDist:F1} km). Own renown −5.", ColorSchool.Purple);
+            Msg($"Wither's Touch — {targetLord.Name}: morale −10, renown −8 ({minDist:F1} km). Own renown −8.", ColorSchool.Purple);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
