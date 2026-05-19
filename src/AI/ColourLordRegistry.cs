@@ -312,9 +312,41 @@ namespace ColoursOfCalradia
             schools.Add(school);
             try { ApplyColourTraits(hero, schools); } catch { }
             try { ApplyColorRelationships(hero, schools); } catch { }
+            try { ApplyBlightPenalty(hero, school); } catch { }
             InformationManager.DisplayMessage(new InformationMessage(
-                $"{hero.Name} has absorbed a Blight's power — {ColorSchoolData.Info[school].Name} now stirs in them.",
+                $"{hero.Name} drinks in the Blight's colour — {ColorSchoolData.Info[school].Name} flares in their blood, but the world answers with a stain of crime and waning influence.",
                 ColorSchoolData.GetMessageColor(school)));
+        }
+
+        private static void ApplyBlightPenalty(Hero hero, ColorSchool school)
+        {
+            if (hero == null) return;
+
+            const float CrimePenalty = 30f;
+            const float InfluencePenalty = 12f;
+
+            try
+            {
+                IFaction crimeFaction = hero.Clan?.Kingdom as IFaction ?? hero.Clan as IFaction;
+                if (crimeFaction != null)
+                    ChangeCrimeRatingAction.Apply(crimeFaction, CrimePenalty, true);
+            }
+            catch { }
+
+            try
+            {
+                if (hero.Clan?.Kingdom != null)
+                    hero.AddInfluenceWithKingdom(-InfluencePenalty);
+            }
+            catch { }
+
+            try
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{hero.Name}'s triumph leaves a dark sigil upon their clan. Crime swells; the court's favour slips like ash through open fingers.",
+                    ColorSchoolData.GetMessageColor(school)));
+            }
+            catch { }
         }
 
         // ── Children ──────────────────────────────────────────────────────────

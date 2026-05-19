@@ -184,33 +184,16 @@ namespace ColoursOfCalradia
         {
             try
             {
-                // Find any party template — looters preferred for hostile behavior
-                PartyTemplateObject template = null;
-                try
-                {
-                    foreach (PartyTemplateObject t in MBObjectManager.Instance.GetObjectTypeList<PartyTemplateObject>())
-                    {
-                        if (t == null) continue;
-                        if (t.StringId?.Contains("looter") == true) { template = t; break; }
-                    }
-                    if (template == null)
-                        template = MBObjectManager.Instance.GetObjectTypeList<PartyTemplateObject>()
-                                       .FirstOrDefault(t => t != null);
-                }
-                catch { }
-
                 Clan banditClan = Clan.BanditFactions?.FirstOrDefault();
                 if (banditClan == null) return;
 
+                try { blight.Clan = banditClan; } catch { }
+
                 MobileParty party = TaleWorlds.CampaignSystem.Party.PartyComponents.BanditPartyComponent.CreateBanditParty(
-                    "coc_blight_" + (int)school, banditClan, null, true, template, pos);
+                    "coc_blight_" + (int)school, banditClan, null, false, null, pos);
                 if (party == null) return;
 
-                try { party.PartyComponent?.ChangePartyLeader(blight); } catch { }
-
-                // Replace template troops with the blight hero
-                try { party.MemberRoster.Clear(); } catch { }
-                try { party.MemberRoster.AddToCounts(blight.CharacterObject, 1); } catch { }
+                try { party.ActualClan = banditClan; } catch { }
 
                 // Green/Orange get 20–50 elite escorts; others get speed boost
                 if (school == ColorSchool.Green || school == ColorSchool.Orange)

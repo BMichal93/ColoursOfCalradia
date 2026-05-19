@@ -476,6 +476,7 @@ namespace ColoursOfCalradia
                     if (chosen?.Count > 0)
                     {
                         ColourKnowledge.AddSchool(school);
+                        ApplyBlightCrimePenalty(school);
                         ApplySchoolPenalties(new List<ColorSchool> { school });
                         ShowStartingSpells(new List<ColorSchool> { school });
                     }
@@ -497,6 +498,35 @@ namespace ColoursOfCalradia
         private void OnCompanionAdded(Hero companion)
         {
             ColourLordRegistry.TryGrantCompanionColours(companion);
+        }
+
+        private void ApplyBlightCrimePenalty(ColorSchool school)
+        {
+            Hero player = Hero.MainHero;
+            if (player == null) return;
+
+            const float CrimePenalty = 30f;
+            const float InfluencePenalty = 12f;
+
+            try
+            {
+                IFaction crimeFaction = player.Clan?.Kingdom as IFaction ?? player.Clan as IFaction;
+                if (crimeFaction != null)
+                    ChangeCrimeRatingAction.Apply(crimeFaction, CrimePenalty, true);
+            }
+            catch { }
+
+            try
+            {
+                if (player.Clan?.Kingdom != null)
+                    player.AddInfluenceWithKingdom(-InfluencePenalty);
+            }
+            catch { }
+
+            var info = ColorSchoolData.Info[school];
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"The colours darken around you. {info.Name} blight leaves a dangerous stain: crime rises sharply{(player.Clan?.Kingdom != null ? " and your influence gutters." : ".")}",
+                ColorSchoolData.GetMessageColor(school)));
         }
 
         public override void SyncData(IDataStore dataStore)
