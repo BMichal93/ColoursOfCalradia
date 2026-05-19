@@ -40,6 +40,9 @@ namespace ColoursOfCalradia
     {
         private static bool _initialized;
         private static readonly Random _rng = new Random();
+        private static readonly FieldInfo _extraSpeedBonusField =
+            typeof(MobileParty).GetField("_extraSpeedBonusFromItems",
+                BindingFlags.NonPublic | BindingFlags.Instance);
 
         // ColorSchool (int) → hero StringId
         private static readonly Dictionary<int, string> _blightIds   = new Dictionary<int, string>();
@@ -100,11 +103,12 @@ namespace ColoursOfCalradia
         public static void InitializeBlights()
         {
             if (_initialized) return;
-            _initialized = true;
             try
             {
-                var kingdoms = Campaign.Current.Kingdoms.ToList();
-                if (kingdoms.Count == 0) return;
+                var kingdoms = Campaign.Current?.Kingdoms?.ToList();
+                if (kingdoms == null || kingdoms.Count == 0) return;
+
+                _initialized = true;
 
                 // Shuffle kingdoms for random colour assignment
                 for (int i = kingdoms.Count - 1; i > 0; i--)
@@ -117,7 +121,7 @@ namespace ColoursOfCalradia
                 for (int i = 0; i < allSchools.Length; i++)
                     TrySpawnBlight(allSchools[i], kingdoms[i % kingdoms.Count]);
             }
-            catch { }
+            catch { _initialized = false; }
         }
 
         // ── Spawn ─────────────────────────────────────────────────────────────
@@ -262,13 +266,10 @@ namespace ColoursOfCalradia
         {
             try
             {
-                // Reflects onto the private speed bonus field — silently ignored if the field
-                // name changed in this Bannerlord version
-                var field = typeof(MobileParty).GetField("_extraSpeedBonusFromItems",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                if (field == null) return;
-                float cur = (float)(field.GetValue(party) ?? 0f);
-                field.SetValue(party, cur + 3f);
+                // Best-effort speed boost for solo blights; safe to skip if the private field changes.
+                if (_extraSpeedBonusField == null || party == null) return;
+                float cur = (float)(_extraSpeedBonusField.GetValue(party) ?? 0f);
+                _extraSpeedBonusField.SetValue(party, cur + 3f);
             }
             catch { }
         }
@@ -318,12 +319,21 @@ namespace ColoursOfCalradia
         // ── Save / Load ───────────────────────────────────────────────────────
         public static void Save(IDataStore store)
         {
+            var stateEntries = _blightIds.Select(kvp =>
+            {
+                int school = kvp.Key;
+                string heroId = kvp.Value ?? "";
+                int respawn = _respawnHours.TryGetValue(school, out int hours) ? hours : 0;
+                return SerializeBlightState(school, heroId, respawn);
+            }).ToList();
+
             var bKeys   = _blightIds.Keys.ToList();
             var bVals   = _blightIds.Values.ToList();
             var rKeys   = _respawnHours.Keys.ToList();
             var rVals   = _respawnHours.Values.ToList();
             bool inited = _initialized;
 
+            store.SyncData("COC_BlightState", ref stateEntries);
             store.SyncData("COC_BlightKeys",   ref bKeys);
             store.SyncData("COC_BlightVals",   ref bVals);
             store.SyncData("COC_BlightRspK",   ref rKeys);
@@ -333,14 +343,45 @@ namespace ColoursOfCalradia
             _initialized = inited;
 
             _blightIds.Clear();
+            _respawnHours.Clear();
+
+            if (stateEntries != null && stateEntries.Count > 0)
+            {
+                foreach (string entry in stateEntries)
+                    if (TryParseBlightState(entry, out int school, out string heroId, out int respawn))
+                    {
+                        _blightIds[school] = heroId;
+                        if (respawn > 0)
+                            _respawnHours[school] = respawn;
+                    }
+                return;
+            }
+
             if (bKeys != null && bVals != null)
                 for (int i = 0; i < Math.Min(bKeys.Count, bVals.Count); i++)
                     _blightIds[bKeys[i]] = bVals[i];
 
-            _respawnHours.Clear();
             if (rKeys != null && rVals != null)
                 for (int i = 0; i < Math.Min(rKeys.Count, rVals.Count); i++)
                     _respawnHours[rKeys[i]] = rVals[i];
+        }
+
+        private static string SerializeBlightState(int school, string heroId, int respawnHours)
+            => $"{school}|{heroId}|{respawnHours}";
+
+        private static bool TryParseBlightState(string entry, out int school, out string heroId, out int respawnHours)
+        {
+            school = 0;
+            heroId = null;
+            respawnHours = 0;
+            if (string.IsNullOrWhiteSpace(entry)) return false;
+
+            string[] parts = entry.Split(new[] { '|' }, 3);
+            if (parts.Length < 3) return false;
+            if (!int.TryParse(parts[0], out school)) return false;
+            heroId = parts[1];
+            if (!int.TryParse(parts[2], out respawnHours)) respawnHours = 0;
+            return true;
         }
     }
 }
