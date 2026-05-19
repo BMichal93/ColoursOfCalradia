@@ -360,6 +360,28 @@ namespace ColoursOfCalradia
                 }
             }
 
+            // Green — Forced Veganism: one unit of animal-derived food is consumed (map only).
+            // If the party carries none, nothing is lost.
+            if (spell.School == ColorSchool.Green && !inMission && MobileParty.MainParty != null)
+            {
+                try
+                {
+                    string[] animalFoods = { "meat", "fish", "cheese", "butter" };
+                    foreach (string id in animalFoods)
+                    {
+                        ItemObject food = MBObjectManager.Instance.GetObject<ItemObject>(id);
+                        if (food == null) continue;
+                        if (MobileParty.MainParty.ItemRoster.GetItemNumber(food) <= 0) continue;
+                        MobileParty.MainParty.ItemRoster.AddToCounts(food, -1);
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"Forced Veganism: The green will not suffer the dead. One {food.Name} consumed.",
+                            ColorSchoolData.GetMessageColor(ColorSchool.Green)));
+                        break;
+                    }
+                }
+                catch { }
+            }
+
             // Personality drift
             ColourKnowledge.RecordCast(spell.School);
         }

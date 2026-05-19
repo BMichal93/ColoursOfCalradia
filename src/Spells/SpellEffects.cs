@@ -605,10 +605,39 @@ namespace ColoursOfCalradia
 
         private static readonly ActionIndexCache _castAnimCache = ActionIndexCache.Create("act_cheer_1");
 
+        private static readonly List<(Agent agent, float remaining)> _animClearTimers
+            = new List<(Agent, float)>();
+
+        public static void TickAnimClears(float dt)
+        {
+            for (int i = _animClearTimers.Count - 1; i >= 0; i--)
+            {
+                float t = _animClearTimers[i].remaining - dt;
+                if (t <= 0f)
+                {
+                    var a = _animClearTimers[i].agent;
+                    if (a != null && a.IsActive())
+                        // Seek to final frame + instant blend-out: terminates the loop cleanly
+                        try { a.SetActionChannel(1, _castAnimCache, true, 0UL, 0f, 1f, 0f, 0f, 1f); } catch { }
+                    _animClearTimers.RemoveAt(i);
+                }
+                else
+                    _animClearTimers[i] = (_animClearTimers[i].agent, t);
+            }
+        }
+
+        public static void ClearAnimTimers() => _animClearTimers.Clear();
+
         public static void TryCastAnimation(Agent agent)
         {
             if (agent == null || !agent.IsActive()) return;
-            try { agent.SetActionChannel(1, _castAnimCache, false, 0UL); }
+            try
+            {
+                agent.SetActionChannel(1, _castAnimCache, false, 0UL);
+                int idx = _animClearTimers.FindIndex(x => x.agent == agent);
+                if (idx >= 0) _animClearTimers.RemoveAt(idx);
+                _animClearTimers.Add((agent, 0.8f));
+            }
             catch { }
         }
 

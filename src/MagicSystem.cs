@@ -72,6 +72,7 @@ namespace ColoursOfCalradia
             ColourLordAI.MissionTick(dt);
             ColourUnitRegistry.MissionTick(dt);
             SpellEffects.TickGlows(dt);
+            SpellEffects.TickAnimClears(dt);
             SpellEffects.TickMoves(dt);
             SpellEffects.TickAreaEffects(dt);
             SpellEffects.TickHollowGaze(dt);
@@ -116,14 +117,17 @@ namespace ColoursOfCalradia
 
         protected override void OnEndMission()
         {
-            if (!_orderHookRegistered) return;
-            try
+            if (_orderHookRegistered)
             {
-                var ctrl = Mission.Current?.PlayerTeam?.PlayerOrderController;
-                if (ctrl != null) ctrl.OnOrderIssued -= OnPlayerOrderIssued;
+                try
+                {
+                    var ctrl = Mission.Current?.PlayerTeam?.PlayerOrderController;
+                    if (ctrl != null) ctrl.OnOrderIssued -= OnPlayerOrderIssued;
+                }
+                catch { }
+                _orderHookRegistered = false;
             }
-            catch { }
-            _orderHookRegistered = false;
+            SpellEffects.ClearAnimTimers();
         }
 
         public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
