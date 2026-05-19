@@ -38,7 +38,7 @@ namespace ColoursOfCalradia
             const float Duration = 8f;
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
-            SpawnTempLight(Player.Position, ColorSchool.Red, 6f, 1.5f);
+            SpawnTempLight(Player.Position, ColorSchool.Red, 6f, 4f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_scarlet_ward", Duration = Duration, IsMissionEffect = true,
@@ -160,7 +160,7 @@ namespace ColoursOfCalradia
             _ceruleanMirrorActive = true;
             _ceruleanMirrorBlocks = 3;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
-            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
+            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 4f);
             ActiveEffectManager.Add(new ActiveEffect
             {
                 Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
@@ -210,6 +210,7 @@ namespace ColoursOfCalradia
                             _shadowVeilActive = false;
                             // Post-veil: 2s stagger — the world snaps back hard
                             try { if (Player?.IsActive() == true) Player.SetMaximumSpeedLimit(0f, false); } catch { }
+                            try { if (Player?.IsActive() == true) DamageAgent(Player, 1f); } catch { }
                             ActiveEffectManager.Add(new ActiveEffect
                             {
                                 Name = "_veil_aftermath", Duration = 2f, IsMissionEffect = true,
@@ -228,7 +229,7 @@ namespace ColoursOfCalradia
                     }
                 });
             }
-            BeginAgentGlow(Player, ColorSchool.Purple, 2f);
+            BeginAgentGlow(Player, ColorSchool.Purple, 12f);
             SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
             string haltedMsg = halted.Count > 0
                 ? $" {halted.Count} nearby {(halted.Count == 1 ? "formation pauses" : "formations pause")}."

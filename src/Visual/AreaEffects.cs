@@ -158,9 +158,24 @@ namespace ColoursOfCalradia
                     e.DirTimer -= dt;
                     if (e.DirTimer <= 0f)
                     {
-                        float angle = (float)(_rng.NextDouble() * Math.PI * 2);
-                        e.Velocity = new Vec3((float)Math.Cos(angle) * 2f, (float)Math.Sin(angle) * 2f, 0f);
-                        e.DirTimer = 3f + (float)_rng.NextDouble() * 4f;
+                        float angle    = (float)(_rng.NextDouble() * Math.PI * 2);
+                        Vec3  newVel   = new Vec3((float)Math.Cos(angle) * 2f, (float)Math.Sin(angle) * 2f, 0f);
+                        float newTimer = 3f + (float)_rng.NextDouble() * 4f;
+                        if (e.Id == "create_yellow")
+                        {
+                            // Whole cloud turns together — propagate to all nodes (no alloc: plain for loop)
+                            for (int j = 0; j < _areaEffects.Count; j++)
+                                if (_areaEffects[j].Id == "create_yellow")
+                                {
+                                    _areaEffects[j].Velocity = newVel;
+                                    _areaEffects[j].DirTimer = newTimer;
+                                }
+                        }
+                        else
+                        {
+                            e.Velocity = newVel;
+                            e.DirTimer = newTimer;
+                        }
                     }
                     e.Position += e.Velocity * dt;
                 }

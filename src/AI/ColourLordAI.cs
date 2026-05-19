@@ -455,6 +455,7 @@ namespace ColoursOfCalradia
             SetCooldown(hero);
             SpellEffects.BeginAgentGlow(agent, school, 3.0f);
             SpellEffects.TryCastSound(agent.Position, school);
+            SpellEffects.TryCastAnimation(agent);
 
             InformationManager.DisplayMessage(new InformationMessage(
                 $"{agent.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}).",

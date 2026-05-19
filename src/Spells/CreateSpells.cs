@@ -49,13 +49,12 @@ namespace ColoursOfCalradia
                 {
                     DamageAgent(a, 50f * power);
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
-                    SpawnTempLight(a.Position, ColorSchool.Red, 6f, 1.5f);
                     count++;
                 }
                 catch { }
             }
             BeginAgentGlow(Player, ColorSchool.Red, 1.5f);
-            SpawnTempLight(Player.Position, ColorSchool.Red, Radius, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Red, Radius, 3f);
             Msg(count > 0 ? $"Cinder Burst destroys {count} {(count == 1 ? "creature" : "creatures")} within {Radius}m."
                           : "The burst finds nothing nearby.", ColorSchool.Red);
         }
@@ -116,14 +115,17 @@ namespace ColoursOfCalradia
                 centre                  + fwd * Spacing,
                 centre + right * Spacing + fwd * Spacing,
             };
+            float cloudAngle = (float)(_rng.NextDouble() * Math.PI * 2);
+            Vec3  cloudVel   = new Vec3((float)Math.Cos(cloudAngle) * 2f, (float)Math.Sin(cloudAngle) * 2f, 0f);
+            float cloudTimer = 2f + (float)_rng.NextDouble() * 3f;
             foreach (Vec3 pos in nodePos)
             {
                 var node = new AreaEffect
                 {
                     Id = "create_yellow", School = ColorSchool.Yellow,
                     Position = pos, Radius = NodeRadius,
-                    Velocity = new Vec3(1f, 0f, 0f),
-                    DirTimer = 3f,
+                    Velocity = cloudVel,
+                    DirTimer = cloudTimer,
                     TickInterval = 2f, TickTimer = 2f, Remaining = -1f,
                     Power = power
                 };
@@ -228,6 +230,8 @@ namespace ColoursOfCalradia
             {
                 string name = _hollowGazeTarget.IsActive() ? _hollowGazeTarget.Name : "them";
                 _hollowGazeTarget = null;
+                try { _hollowGazeLight?.Remove(0); } catch { }
+                _hollowGazeLight = null;
                 Msg($"The Hollow Gaze releases. {name} stirs back into themselves.", ColorSchool.Purple);
                 return;
             }
@@ -239,7 +243,8 @@ namespace ColoursOfCalradia
             _hollowGazeTarget = candidates[_rng.Next(candidates.Count)];
             _hollowGazeTimer  = 0f;
             BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, 3f);
-            SpawnTempLight(_hollowGazeTarget.Position, ColorSchool.Purple, 6f, 1.5f);
+            try { _hollowGazeLight?.Remove(0); } catch { }
+            _hollowGazeLight = SpawnAreaLight(_hollowGazeTarget.Position, ColorSchool.Purple, 6f);
             Msg($"Hollow Gaze — {_hollowGazeTarget.Name} empties out. They stand and wait for nothing.", ColorSchool.Purple);
         }
 

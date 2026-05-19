@@ -142,9 +142,10 @@ namespace ColoursOfCalradia
         public  static bool  CeruleanMirrorActive => _ceruleanMirrorActive;
         private static int   _ceruleanMirrorBlocks = 0;
         private static bool  _shadowVeilActive     = false;
-        private static Agent _hollowGazeTarget     = null;
-        private static float _hollowGazeTimer      = 0f;
-        private const  float HollowGazeInterval    = 0.3f;
+        private static Agent      _hollowGazeTarget = null;
+        private static float      _hollowGazeTimer  = 0f;
+        private const  float      HollowGazeInterval = 0.3f;
+        private static GameEntity _hollowGazeLight  = null;
 
         // Returns true when the agent is the player and Cerulean Mirror is blocking magic
         public static bool ProtectedByMirror(Agent a) => a == Player && _ceruleanMirrorActive;
@@ -152,13 +153,20 @@ namespace ColoursOfCalradia
         public static void TickHollowGaze(float dt)
         {
             if (_hollowGazeTarget == null) return;
-            if (!_hollowGazeTarget.IsActive()) { _hollowGazeTarget = null; return; }
+            if (!_hollowGazeTarget.IsActive())
+            {
+                _hollowGazeTarget = null;
+                try { _hollowGazeLight?.Remove(0); } catch { }
+                _hollowGazeLight = null;
+                return;
+            }
             _hollowGazeTimer -= dt;
             if (_hollowGazeTimer > 0f) return;
             _hollowGazeTimer = HollowGazeInterval;
             Vec3 pos = _hollowGazeTarget.Position;
             try { _hollowGazeTarget.TeleportToPosition(pos); } catch { }
             try { _hollowGazeTarget.SetMorale(0f); } catch { }
+            BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, HollowGazeInterval * 4);
         }
 
         // ── Orange: confusion stagger ─────────────────────────────────────────
@@ -265,6 +273,8 @@ namespace ColoursOfCalradia
             if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; _ceruleanMirrorBlocks = 0; }
             _shadowVeilActive  = false;
             _hollowGazeTarget  = null;
+            try { _hollowGazeLight?.Remove(0); } catch { }
+            _hollowGazeLight   = null;
             _confusionRemaining = 0f;
             if (_blueWeightStacks > 0)
             {
@@ -591,6 +601,15 @@ namespace ColoursOfCalradia
                 }
                 catch { }
             }
+        }
+
+        private static readonly ActionIndexCache _castAnimCache = ActionIndexCache.Create("act_cheer_1");
+
+        public static void TryCastAnimation(Agent agent)
+        {
+            if (agent == null || !agent.IsActive()) return;
+            try { agent.SetActionChannel(1, _castAnimCache, false, 0UL); }
+            catch { }
         }
 
         // Battery multiplier: 1.0 normally (kept for compatibility, unused in colour system)

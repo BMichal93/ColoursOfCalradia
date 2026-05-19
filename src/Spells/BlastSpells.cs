@@ -162,7 +162,7 @@ namespace ColoursOfCalradia
                         _haltedAgents[a.Index] = (haltDuration, a.Position);
                     }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
-                    SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 3f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
                 catch { }

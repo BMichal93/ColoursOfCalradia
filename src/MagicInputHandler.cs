@@ -46,6 +46,7 @@ namespace ColoursOfCalradia
 
         public static void Tick(bool inMission)
         {
+            ColourKnowledge.FlushDeferredInquiry();
             if (!ColourKnowledge.HasAnySchool) { InputSuppressed = false; return; }
 
             // ControllerLTrigger takes priority — Bannerlord maps L-trigger to LeftAlt at the

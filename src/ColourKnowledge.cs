@@ -42,6 +42,14 @@ namespace ColoursOfCalradia
                 [ColorSchool.Purple] = 0,
             };
         private static readonly HashSet<string> _giftedChildIds = new HashSet<string>();
+        private static Action _deferredInquiry = null;
+
+        public static void FlushDeferredInquiry()
+        {
+            Action pending = _deferredInquiry;
+            _deferredInquiry = null;
+            pending?.Invoke();
+        }
 
         private static float _purpleFertilityLevel  = 1.0f;
 
@@ -89,6 +97,7 @@ namespace ColoursOfCalradia
             foreach (var key in _castCounters.Keys.ToList()) _castCounters[key] = 0;
             _giftedChildIds.Clear();
             _purpleFertilityLevel = 1.0f;
+            _deferredInquiry = null;
         }
 
         public static bool IsChildGifted(string heroId) => _giftedChildIds.Contains(heroId);
@@ -209,7 +218,7 @@ namespace ColoursOfCalradia
                 description,
                 true, true,
                 "Close", "Guide",
-                () => { }, () => ShowGuide(inMission, usingController)
+                () => { }, () => { _deferredInquiry = () => ShowGuide(inMission, usingController); }
             ), true, true);
         }
 
@@ -269,7 +278,7 @@ namespace ColoursOfCalradia
                 guide,
                 true, true,
                 "Close", "Back",
-                () => { }, () => ShowGrimoire(inMission, usingController)
+                () => { }, () => { _deferredInquiry = () => ShowGrimoire(inMission, usingController); }
             ), true, true);
         }
 
