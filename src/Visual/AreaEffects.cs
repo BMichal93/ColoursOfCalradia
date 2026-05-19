@@ -107,7 +107,7 @@ namespace ColoursOfCalradia
             {
                 var scene = Mission.Current?.Scene;
                 if (scene == null) return null;
-                var entity = GameEntity.CreateEmpty(scene, false);
+                var entity = GameEntity.CreateEmpty(scene, false, false, false);
                 var frame  = new MatrixFrame(Mat3.Identity, position + new Vec3(0f, 0f, 0.5f));
                 entity.SetGlobalFrame(in frame, true);
                 float lightRadius = Math.Min(radius, 8f);
