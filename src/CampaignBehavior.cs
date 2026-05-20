@@ -39,12 +39,6 @@ namespace ColoursOfCalradia
             ColorSchool.Green, ColorSchool.Blue, ColorSchool.Purple
         };
 
-        // ── Daily overindulgent food drain (Orange B1) ───────────────────────
-        // How many extra food units consumed per day per Orange caster
-        private const int OverindulgentFoodDrain = 2;
-        // Party size soft-penalty threshold (Yellow C1 Uncharismatic)
-        private const int UncharismaticPenaltyThreshold = 3;
-
         public override void RegisterEvents()
         {
             CampaignEvents.HourlyTickEvent.AddNonSerializedListener(this, OnHourlyTick);
@@ -56,6 +50,7 @@ namespace ColoursOfCalradia
             CampaignEvents.OnCharacterCreationIsOverEvent.AddNonSerializedListener(this, OnNewGameCreated);
             CampaignEvents.HeroCreated.AddNonSerializedListener(this, OnHeroCreated);
             CampaignEvents.NewCompanionAdded.AddNonSerializedListener(this, OnCompanionAdded);
+            CampaignEvents.HeroLevelledUp.AddNonSerializedListener(this, OnHeroLevelledUp);
         }
 
         // ── New game: present colour selection ───────────────────────────────
@@ -64,13 +59,20 @@ namespace ColoursOfCalradia
             ColourKnowledge.ResetForNewGame();
             SpellEffects.ResetCampaignCounters();
             BlightSystem.ResetForNewGame();
+            SaturationSystem.ResetForNewGame();
 
-            var elements = _allSchoolsOrdered.Select(school =>
+            var elements = new List<InquiryElement>
+            {
+                new InquiryElement("PRISM", "I am a Prism", null, true,
+                    "[Easy mode] You are born knowing all six colours. " +
+                    "You are immune to Madness and Oversaturation. No attribute penalties apply.")
+            };
+            elements.AddRange(_allSchoolsOrdered.Select(school =>
             {
                 var info = ColorSchoolData.Info[school];
                 string hint = $"{info.FlavorText}\n\nPenalty: {info.AttributePenalty}\n{info.LimitationA}\n{info.LimitationB}";
                 return new InquiryElement(school, info.Name, null, true, hint);
-            }).ToList();
+            }));
 
             MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                 "The Colours of Calradia",
@@ -81,16 +83,26 @@ namespace ColoursOfCalradia
                 "No colour calls to me.",
                 chosen =>
                 {
-                    var schools = chosen?.Select(e => (ColorSchool)e.Identifier).ToList()
-                                  ?? new List<ColorSchool>();
-                    if (schools.Count == 0)
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
+                    if (chosen?.Any(e => e.Identifier is string s && s == "PRISM") == true)
+                    {
+                        foreach (var school in _allSchoolsOrdered) ColourKnowledge.AddSchool(school);
+                        ColourLordRegistry.SetPlayerAsPrism();
+                        ShowStartingSpells(_allSchoolsOrdered.ToList());
+                    }
                     else
                     {
-                        foreach (var s in schools) ColourKnowledge.AddSchool(s);
-                        ApplySchoolPenalties(schools);
-                        ShowStartingSpells(schools);
+                        var schools = chosen?.Where(e => e.Identifier is ColorSchool)
+                                             .Select(e => (ColorSchool)e.Identifier).ToList()
+                                      ?? new List<ColorSchool>();
+                        if (schools.Count == 0)
+                            InformationManager.DisplayMessage(new InformationMessage(
+                                "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
+                        else
+                        {
+                            foreach (var s in schools) ColourKnowledge.AddSchool(s);
+                            ApplySchoolPenalties(schools);
+                            ShowStartingSpells(schools);
+                        }
                     }
                     _selectionDone = true;
                     ColourLordRegistry.SeedInitialLords();
@@ -219,50 +231,13 @@ namespace ColoursOfCalradia
 
             ColourLordRegistry.SeedInitialLords();
             ColourLordRegistry.FlushAnnouncements();
+            ColourLordRegistry.FlushDeferredPrismInquiry();
             BlightSystem.InitializeBlights();
             ColourLordRegistry.DailyMapCast();
             ColourUnitRegistry.SeedInitialUnits();
             ColourUnitRegistry.DailyMaintenance();
             ColourUnitRegistry.DailyMapCast();
-            ApplyDailyLimitations();
-        }
-
-        private void ApplyDailyLimitations()
-        {
-            if (!ColourKnowledge.HasAnySchool) return;
-            Hero player = Hero.MainHero;
-            MobileParty party = MobileParty.MainParty;
-            if (player == null || party == null) return;
-
-            // B1 Overindulgent (Orange) — extra food drain
-            if (ColourKnowledge.HasSchool(ColorSchool.Orange))
-            {
-                try
-                {
-                    ItemObject food = MBObjectManager.Instance.GetObject<ItemObject>("grain")
-                                   ?? MBObjectManager.Instance.GetObject<ItemObject>("fish");
-                    if (food != null && party.ItemRoster.FindIndexOfItem(food) >= 0)
-                    {
-                        party.ItemRoster.AddToCounts(food, -Math.Min(OverindulgentFoodDrain,
-                            party.ItemRoster.GetItemNumber(food)));
-                    }
-                }
-                catch { }
-            }
-
-            // C1 Uncharismatic (Yellow) — morale drain if party is near its limit
-            if (ColourKnowledge.HasSchool(ColorSchool.Yellow))
-            {
-                try
-                {
-                    int partySize = party.MemberRoster.TotalManCount;
-                    int limit     = party.Party.PartySizeLimit;
-                    // If party within 3 of its natural limit, impose morale penalty
-                    if (limit - partySize <= UncharismaticPenaltyThreshold)
-                        party.RecentEventsMorale -= 3f;
-                }
-                catch { }
-            }
+            SaturationSystem.FlushMaxDepletionPrompt();
         }
 
         // ── Hourly tick ──────────────────────────────────────────────────────
@@ -271,6 +246,7 @@ namespace ColoursOfCalradia
             ColourLordRegistry.CheckRespawnTimers();
             BlightSystem.CheckRespawnTimers();
             SpellEffects.TickHourlyMapEffects();
+            SaturationSystem.CheckNightReset();
         }
 
         // ── Weekly tick ──────────────────────────────────────────────────────
@@ -278,8 +254,8 @@ namespace ColoursOfCalradia
         {
             var rng = new Random();
 
-            // Five or more colours on the player — the fracture never heals
-            if (ColourKnowledge.AllSchools.Count() > 4)
+            // Five or more colours on the player — the fracture never heals (Prism immune)
+            if (ColourKnowledge.AllSchools.Count() > 4 && !SaturationSystem.IsPlayerPrism)
             {
                 Hero player = Hero.MainHero;
                 if (player != null)
@@ -302,9 +278,9 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // Prism lord — personality shifts every week regardless
+            // NPC Prism lord — personality shifts every week (player Prism is immune)
             Hero prism = ColourLordRegistry.GetPrismLord();
-            if (prism != null)
+            if (prism != null && prism != Hero.MainHero)
             {
                 bool prismChanged = false;
                 foreach (TraitObject trait in MadnessTraits)
@@ -322,6 +298,20 @@ namespace ColoursOfCalradia
                         $"The Prism — {prism.Name}'s personality fractures again. Their nature bends without reason.",
                         new Color(0.9f, 0.7f, 1.0f)));
             }
+
+            // 2% chance a random NPC colour lord oversaturates each week
+            try
+            {
+                var npcLords = Hero.AllAliveHeroes
+                    .Where(h => h != Hero.MainHero
+                             && ColourLordRegistry.IsColourLord(h)
+                             && !BlightSystem.IsBlight(h)
+                             && !ColourLordRegistry.IsPrismLord(h))
+                    .ToList();
+                if (npcLords.Count > 0 && rng.Next(50) == 0)
+                    ColourLordRegistry.OnLordOversaturated(npcLords[rng.Next(npcLords.Count)]);
+            }
+            catch { }
         }
 
         // ── Mission ended ────────────────────────────────────────────────────
@@ -494,6 +484,13 @@ namespace ColoursOfCalradia
             ), false, true);
         }
 
+        // ── Level-up: recalc saturation max ──────────────────────────────────
+        private void OnHeroLevelledUp(Hero hero, bool shouldNotify)
+        {
+            if (hero == Hero.MainHero)
+                SaturationSystem.RecalcMax();
+        }
+
         // ── Companions may have colours ──────────────────────────────────────
         private void OnCompanionAdded(Hero companion)
         {
@@ -536,6 +533,7 @@ namespace ColoursOfCalradia
             ColourLordRegistry.Save(dataStore);
             ColourUnitRegistry.Save(dataStore);
             BlightSystem.Save(dataStore);
+            SaturationSystem.Save(dataStore);
         }
     }
 }

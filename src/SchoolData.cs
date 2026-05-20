@@ -51,57 +51,57 @@ namespace ColoursOfCalradia
                                    "The art demands payment in pain: each working scorches the caster, and every cast drives your soldiers into a frenzy.",
                 PersonalityEffect= "Repeated casting makes you less Calculating — more instinctive, more impulsive.",
                 LimitationA      = "Furious: Each Red spell automatically issues a Charge order to your formations.",
-                LimitationB      = "Blood Price: Each Red spell opens a wound on the caster — magic always takes its due.",
+                LimitationB      = "Blood Price: Each Red spell deals 2 damage to the caster — magic always takes its due.",
                 AttributePenalty = "-1 Cunning"
             },
             [ColorSchool.Orange] = new SchoolInfo
             {
                 Name             = "Orange",
                 FlavorText       = "Generous Hunger — Joyful, generous magic of warmth and plenty. Orange mages inspire and conjure allies from nothing. " +
-                                   "Their indulgent nature, however, devours resources and sends the caster lurching with each casting.",
+                                   "The warmth only flows when the heart is light — misery chokes the golden current before it can form.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
-                LimitationA      = "Overindulgent: Your party consumes food faster and army upkeep is higher.",
-                LimitationB      = "Generous Flood: Each Orange spell briefly seizes your body — you stagger in random directions, have a 33% chance of being thrown from your mount, and scatter 2 units of carried ammunition. The Golden Recoil creation spell turns the violence of others back on themselves.",
+                LimitationA      = "Joyful Cast: You cannot cast Orange magic if your party morale is below 45 — the warmth will not flow through misery.",
+                LimitationB      = "",
                 AttributePenalty = "-1 Intelligence"
             },
             [ColorSchool.Yellow] = new SchoolInfo
             {
                 Name             = "Yellow",
                 FlavorText       = "The Fearful Eye — Visceral, stomach-turning magic of dread and revulsion. Yellow mages poison courage and stir the deep animal panic beneath every soldier's composure. " +
-                                   "The cost is insidious: those who spread fear begin to feel it — their judgment frays and their nerve hollows from within.",
+                                   "Animals sense the wrongness in the Yellow mage and will not carry them — every mount feels it and throws them.",
                 PersonalityEffect= "Repeated casting erodes your Mercy — disgust curdles into indifference; pity becomes revulsion.",
-                LimitationA      = "Paranoia: Each Yellow spell costs party morale — the fear bleeds inward as well as outward.",
-                LimitationB      = "Blurred Judgment: Yellow magic clouds the caster's mind — each cast increases your criminal rating as you begin to see threats everywhere.",
+                LimitationA      = "Animal Fear: You cannot cast Yellow magic from horseback — animals sense the wrongness and refuse to carry you while you channel it.",
+                LimitationB      = "",
                 AttributePenalty = "-1 Social"
             },
             [ColorSchool.Green] = new SchoolInfo
             {
                 Name             = "Green",
                 FlavorText       = "Gentle Burden — Kind, mending magic of life and restoration. Green mages sustain their companions through battle. " +
-                                   "Their pacifist heart cannot act while holding a blade, and the living current they channel will not flow through a mount's distress.",
+                                   "Their pacifist heart cannot act while holding a blade — violence and the living current cannot coexist in the same hands.",
                 PersonalityEffect= "Repeated casting increases your Mercy — slow to strike, quick to spare.",
-                LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon.",
-                LimitationB      = "Horse-Shy: Green magic cannot be worked from horseback — the living current will not flow through a mount's distress.",
+                LimitationA      = "Pacifist: You cannot use Green magic while wielding a weapon — sheathe your blade before the green will answer.",
+                LimitationB      = "",
                 AttributePenalty = "-1 Control"
             },
             [ColorSchool.Blue] = new SchoolInfo
             {
                 Name             = "Blue",
                 FlavorText       = "Scholar's Weight — Cold, distanced magic of order and stillness. Blue mages freeze formations and conjure spectral shields. " +
-                                   "But knowledge is heavy, and stillness costs time — each casting strains the body and draws years from the mage without warning.",
+                                   "But stillness demands time — the spell settles into the caster's limbs before it reaches the world, and those 5 seconds feel like an age.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
-                LimitationA      = "Scholar's Weight: Each Blue spell makes your equipment feel heavier — movement slows with every cast and does not recover until the battle ends. Six stacks will slow you to a crawl.",
-                LimitationB      = "Timeless Toll: Each Blue spell costs the caster ~2 days — the Scholar's pursuit of perfect stillness quietly devours years.",
+                LimitationA      = "Scholar's Weight: Blue spells take 5 seconds to wind up in battle — magic stiffens your limbs to a standstill before it releases.",
+                LimitationB      = "",
                 AttributePenalty = "-1 Vigor"
             },
             [ColorSchool.Purple] = new SchoolInfo
             {
                 Name             = "Purple",
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
-                                   "The grey does not take violently — it takes steadily. Each working bleeds away standing, presence, and eventually the self.",
+                                   "The grey does not take violently — it takes steadily. Each working costs a piece of the future: fertility dims and the body quietly ages.",
                 PersonalityEffect= "Repeated casting hollows out all personality — grief erodes every trait toward a silent zero.",
-                LimitationA      = "Hollow Standing: Each Purple campaign map spell costs renown — the grey bleeds your presence from the world, quietly.",
-                LimitationB      = "The Slow Unravelling: Each Purple cast quietly reduces the caster's fertility — something within grows dimmer with every working. It never reaches zero, but it never comes back.",
+                LimitationA      = "The Slow Unravelling: Each Purple cast reduces the caster's fertility by 1% and ages them by 1 day — both are permanent. The future, sacrificed piece by piece.",
+                LimitationB      = "",
                 AttributePenalty = "-1 Endurance"
             }
         };

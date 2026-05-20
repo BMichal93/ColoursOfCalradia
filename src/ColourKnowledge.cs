@@ -86,10 +86,9 @@ namespace ColoursOfCalradia
             return true;
         }
 
-        public static void AddSchool(ColorSchool school)
-        {
-            _chosenSchools.Add(school);
-        }
+        public static void AddSchool(ColorSchool school) => _chosenSchools.Add(school);
+
+        public static void ClearAllSchools() => _chosenSchools.Clear();
 
         public static void ResetForNewGame()
         {
@@ -171,6 +170,10 @@ namespace ColoursOfCalradia
             bool inBattle = inMission && SpellEffects.IsBattleMission();
             var lines     = new List<string>();
 
+            // Saturation status at the top
+            if (!SaturationSystem.IsPlayerPrism && !SaturationSystem.IsPlayerBlight)
+                lines.Add($"Saturation: {SaturationSystem.PlayerSaturation}/{SaturationSystem.PlayerMaxSaturation}  (resets at nightfall)");
+
             var allKnown = SpellDatabase.All
                 .Where(s => HasSchool(s.School))
                 .OrderBy(s => (int)s.School).ToList();
@@ -242,12 +245,19 @@ namespace ColoursOfCalradia
 "  Red →→→  Orange →←→  Yellow ↓←↓  Green ←↓←  Blue ↑←↑  Purple ↓↓↓\n" +
 "\n" +
 "COLOUR LIMITATIONS\n" +
-"  Red    — Furious (charges formations), Blood Price (−8 HP per cast)\n" +
-"  Orange — Generous Flood (confusion/mount/ammo), Overindulgent (daily food drain)\n" +
-"  Yellow — Suspicious (morale loss, crime rise), Uncharismatic (morale drain near cap)\n" +
-"  Green  — Pacifist (no weapon), Horse-Shy (no horseback casting)\n" +
-"  Blue   — Scholar's Weight (battle encumbrance), Timeless Toll (age +2 days per cast)\n" +
-"  Purple — Hollow Standing (renown −5, influence −2), Slow Unravelling (fertility fades)\n" +
+"  Red    — Furious: each cast auto-issues a Charge order. Blood Price: −2 HP per cast.\n" +
+"  Orange — Joyful Cast: cannot cast if party morale is below 45.\n" +
+"  Yellow — Animal Fear: cannot cast from horseback.\n" +
+"  Green  — Pacifist: cannot cast while wielding a weapon.\n" +
+"  Blue   — Scholar's Weight: spells take 5 seconds to wind up in battle.\n" +
+"  Purple — The Slow Unravelling: each cast costs −1% fertility and +1 day of age.\n" +
+"\n" +
+"SATURATION\n" +
+"  Each cast gains 0–3 Saturation. Max = hero level + 10 (cap 30).\n" +
+"  Resets to 0 when darkness falls (night or dark locations).\n" +
+"  Oversaturation: knocked down 3s, random trait shift, Max −1 (permanent).\n" +
+"  Max reaches 0: choose to lose all colours OR embrace the Blight (−100 relations, immune).\n" +
+"  Prism and Blights are immune to all Oversaturation effects.\n" +
 "\n" +
 "PERSONALITY DRIFT\n" +
 "  Every 25 casts nudges the school's associated trait by 1. Purple hollows all toward 0.\n" +
@@ -262,7 +272,7 @@ namespace ColoursOfCalradia
 "DAY / NIGHT\n" +
 "  Bright (07:00–20:00) — full casting.\n" +
 "  Dim   (05:00–07:00 and 20:00–22:00) — 33% fizzle chance.\n" +
-"  Dark  (22:00–05:00) — casting blocked entirely.\n" +
+"  Dark  (22:00–05:00) — casting blocked entirely. Saturation resets.\n" +
 "\n" +
 "LORDS & COLOURS\n" +
 "  Colour lords cast in battle and on the campaign map.\n" +
@@ -270,8 +280,16 @@ namespace ColoursOfCalradia
 "  Lords with 5+ schools are feared and distrusted by all magical peers.\n" +
 "  Colour lords maintain a morale floor before battle (10 per colour, max 60) and recover\n" +
 "  wounded troops after battle (5% per colour of wounded healed).\n" +
-"  The Prism — one lord always carries all six colours. They cast constantly and\n" +
-"  their personality shifts each week. When slain, a new Prism rises within a month.";
+"  Weekly: 2% chance a random colour lord oversaturates — 80% lose colours (re-seeded in\n" +
+"  one week), 20% die and spawn a Blight of their colour. Blights no longer auto-respawn.\n" +
+"\n" +
+"THE PRISM\n" +
+"  One lord carries all six colours. They cast constantly and their personality shifts\n" +
+"  each week. When slain, if you hold all six colours, you may inherit the mantle (30%\n" +
+"  chance). Otherwise a new Prism rises within a month.\n" +
+"  As the Prism you are immune to Madness and Oversaturation.\n" +
+"  At character creation you may also choose 'I am a Prism' (easy mode) to start with\n" +
+"  all six colours and full immunity, with no attribute penalties.";
 
             InformationManager.ShowInquiry(new InquiryData(
                 "Mechanics — Colours of Calradia",

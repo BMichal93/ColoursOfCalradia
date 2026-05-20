@@ -167,18 +167,9 @@ namespace ColoursOfCalradia
             }
 
 
-            // Green — Pacifist: no weapon in hand; Horse-Shy: no casting from horseback
+            // Green — Pacifist: no weapon in hand
             if (spell.School == ColorSchool.Green && inMission && Agent.Main != null)
             {
-                try
-                {
-                    if (Agent.Main.MountAgent != null)
-                    {
-                        Fizzle("Horse-Shy: Green magic will not flow through a mount's distress — dismount first.");
-                        return;
-                    }
-                }
-                catch { }
                 try
                 {
                     var wielded = Agent.Main.WieldedWeapon;
@@ -188,6 +179,35 @@ namespace ColoursOfCalradia
                     if (hasWeapon)
                     {
                         Fizzle("Pacifist: Sheathe your weapon before casting Green magic.");
+                        return;
+                    }
+                }
+                catch { }
+            }
+
+            // Yellow — Animal Fear: cannot cast on horseback
+            if (spell.School == ColorSchool.Yellow && inMission && Agent.Main != null)
+            {
+                try
+                {
+                    if (Agent.Main.MountAgent != null)
+                    {
+                        Fizzle("Animal Fear: Yellow magic will not flow while you ride — dismount first.");
+                        return;
+                    }
+                }
+                catch { }
+            }
+
+            // Orange — Joyful Cast: party morale must be ≥ 45
+            if (spell.School == ColorSchool.Orange)
+            {
+                try
+                {
+                    float morale = MobileParty.MainParty?.RecentEventsMorale ?? 100f;
+                    if (morale < 45f)
+                    {
+                        Fizzle($"Joyful Cast: Party morale too low ({morale:F0}/45) — the warmth will not flow through misery.");
                         return;
                     }
                 }
@@ -233,6 +253,15 @@ namespace ColoursOfCalradia
                 $"[{ColorSchoolData.Info[spell.School].Name} — {spell.Name}]  {spell.Flavour}",
                 ColorSchoolData.GetMessageColor(spell.School)));
 
+            // Blue — Scholar's Weight: 5-second delay in battle; queue and return
+            // Saturation gained in MagicSystem when spell actually fires, not here
+            if (spell.School == ColorSchool.Blue && inMission)
+            {
+                SpellEffects.BeginBlueDelay(combo);
+                ColourKnowledge.RecordCast(spell.School);
+                return;
+            }
+
             bool success = SpellEffects.Execute(combo);
 
             // Visual: caster glow + charge animation + sound
@@ -247,106 +276,23 @@ namespace ColoursOfCalradia
             if (spell.School == ColorSchool.Red && inMission && Agent.Main != null)
                 SpellEffects.IssueChargeToOwnFormations(Agent.Main);
 
-            // Red A2 — Blood Price: small self-damage
+            // Red A2 — Blood Price: 2 self-damage
             if (spell.School == ColorSchool.Red && inMission && Agent.Main != null)
             {
-                try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 8f); }
+                try { Agent.Main.Health = Math.Max(1f, Agent.Main.Health - 2f); }
                 catch { }
             }
 
-            // Yellow — Suspicious: party morale loss + criminal rating increase
-            if (spell.School == ColorSchool.Yellow)
-            {
-                try { if (MobileParty.MainParty != null) MobileParty.MainParty.RecentEventsMorale -= 5f; }
-                catch { }
-                // Increase criminal rating in the kingdom where the spell is used
-                try
-                {
-                    Kingdom crimKingdom = null;
-                    if (inMission && Mission.Current != null)
-                    {
-                        foreach (Agent a in Mission.Current.Agents)
-                        {
-                            if (a.Character is CharacterObject co && co.IsHero && co.HeroObject != null
-                                && a.Team != Mission.Current.PlayerTeam)
-                            {
-                                crimKingdom = co.HeroObject.Clan?.Kingdom;
-                                if (crimKingdom != null) break;
-                            }
-                        }
-                    }
-                    crimKingdom = crimKingdom ?? Hero.MainHero?.Clan?.Kingdom;
-                    if (crimKingdom != null)
-                        ChangeCrimeRatingAction.Apply(crimKingdom, 1f, true);
-                }
-                catch { }
-            }
-
-
-            // Orange — Generous Flood: stagger + 33% horseback throw + ammo drain
-            if (spell.School == ColorSchool.Orange && inMission)
-            {
-                SpellEffects.TriggerConfusion();
-                try
-                {
-                    if (Agent.Main?.MountAgent != null && _rng.Next(3) == 0)
-                    {
-                        Agent.Main.Formation?.SetRidingOrder(RidingOrder.RidingOrderDismount);
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "Generous Flood: The warmth startles your mount — you are thrown from the saddle.",
-                            ColorSchoolData.GetMessageColor(ColorSchool.Orange)));
-                    }
-                }
-                catch { }
-                for (var ammoSlot = EquipmentIndex.Weapon0; ammoSlot <= EquipmentIndex.ExtraWeaponSlot; ammoSlot++)
-                {
-                    try
-                    {
-                        MissionWeapon w = Agent.Main.Equipment[ammoSlot];
-                        if (w.IsEmpty || w.Amount <= 0) continue;
-                        Agent.Main.SetWeaponAmountInSlot(ammoSlot, (short)Math.Max(0, w.Amount - 2), false);
-                    }
-                    catch { }
-                }
-            }
-
-            // Blue — Scholar's Weight: battle only; Timeless Toll aging applies everywhere
-            if (spell.School == ColorSchool.Blue && inMission)
-                SpellEffects.ApplyBlueWeight();
-
-            if (spell.School == ColorSchool.Blue)
+            // Purple — The Slow Unravelling: −1% fertility + 1 day aging per cast
+            if (spell.School == ColorSchool.Purple)
             {
                 try
                 {
                     if (Hero.MainHero != null)
                     {
-                        Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(2));
+                        Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(1));
                         InformationManager.DisplayMessage(new InformationMessage(
-                            $"Timeless Toll: The Scholar's pursuit costs years. | Age: {(int)Hero.MainHero.Age}",
-                            ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
-                    }
-                }
-                catch { }
-            }
-
-            // Purple — Hollow Standing: each cast costs renown and influence
-            if (spell.School == ColorSchool.Purple)
-            {
-                try
-                {
-                    Hero.MainHero?.Clan?.AddRenown(-1f);
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        "Hollow Standing: The grey bleeds your presence. Renown −1.",
-                        ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
-                }
-                catch { }
-                try
-                {
-                    if (Hero.MainHero?.Clan?.Kingdom != null)
-                    {
-                        GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, -2f);
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "Hollow Standing: Influence −2.",
+                            $"The Slow Unravelling: A day fades from you. | Age: {(int)Hero.MainHero.Age}",
                             ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
                     }
                 }
@@ -360,29 +306,8 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // Green — Forced Veganism: one unit of animal-derived food is consumed (map only).
-            // If the party carries none, nothing is lost.
-            if (spell.School == ColorSchool.Green && !inMission && MobileParty.MainParty != null)
-            {
-                try
-                {
-                    string[] animalFoods = { "meat", "fish", "cheese", "butter" };
-                    foreach (string id in animalFoods)
-                    {
-                        ItemObject food = MBObjectManager.Instance.GetObject<ItemObject>(id);
-                        if (food == null) continue;
-                        if (MobileParty.MainParty.ItemRoster.GetItemNumber(food) <= 0) continue;
-                        MobileParty.MainParty.ItemRoster.AddToCounts(food, -1);
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"Forced Veganism: The green will not suffer the dead. One {food.Name} consumed.",
-                            ColorSchoolData.GetMessageColor(ColorSchool.Green)));
-                        break;
-                    }
-                }
-                catch { }
-            }
-
-            // Personality drift
+            // Saturation gain + personality drift
+            SaturationSystem.GainSaturation();
             ColourKnowledge.RecordCast(spell.School);
         }
 

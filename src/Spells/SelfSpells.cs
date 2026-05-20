@@ -30,12 +30,12 @@ namespace ColoursOfCalradia
         // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        // Scarlet Ward — absorbs the next single blow; expires after 8 s if nothing hits
+        // Scarlet Ward — absorbs the next single blow; expires after 12 s if nothing hits
         private static void SpellSelfRed()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
-            const float Duration = 8f;
+            const float Duration = 12f;
             _scarletWardActive = true;
             BeginAgentGlow(Player, ColorSchool.Red, Duration);
             SpawnTempLight(Player.Position, ColorSchool.Red, 6f, 4f);
@@ -47,11 +47,11 @@ namespace ColoursOfCalradia
                     if (_scarletWardActive)
                     {
                         _scarletWardActive = false;
-                        Msg("The Scarlet Ward fades.", ColorSchool.Red);
+                        Msg("The Scarlet Ward dissipates.", ColorSchool.Red);
                     }
                 }
             });
-            Msg("Scarlet Ward — the next blow will find iron, not flesh.", ColorSchool.Red);
+            Msg("Scarlet Ward — the next blow will find iron, not flesh. Lasts 12 seconds.", ColorSchool.Red);
         }
 
         // Called from OnAgentHit — restores the damage from the triggering blow
@@ -76,7 +76,7 @@ namespace ColoursOfCalradia
                 _ceruleanMirrorActive = false;
                 _ceruleanMirrorBlocks = 0;
                 BeginAgentGlow(Player, ColorSchool.Blue, 1f);
-                Msg("The Cerulean Mirror shatters — three volleys turned.", ColorSchool.Blue);
+                Msg("The Cerulean Mirror shatters — four volleys turned.", ColorSchool.Blue);
             }
             else
             {
@@ -144,21 +144,21 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Green);
-            float heal = Math.Min(20f * power, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 20f * power, Player.HealthLimit);
+            float heal = Math.Min(28f * power, Player.HealthLimit - Player.Health);
+            Player.Health = Math.Min(Player.Health + 28f * power, Player.HealthLimit);
             BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
             SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Mirror — 12-second magic immunity + up to 3 missile blocks, then shatters
+        // Cerulean Mirror — 18-second magic immunity + up to 4 missile blocks, then shatters
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
             if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
-            const float Duration = 12f;
+            const float Duration = 18f;
             _ceruleanMirrorActive = true;
-            _ceruleanMirrorBlocks = 3;
+            _ceruleanMirrorBlocks = 4;
             BeginAgentGlow(Player, ColorSchool.Blue, Duration);
             SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 4f);
             ActiveEffectManager.Add(new ActiveEffect
@@ -170,11 +170,11 @@ namespace ColoursOfCalradia
                     {
                         _ceruleanMirrorActive = false;
                         _ceruleanMirrorBlocks = 0;
-                        Msg("The Cerulean Mirror dims. Missiles find you again.", ColorSchool.Blue);
+                        Msg("The Cerulean Mirror dims. Volleys find you again.", ColorSchool.Blue);
                     }
                 }
             });
-            Msg("Cerulean Mirror — missiles deflected for 12 seconds or 3 volleys. Steel still finds flesh.", ColorSchool.Blue);
+            Msg("Cerulean Mirror — missiles deflected for 18 seconds or 4 volleys. Steel still finds flesh.", ColorSchool.Blue);
         }
 
         // Grief's Veil — the grey folds you from sight; nearby enemies lose nerve
@@ -182,7 +182,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null || Mission.Current == null) return;
             const float Radius = 20f;
-            const float Duration = 12f;
+            const float Duration = 18f;
             // Drain morale of nearby enemies — they falter and lose aggression
             var halted = new HashSet<Formation>();
             foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
@@ -229,12 +229,12 @@ namespace ColoursOfCalradia
                     }
                 });
             }
-            BeginAgentGlow(Player, ColorSchool.Purple, 12f);
+            BeginAgentGlow(Player, ColorSchool.Purple, 18f);
             SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
             string haltedMsg = halted.Count > 0
                 ? $" {halted.Count} nearby {(halted.Count == 1 ? "formation pauses" : "formations pause")}."
                 : string.Empty;
-            Msg($"Grief's Veil — the purple folds you from sight for {(int)Duration}s.{haltedMsg}", ColorSchool.Purple);
+            Msg($"Grief's Veil — the purple folds you from sight for 18s.{haltedMsg}", ColorSchool.Purple);
         }
     }
 }

@@ -57,6 +57,9 @@ namespace ColoursOfCalradia
         private static string _prismLordId = null;
         private static int    _prismRespawnHours = 0;
 
+        // Deferred Prism offer (shown on next daily tick, not during a mission or event)
+        private static Action _deferredPrismInquiry = null;
+
         // Desired trait level per colour school — applied when colours are assigned
         // Key: trait to set; Value: target level (positive or negative)
         private static readonly Dictionary<ColorSchool, List<(TraitObject Trait, int Level)>> _colourTraits =
@@ -73,6 +76,11 @@ namespace ColoursOfCalradia
         // ── Public access ─────────────────────────────────────────────────────
         public static bool IsColourLord(Hero hero) =>
             hero != null && _lordColors.ContainsKey(hero.StringId);
+
+        public static IEnumerable<Hero> GetAllColourLords() =>
+            _lordColors.Keys
+                .Select(id => Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == id))
+                .Where(h => h != null);
 
         public static bool IsPrismLord(Hero hero) =>
             hero != null && _prismLordId != null && hero.StringId == _prismLordId;
@@ -387,10 +395,23 @@ namespace ColoursOfCalradia
             if (wasPrism)
             {
                 _prismLordId = null;
-                _prismRespawnHours = 720; // 1 month
                 InformationManager.DisplayMessage(new InformationMessage(
-                    $"The Prism has fallen — {hero.Name} is dead. The six colours scatter. A new Prism will rise within a month.",
+                    $"The Prism has fallen — {hero.Name} is dead. The six colours scatter.",
                     new Color(0.9f, 0.7f, 1.0f)));
+
+                bool playerHasAll    = ColourKnowledge.AllSchools.Count() >= 6;
+                bool playerIsPrism   = SaturationSystem.IsPlayerPrism;
+                if (playerHasAll && !playerIsPrism && _rng.Next(100) < 30)
+                {
+                    _deferredPrismInquiry = OfferPlayerPrism;
+                }
+                else
+                {
+                    _prismRespawnHours = 720; // 1 month
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        "A new Prism will rise within a month.",
+                        new Color(0.9f, 0.7f, 1.0f)));
+                }
                 return;
             }
 
@@ -401,6 +422,91 @@ namespace ColoursOfCalradia
             InformationManager.DisplayMessage(new InformationMessage(
                 $"The colours of {hero.Name} are extinguished. They will pass to another in one week.",
                 Color.FromUint(0xFFAA6644)));
+        }
+
+        // ── Player Prism ──────────────────────────────────────────────────────
+        public static void SetPlayerAsPrism()
+        {
+            Hero player = Hero.MainHero;
+            if (player == null) return;
+            _prismLordId = player.StringId;
+            _lordColors[player.StringId] = new List<ColorSchool>
+            {
+                ColorSchool.Red, ColorSchool.Orange, ColorSchool.Yellow,
+                ColorSchool.Green, ColorSchool.Blue, ColorSchool.Purple
+            };
+            SaturationSystem.SetPlayerPrism(true);
+            try { ApplyAllRelationships(); } catch { }
+        }
+
+        private static void OfferPlayerPrism()
+        {
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                "The Prism Falls to You",
+                "The Prism is dead. You carry all six colours. The mantle seeks a new vessel — and it has found you.\n\n" +
+                "Accept, and you become the Prism: Madness and Oversaturation will no longer touch you. " +
+                "The world fractures around you instead.",
+                new List<InquiryElement>
+                {
+                    new InquiryElement("accept", "Accept the mantle", null, true,
+                        "You become the Prism. Immune to Madness and Oversaturation."),
+                    new InquiryElement("refuse", "Refuse", null, true,
+                        "The mantle passes on. A new Prism will rise within a month."),
+                },
+                false, 1, 1,
+                "Choose.",
+                "",
+                chosen =>
+                {
+                    string choice = chosen?.Count > 0 ? chosen[0].Identifier?.ToString() : "refuse";
+                    if (choice == "accept")
+                        SetPlayerAsPrism();
+                    else
+                    {
+                        _prismRespawnHours = 720;
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            "You refuse the mantle. A new Prism will rise within a month.",
+                            new Color(0.9f, 0.7f, 1.0f)));
+                    }
+                },
+                null, "", false
+            ), false, true);
+        }
+
+        public static void FlushDeferredPrismInquiry()
+        {
+            if (_deferredPrismInquiry == null) return;
+            var action = _deferredPrismInquiry;
+            _deferredPrismInquiry = null;
+            action?.Invoke();
+        }
+
+        // ── NPC oversaturation ────────────────────────────────────────────────
+        public static void OnLordOversaturated(Hero hero)
+        {
+            if (!_lordColors.TryGetValue(hero?.StringId ?? "", out var schools)) return;
+
+            int roll = _rng.Next(100);
+            if (roll < 80)
+            {
+                string factionId = (hero.MapFaction as Kingdom)?.StringId;
+                _lordColors.Remove(hero.StringId);
+                if (factionId != null) _respawnHours[factionId] = 168;
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{hero.Name} is destroyed by Oversaturation — their colours scatter.",
+                    new Color(0.6f, 0.4f, 0.9f)));
+            }
+            else
+            {
+                ColorSchool blightSchool = schools[_rng.Next(schools.Count)];
+                _lordColors.Remove(hero.StringId);
+                try { KillCharacterAction.ApplyByMurder(hero, null, true); } catch { }
+                BlightSystem.SpawnBlightFromOversaturation(blightSchool);
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{hero.Name} is consumed by Oversaturation — dead. " +
+                    $"The {ColorSchoolData.Info[blightSchool].Name} Blight rises from their ruin.",
+                    new Color(0.6f, 0.4f, 0.9f)));
+            }
         }
 
         public static void CheckRespawnTimers()

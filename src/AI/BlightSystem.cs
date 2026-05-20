@@ -248,31 +248,25 @@ namespace ColoursOfCalradia
         {
             ColorSchool school = GetBlightSchool(victim);
             _blightIds.Remove((int)school);
-            _respawnHours[(int)school] = RespawnHours;
-
+            // Blights do not auto-respawn; new ones only arise from NPC oversaturation events.
             InformationManager.DisplayMessage(new InformationMessage(
-                $"{victim.Name} — the {ColorSchoolData.Info[school].Name} Blight — is slain. " +
-                $"The colour will return within a week.",
+                $"{victim.Name} — the {ColorSchoolData.Info[school].Name} Blight — is slain.",
                 ColorSchoolData.GetMessageColor(school)));
         }
 
-        // Called from CampaignBehavior.OnHourlyTick.
-        public static void CheckRespawnTimers()
+        // Blights no longer auto-respawn on a timer.
+        public static void CheckRespawnTimers() { }
+
+        // Called from the weekly NPC oversaturation event (20% path).
+        public static void SpawnBlightFromOversaturation(ColorSchool school)
         {
-            foreach (int key in _respawnHours.Keys.ToList())
+            try
             {
-                _respawnHours[key]--;
-                if (_respawnHours[key] > 0) continue;
-                _respawnHours.Remove(key);
-                ColorSchool school = (ColorSchool)key;
-                try
-                {
-                    Kingdom kingdom = Campaign.Current?.Kingdoms
-                        .OrderBy(_ => _rng.Next()).FirstOrDefault();
-                    if (kingdom != null) TrySpawnBlight(school, kingdom);
-                }
-                catch { }
+                Kingdom kingdom = Campaign.Current?.Kingdoms
+                    .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                if (kingdom != null) TrySpawnBlight(school, kingdom);
             }
+            catch { }
         }
 
         // ── NPC lord kills blight — 7 % chance to learn the colour ───────────

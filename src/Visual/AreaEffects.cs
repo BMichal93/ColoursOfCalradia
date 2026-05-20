@@ -213,7 +213,7 @@ namespace ColoursOfCalradia
                     case "create_yellow": // Creeping Dread — damage agents in cloud
                     {
                         int dreadHit = 0;
-                        float dreadDmg = 30f * e.Power;
+                        float dreadDmg = 40f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -242,7 +242,7 @@ namespace ColoursOfCalradia
 
                     case "create_green": // Emerald Font — heal all agents in area
                     {
-                        float fontHeal = 10f * e.Power;
+                        float fontHeal = 15f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -281,7 +281,7 @@ namespace ColoursOfCalradia
                     case "self_yellow": // Nausea Bloom — drifting toxic cloud
                     {
                         int bloomHit = 0;
-                        float bloomDmg = 15f * e.Power;
+                        float bloomDmg = 22f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())

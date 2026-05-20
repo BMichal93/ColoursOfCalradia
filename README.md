@@ -305,7 +305,7 @@ When a new campaign starts you will see a multi-selection screen titled **"The C
 
 - Select any combination of colours (including none — you walk an uncoloured path).
 - Your chosen colours are **permanent** for that playthrough.
-- Each colour you pick reduces one attribute by 1 and locks in two permanent limitations.
+- Each colour you pick reduces one attribute by 1 and locks in a permanent limitation.
 - You may select as many as all six colours simultaneously.
 
 ### Adjacency and Madness
@@ -347,31 +347,26 @@ When an order is scrambled, the formation receives a random command (Charge or H
 
 ### Limitations by School
 
-Each school carries two permanent limitations. The first category (A) applies every cast in battle; the second (B) may add a passive daily effect or a further cast cost.
+Each school carries a permanent limitation that activates on every cast.
 
 **Red — Blood Price**
-- **(A) Furious:** Each Red spell automatically issues a Charge order to all your formations.
-- **(B) Blood Price:** Each Red spell opens a wound on the caster — 8 HP self-damage.
+- **Furious:** Each Red spell automatically issues a Charge order to all your formations.
+- **Blood Price:** Each Red spell opens a wound on the caster — 2 HP self-damage.
 
 **Orange — Generous Hunger**
-- **(A) Overindulgent:** Your party consumes food faster and army upkeep is higher. 2 food units are drained daily.
-- **(B) Generous Flood:** Each Orange spell briefly seizes your body — you stagger in random directions for a moment, lurching unpredictably across the field.
+- **Joyful Cast:** You cannot cast Orange magic if your party morale is below 45. The warmth will not flow through misery.
 
 **Yellow — The Fearful Eye**
-- **(A) Paranoia:** Each Yellow spell costs your party 8 morale. The fear bleeds inward.
-- **(B) Blurred Judgment:** Each Yellow spell increases your criminal rating by 3 in the relevant kingdom. You begin to see threats everywhere.
+- **Animal Fear:** You cannot cast Yellow magic from horseback. Animals sense the wrongness and refuse to carry you while you channel it.
 
 **Green — Gentle Burden**
-- **(A) Pacifist:** You cannot use Green magic while wielding a weapon. Sheathe it first.
-- **(B) Horse-Shy:** Green magic cannot be cast from horseback — the living current will not flow through a mount's distress.
+- **Pacifist:** You cannot use Green magic while wielding a weapon. Sheathe it first.
 
 **Blue — Scholar's Weight**
-- **(A) Scholar's Weight:** Each Blue spell makes your equipment feel heavier — your maximum movement speed decreases with every cast and does not recover until the battle ends. Up to 6 stacks; at the cap you slow to a crawl.
-- **(B) Timeless Toll:** Each Blue spell costs the caster approximately 2 days — the Scholar's pursuit of perfect stillness quietly devours years. Applies to all Blue spells in battle and on the campaign map.
+- **Scholar's Weight:** Blue spells take **5 seconds** to wind up in battle. The stillness must settle through your limbs before it can reach the world — you stand motionless during the delay.
 
 **Purple — The Waning Art**
-- **(A) Hollow Standing:** Each Purple spell costs renown (−5) and influence (−2 if in a kingdom) — the grey bleeds your presence from the world, quietly.
-- **(B) The Slow Unravelling:** Each Purple cast quietly reduces the caster's fertility by 1 percentage point (minimum 1%). It never reaches zero — but it never comes back. This value persists across saves.
+- **The Slow Unravelling:** Each Purple cast reduces your fertility by 1% and ages you by 1 day — both are permanent. The future, sacrificed piece by piece.
 
 ---
 
@@ -572,7 +567,11 @@ When a mage lord dies, their colours are extinguished. After **7 days**, the col
 
 One lord in the entire world always carries **all six colour schools** — this is The Prism. They are selected randomly at campaign start from any living non-player lord. The Prism casts in battle at **3× the normal frequency** and their personality shifts randomly every week regardless of cast count. They are feared and distrusted by all other colour lords.
 
-When The Prism dies, a new one rises within **one month**. The world is never without a Prism.
+When The Prism dies, if you carry all six colours and are not already the Prism, there is a **30 % chance** the mantle seeks you next. A prompt appears the following day — you may accept or refuse. If you refuse (or the chance doesn't trigger), a new Prism rises within **one month**.
+
+**Becoming the Prism grants immunity to Madness and Oversaturation.** Your personality will not fracture weekly, and your Saturation cap cannot be depleted.
+
+You may also choose **"I am a Prism"** at character creation (easy mode) to begin with all six colours and full immunity immediately, with no attribute penalties.
 
 ### Colour Lord Relationships
 
@@ -608,7 +607,9 @@ NPC mage lords cast in battle using a priority-driven AI:
 6. **Morale drain** — Tide of Dread (Yellow).
 7. **Reinforcement** — Calling (Orange) if outnumbered; Warm Beacon as fallback.
 
-All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **12-second cast cooldown** between spells. The Prism uses a **4-second cooldown**.
+All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **12-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often; Calculating lords cast 50 % less often. The Prism uses a **4-second base cooldown**.
+
+NPC lords apply their school limitations: Green lords cannot cast while wielding a weapon; Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. After each cast, non-Blight non-Prism lords have a **5 % chance of a 3-second knockdown** from Oversaturation.
 
 ### Campaign Map Spells
 
@@ -713,10 +714,10 @@ Each Affect spell is tied to a specific situation or resource. No cooldowns — 
 |-------|-------|--------|--------|----------------|
 | **Ember Drive** | `ULRRR` | Red | +100×power gold during a village raid or hideout assault | −10% current HP per cast; blocked at ≤5 HP |
 | **Shared Feast** | `ULRLR` | Orange | Consume food → party morale +8×power | Food cost doubles each cast within the day (1→2→4→8…), resets at midnight |
-| **Dread Whisper** | `ULDLD` | Yellow | Nearest enemy party loses 15×power morale | Self-morale drain escalates +5 per cast within the day (5→10→15…) plus Yellow limitation −8 |
+| **Dread Whisper** | `ULDLD` | Yellow | Nearest enemy party loses 15×power morale | No self-cost (limitation is Animal Fear: no horseback) |
 | **Verdant Hour** | `ULLDL` | Green | Produce 1–4 grain | −5% current HP per cast; blocked at ≤5 HP |
 | **Scholar's Gaze** | `ULULU` | Blue | Reveals all allied and enemy parties within 80 map units — shows direction, leader, and troop count in a popup | No cost |
-| **Grey Veil** | `ULDDD` | Purple | Scatter nearby enemy parties (radius 2); enemies lose your trail | Renown −5 per cast; fertility reduction |
+| **Grey Veil** | `ULDDD` | Purple | Scatter nearby enemy parties (radius 2); enemies lose your trail | −1% fertility + 1 day aging per cast |
 
 ### Invoke Spells (LU prefix) — advanced campaign effects
 
@@ -728,13 +729,51 @@ Invoke spells target heroes, rosters, and rival lords directly. No cooldowns —
 | **Golden Word** | `LURLR` | Orange | Spend gold as patronage → +15×power influence | Gold cost 100→200→400 (capped at 400), resets at midnight; kingdom required |
 | **Whispered Ruin** | `LUDLD` | Yellow | Nearest enemy lord (at war) clan renown −8 | −2 own clan renown per cast |
 | **Tend the Fallen** | `LULDL` | Green | Heal 3+(power×2) wounded troops in own party | −5% current HP per cast; blocked at ≤5 HP |
-| **Scholar's Blueprint** | `LUULU` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | ~2 days aging per cast; requires active siege; no effect if nothing is under construction |
-| **Wither's Touch** | `LUDDD` | Purple | Nearest enemy lord: party morale −15, clan renown −8 | Own clan renown −10 per cast |
+| **Scholar's Blueprint** | `LUULU` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | Renown −2 per cast; requires active siege; no effect if nothing is under construction |
+| **Wither's Touch** | `LUDDD` | Purple | Nearest enemy lord: party morale −10, clan renown −8 | −1% fertility + 1 day aging per cast |
 
 ### Notes
 
 - **Orange Golden Word** gold cost is capped at 400 — once at the cap, each cast costs 400 gold. The cap resets each campaign day. Kingdom membership required.
 - **Yellow Whispered Ruin** and **Dread Whisper** require an active war with the target's faction. **Scholar's Blueprint** requires an active siege by the player's party. **Wither's Touch** works against any non-player faction.
 - **Scholar's Blueprint** requires no kingdom but does require an ongoing siege.
-- **Blue Timeless Toll** applies to every Blue spell — Azure Arrest, Cerulean Mirror, and Sapphire Bastion in battle, plus Scholar's Blueprint on the campaign map. Scholar's Gaze has no aging cost (it is blocked while already active instead).
 - **Red** HP costs apply to campaign HP, which carries into the next battle. Ember Drive during a raid means you fight the battle with reduced health.
+
+---
+
+## Saturation
+
+Every cast generates **0–3 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap scales with your level: **max = hero level + 10** (hard cap 30).
+
+| Condition | Effect |
+|-----------|--------|
+| Saturation reaches max | **Oversaturation** |
+| Darkness falls (22:00–05:00 or dark location) | Saturation resets to 0 |
+
+### Oversaturation
+
+When you hit the cap, the light tears through you:
+- Knocked down for **3 seconds** (in battle)
+- A random personality trait shifts by ±1
+- Your **max Saturation permanently decreases by 1**
+
+### Max Depletion
+
+When max Saturation reaches **0**, you must choose:
+
+| Choice | Consequence |
+|--------|-------------|
+| **Surrender your colours** | All colour schools are lost permanently. Others will inherit them in time. |
+| **Embrace the Blight** | You keep your colours and become immune to all future Oversaturation — but every living lord's opinion of you collapses by −100 immediately and permanently. |
+
+### Immunity
+
+- **Blights** are immune to all Oversaturation effects.
+- **The Prism** (NPC or player) is immune to Madness and Oversaturation.
+
+### NPC Saturation
+
+- Every NPC colour lord has a **5 % chance of a 3-second knockdown** after each battle cast.
+- Every week there is a **2 % chance** a random NPC colour lord oversaturates:
+  - **80 % outcome:** they lose all colours. Another lord in the same kingdom inherits them within 7 days.
+  - **20 % outcome:** they die and a Blight of one of their colours spawns immediately. **Blights no longer auto-respawn** — each Blight that is slain is gone until the next oversaturation event spawns one.

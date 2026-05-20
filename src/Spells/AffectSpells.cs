@@ -35,19 +35,15 @@ namespace ColoursOfCalradia
         // Spam limiters (no cooldowns — all mechanical):
         //   Red    −10% current HP per cast; blocked at ≤5 HP
         //   Orange food cost doubles each cast within 24h (1→2→4→8…)
-        //   Yellow self-morale drain escalates +5 each cast within 24h (5→10→15…)
+        //   Yellow no self-cost (limitation is Animal Fear: no horseback)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
         //   Blue   no cost — reveals nearby parties in a popup (no cooldown or HP cost)
-        //   Purple renown −5 per cast (no daily reset)
+        //   Purple −1% fertility + 1 day aging per cast (Slow Unravelling)
         // =================================================================
 
         // ── Orange escalation tracking ──────────────────────────────────────
         private static int _orangeCastCount   = 0;
         private static int _orangeFirstCastDay = -1; // campaign day of first cast; -1 = never
-
-        // ── Yellow escalation tracking ──────────────────────────────────────
-        private static int _yellowCastCount   = 0;
-        private static int _yellowFirstCastDay = -1;
 
 
         // ── Red — Ember Drive ─────────────────────────────────────────────
@@ -69,12 +65,12 @@ namespace ColoursOfCalradia
             }
 
             float power = SpellPower(ColorSchool.Red);
-            int gold = (int)(100f * power);
+            int gold = (int)(130f * power);
             try { Hero.MainHero.ChangeHeroGold(gold); } catch { return; }
             int hpCost = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.10f));
             Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
             string context = ev.IsRaid ? "village" : "hideout";
-            Msg($"Ember Drive — seized +{gold} gold from the {context}. HP −{hpCost}.", ColorSchool.Red);
+            Msg($"Ember Drive — seized +{gold} gold from the {context}. Cost: HP −{hpCost}.", ColorSchool.Red);
         }
 
         // ── Orange — Shared Feast ─────────────────────────────────────────
@@ -120,7 +116,7 @@ namespace ColoursOfCalradia
                 party.ItemRoster.AddToCounts(item, -amount);
 
             float power = SpellPower(ColorSchool.Orange);
-            float gain = 8f * power;
+            float gain = 12f * power;
             try { party.RecentEventsMorale += gain; } catch { }
 
             if (_orangeFirstCastDay < 0) try { _orangeFirstCastDay = (int)CampaignTime.Now.ToDays; } catch { }
@@ -131,20 +127,11 @@ namespace ColoursOfCalradia
         }
 
         // ── Yellow — Dread Whisper ────────────────────────────────────────
-        // Self-morale drain escalates +5 per cast within 24h (5→10→15…).
-        // Yellow limitation adds a further −8 on top. No cap — self-limiting by design.
+        // Drain enemy party morale. No self-cost (limitation is Animal Fear: no horseback).
         private static void SpellAffectYellow()
         {
             var party = MobileParty.MainParty;
             if (party == null || Hero.MainHero == null) return;
-
-            try
-            {
-                int today = (int)CampaignTime.Now.ToDays;
-                if (_yellowFirstCastDay >= 0 && today > _yellowFirstCastDay)
-                { _yellowCastCount = 0; _yellowFirstCastDay = -1; }
-            }
-            catch { }
 
             float power = SpellPower(ColorSchool.Yellow);
             IFaction playerFaction = Hero.MainHero.MapFaction;
@@ -162,22 +149,15 @@ namespace ColoursOfCalradia
                 if (d < minDist) { minDist = d; closest = p; }
             }
 
-            float selfLoss = 5f * (_yellowCastCount + 1); // 5, 10, 15…
-            try { party.RecentEventsMorale -= selfLoss; } catch { }
-
-            if (_yellowFirstCastDay < 0) try { _yellowFirstCastDay = (int)CampaignTime.Now.ToDays; } catch { }
-            _yellowCastCount++;
-
             if (closest == null)
             {
-                Msg($"Dread Whisper — no enemy at war found. Your morale still bleeds (−{selfLoss:F0}; Yellow limitation adds −8 more).", ColorSchool.Yellow);
+                Msg("Dread Whisper — no enemy at war found.", ColorSchool.Yellow);
                 return;
             }
 
-            float enemyLoss = 15f * power;
+            float enemyLoss = 22f * power;
             try { closest.RecentEventsMorale -= enemyLoss; } catch { }
-            int nextSelfLoss = (int)(5f * (_yellowCastCount + 1));
-            Msg($"Dread Whisper — morale −{selfLoss:F0} (+−8 Yellow limitation); {closest.Name} −{enemyLoss:F0} ({minDist:F1} km). Next self-cost: −{nextSelfLoss}.", ColorSchool.Yellow);
+            Msg($"Dread Whisper — {closest.Name} morale −{enemyLoss:F0} ({minDist:F1} km).", ColorSchool.Yellow);
         }
 
         // ── Green — Verdant Hour ─────────────────────────────────────────
@@ -301,8 +281,8 @@ namespace ColoursOfCalradia
         //   Orange gold cost 100→200→400 (capped), resets at campaign midnight
         //   Yellow −2 own clan renown per cast (self-limiting)
         //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   ~2 days aging per cast; siege required
-        //   Purple renown −10 per cast (no daily reset)
+        //   Blue   −2 renown per cast; siege required
+        //   Purple −1% fertility + 1 day aging per cast (Slow Unravelling)
         // =================================================================
 
         // ── Orange Invoke (Golden Word) tracking ────────────────────────────
@@ -407,7 +387,7 @@ namespace ColoursOfCalradia
             }
 
             float power     = SpellPower(ColorSchool.Orange);
-            int   influence = (int)(15f * power);
+            int   influence = (int)(20f * power);
             Hero.MainHero.ChangeHeroGold(-goldCost);
             try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, influence); } catch { return; }
 
@@ -473,7 +453,7 @@ namespace ColoursOfCalradia
             }
 
             float power = SpellPower(ColorSchool.Green);
-            int healBudget = 3 + (int)(power * 2f);
+            int healBudget = 5 + (int)(power * 3f);
 
             int totalHealed = 0;
             try
@@ -571,21 +551,12 @@ namespace ColoursOfCalradia
             }
 
             try { Hero.MainHero.Clan?.AddRenown(-2f); } catch { }
-            try
-            {
-                var prop = typeof(Hero).GetProperty("BirthDay",
-                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                var setter = prop?.GetSetMethod(nonPublic: true);
-                if (setter != null)
-                    setter.Invoke(Hero.MainHero, new object[] { Hero.MainHero.BirthDay - CampaignTime.Days(2f) });
-            }
-            catch { }
-            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −2, aged 2 days)", ColorSchool.Blue);
+            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −2)", ColorSchool.Blue);
         }
 
         // ── Purple — Wither's Touch ──────────────────────────────────────
-        // Curse the nearest enemy lord: −15 party morale, −8 clan renown.
-        // Cost: 14 days aging (flat). Targets any hostile lord regardless of war state.
+        // Curse the nearest enemy lord: −10 party morale, −8 clan renown.
+        // Cost: −1% fertility + 1 day aging (The Slow Unravelling).
         private static void SpellInvokePurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -614,14 +585,23 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-8f); } catch { }
             try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 10f; } catch { }
             try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            Msg($"Wither's Touch — {targetLord.Name}: morale −10, renown −8 ({minDist:F1} km). Own renown −8.", ColorSchool.Purple);
+            try
+            {
+                Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(1));
+            }
+            catch { }
+            if (ColourKnowledge.ReducePurpleFertility())
+            {
+                int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
+                Msg($"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%", ColorSchool.Purple);
+            }
+            Msg($"Wither's Touch — {targetLord.Name}: morale −10, renown −8 ({minDist:F1} km). [Age +1 day]", ColorSchool.Purple);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
-        // Scatter radius 2 map units. Cost: −5 renown + fertility reduction.
+        // Scatter radius 2 map units. Cost: −1% fertility + 1 day aging.
         private static void SpellAffectPurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -643,11 +623,20 @@ namespace ColoursOfCalradia
                 try { p.SetMoveGoToPoint(new CampaignVec2(target, true), MobileParty.NavigationType.Default); scattered++; } catch { }
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-5f); } catch { }
+            try
+            {
+                Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(1));
+            }
+            catch { }
+            if (ColourKnowledge.ReducePurpleFertility())
+            {
+                int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
+                Msg($"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%", ColorSchool.Purple);
+            }
             string effect = scattered > 0
                 ? $"{scattered} nearby {(scattered == 1 ? "party loses" : "parties lose")} your trail."
                 : "No enemies were close enough to scatter.";
-            Msg($"Grey Veil — {effect} (Renown −5)", ColorSchool.Purple);
+            Msg($"Grey Veil — {effect} [Age +1 day]", ColorSchool.Purple);
         }
     }
 }

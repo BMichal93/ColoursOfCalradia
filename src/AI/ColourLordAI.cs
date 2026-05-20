@@ -27,25 +27,48 @@ namespace ColoursOfCalradia
     // =========================================================================
     // 10. COLOUR LORD AI
     //     Finds hero agents with colour schools and has them cast spells in battle.
-    //     NPC limitations apply: Blue → aging per cast, Green → no weapon + no horseback,
-    //     Purple → renown/influence loss per cast.
+    //     NPC limitations: Green → no weapon, Yellow → no horseback,
+    //     Orange → party morale ≥ 45.
+    //     5% chance of 3s knockdown after each cast (non-Blight, non-Prism lords).
+    //     Impulsive lords cast more often; Calculating lords less often.
     // =========================================================================
     public static class ColourLordAI
     {
         private const float CastInterval       = 12f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
-        private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
+        private static readonly Dictionary<string, float> _cooldowns        = new Dictionary<string, float>();
+        private static readonly Dictionary<int, float>    _knockdownTimers  = new Dictionary<int, float>();
         private static readonly Random _rng = new Random();
 
         private static float _tickAccum = 0f;
         private const  float TickInterval = 0.5f;
 
-        public static void ClearCooldowns() => _cooldowns.Clear();
+        public static void ClearCooldowns()
+        {
+            _cooldowns.Clear();
+            _knockdownTimers.Clear();
+        }
 
         public static void MissionTick(float dt)
         {
             if (Mission.Current == null) return;
+
+            // Tick knockdown timers
+            foreach (int idx in _knockdownTimers.Keys.ToList())
+            {
+                _knockdownTimers[idx] -= dt;
+                if (_knockdownTimers[idx] <= 0f)
+                {
+                    _knockdownTimers.Remove(idx);
+                    try
+                    {
+                        Agent a = Mission.Current.Agents.FirstOrDefault(x => x.Index == idx);
+                        if (a?.IsActive() == true) a.SetMaximumSpeedLimit(10f, false);
+                    }
+                    catch { }
+                }
+            }
 
             _tickAccum += dt;
             if (_tickAccum < TickInterval) return;
@@ -133,7 +156,6 @@ namespace ColoursOfCalradia
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                         }
                     });
-                    ApplyPurpleHollowStanding(hero);
                     return;
                 }
                 if (colors.Contains(ColorSchool.Red))
@@ -194,7 +216,6 @@ namespace ColoursOfCalradia
                         foreach (Formation f in formations)
                             try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
                     });
-                    ApplyBlueAging(hero);
                     return;
                 }
             }
@@ -222,8 +243,8 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // Yellow — Tide of Dread morale drain
-            if (colors.Contains(ColorSchool.Yellow))
+            // Yellow — Tide of Dread morale drain (no horseback)
+            if (colors.Contains(ColorSchool.Yellow) && CanUseYellow(agent))
             {
                 float yellowPower = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
                 CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
@@ -240,8 +261,8 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            // Orange — Calling (summon) if outnumbered, else Warm Beacon (ally pull)
-            if (colors.Contains(ColorSchool.Orange))
+            // Orange — Calling (summon) if outnumbered, else Warm Beacon (ally pull) (morale ≥ 45)
+            if (colors.Contains(ColorSchool.Orange) && CanUseOrange(hero))
             {
                 int nearAllies  = AlliesOf(agent).Count(a => a.Position.Distance(agent.Position) <= 20f);
                 int nearEnemies = EnemiesOf(agent).Count(a => a.Position.Distance(agent.Position) <= 20f);
@@ -311,7 +332,7 @@ namespace ColoursOfCalradia
                     ApplyRedA1(agent); ApplyRedA2(agent);
                     break;
                 }
-                case ColorSchool.Orange:
+                case ColorSchool.Orange when CanUseOrange(hero):
                 {
                     float orangePower = SpellEffects.SpellPower(ColorSchool.Orange, hero);
                     CastWithGlow(agent, hero, ColorSchool.Orange, "Warm Beacon", () =>
@@ -346,9 +367,8 @@ namespace ColoursOfCalradia
                         foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 30f).ToList())
                             try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f); } catch { }
                     });
-                    ApplyBlueAging(hero);
                     break;
-                case ColorSchool.Yellow:
+                case ColorSchool.Yellow when CanUseYellow(agent):
                 {
                     float yellowPower = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
                     CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
@@ -369,7 +389,6 @@ namespace ColoursOfCalradia
                             SpellEffects.KillAgent(t);
                         }
                     });
-                    ApplyPurpleHollowStanding(hero);
                     break;
             }
         }
@@ -505,8 +524,20 @@ namespace ColoursOfCalradia
         private static bool CanUseGreen(Agent agent)
         {
             if (agent == null) return false;
-            try { if (agent.MountAgent != null) return false; } catch { }
             try { return agent.WieldedWeapon.IsEmpty || agent.WieldedWeapon.CurrentUsageItem?.IsShield == true; }
+            catch { return true; }
+        }
+
+        private static bool CanUseYellow(Agent agent)
+        {
+            if (agent == null) return true;
+            try { return agent.MountAgent == null; }
+            catch { return true; }
+        }
+
+        private static bool CanUseOrange(Hero hero)
+        {
+            try { return (hero?.PartyBelongedTo?.RecentEventsMorale ?? 100f) >= 45f; }
             catch { return true; }
         }
 
@@ -528,22 +559,11 @@ namespace ColoursOfCalradia
             foreach (Formation f in agent.Team.FormationsIncludingSpecialAndEmpty)
                 try { if (f.CountOfUnits > 0) f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
         }
+
         private static void ApplyRedA2(Agent agent)
         {
             if (agent == null) return;
-            try { agent.Health = Math.Max(1f, agent.Health - 8f); } catch { }
-        }
-        private static void ApplyBlueAging(Hero hero)
-        {
-            if (hero == null) return;
-            try { hero.SetBirthDay(hero.BirthDay - CampaignTime.Days(2)); } catch { }
-        }
-
-        private static void ApplyPurpleHollowStanding(Hero hero)
-        {
-            if (hero == null) return;
-            try { hero.Clan?.AddRenown(-5f); } catch { }
-            try { if (hero.Clan?.Kingdom != null) GainKingdomInfluenceAction.ApplyForDefault(hero, -2f); } catch { }
+            try { agent.Health = Math.Max(1f, agent.Health - 2f); } catch { }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -586,10 +606,36 @@ namespace ColoursOfCalradia
             InformationManager.DisplayMessage(new InformationMessage(
                 $"{agent.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}).",
                 ColorSchoolData.GetMessageColor(school)));
+
+            // 5% knockdown from Oversaturation (non-Blight, non-Prism lords)
+            if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero) && _rng.Next(100) < 5)
+            {
+                try
+                {
+                    if (agent.IsActive())
+                    {
+                        agent.SetMaximumSpeedLimit(0f, false);
+                        _knockdownTimers[agent.Index] = 3f;
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private static float GetCooldownForHero(Hero hero)
+        {
+            float baseInterval = ColourLordRegistry.IsPrismLord(hero) ? PrismCastInterval : CastInterval;
+            try
+            {
+                int calc = hero.GetTraitLevel(DefaultTraits.Calculating);
+                if (calc < 0) return baseInterval * 0.75f; // Impulsive — casts more often
+                if (calc > 0) return baseInterval * 1.5f;  // Calculating — casts less often
+            }
+            catch { }
+            return baseInterval;
         }
 
         private static void SetCooldown(Hero hero) =>
-            _cooldowns[hero.StringId] = ColourLordRegistry.IsPrismLord(hero)
-                ? PrismCastInterval : CastInterval;
+            _cooldowns[hero.StringId] = GetCooldownForHero(hero);
     }
 }

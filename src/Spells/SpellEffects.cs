@@ -169,63 +169,45 @@ namespace ColoursOfCalradia
             BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, HollowGazeInterval * 4);
         }
 
-        // ── Orange: confusion stagger ─────────────────────────────────────────
-        private static float _confusionRemaining  = 0f;
-        private static float _confusionTickTimer  = 0f;
-        private const  float ConfusionDuration    = 1.5f;
-        private const  float ConfusionTickRate    = 0.35f;
-        private const  float ConfusionStaggerDist = 1.5f;
+        // ── Blue: 5-second delay before spell fires ───────────────────────────
+        // When a Blue battle spell is input, the animation holds for 5 s before executing.
+        private static string _pendingBlueCombo = null;
+        private static float  _pendingBlueDelay = 0f;
+        private const  float  BlueDelayDuration = 5f;
 
-        public static void TriggerConfusion()
+        public static bool IsBluePending => _pendingBlueCombo != null;
+
+        // Returns true if the delay was accepted. False if one is already pending.
+        public static bool BeginBlueDelay(string combo)
         {
-            _confusionRemaining = ConfusionDuration;
-            _confusionTickTimer = 0f;
-            Msg("Generous Hunger seizes you — your body lurches as the magic tears through.", ColorSchool.Orange);
+            if (_pendingBlueCombo != null)
+            {
+                Msg("The Scholar's Weight is already winding up — wait for it to resolve.", ColorSchool.Blue);
+                return false;
+            }
+            _pendingBlueCombo = combo;
+            _pendingBlueDelay = BlueDelayDuration;
+            TryCastAnimation(Player);
+            Msg($"Scholar's Weight — magic stiffens your limbs. The weave resolves in {(int)BlueDelayDuration}s.", ColorSchool.Blue);
+            return true;
         }
 
-        public static void TickHUDConfusion(float dt)
+        // Called from MagicMissionBehavior.OnMissionTick.
+        // Returns the combo string when the delay expires; null otherwise.
+        public static string TickBlueDelay(float dt)
         {
-            if (_confusionRemaining <= 0f) return;
-            _confusionRemaining -= dt;
-            _confusionTickTimer -= dt;
-            if (_confusionTickTimer > 0f) return;
-            _confusionTickTimer = ConfusionTickRate;
-            if (Player == null || !Player.IsActive()) return;
-            float angle = (float)(_rng.NextDouble() * Math.PI * 2);
-            Vec3 dest = Player.Position + new Vec3(
-                (float)Math.Cos(angle) * ConfusionStaggerDist,
-                (float)Math.Sin(angle) * ConfusionStaggerDist,
-                0f);
-            dest.z = Player.Position.z;
-            try { Player.TeleportToPosition(dest); } catch { }
+            if (_pendingBlueCombo == null) return null;
+            _pendingBlueDelay -= dt;
+            if (_pendingBlueDelay > 0f) return null;
+            string combo = _pendingBlueCombo;
+            _pendingBlueCombo = null;
+            return combo;
         }
 
-        // ── Blue: accumulating weight stacks ─────────────────────────────────
-        private static int   _blueWeightStacks = 0;
-        private const  float BlueBaseSpeed     = 6.5f;
-        private const  float BlueSpeedPenalty  = 0.4f;
-        private const  int   BlueMaxStacks     = 6;
-
-        public static void ApplyBlueWeight()
+        public static void CancelBlueDelay()
         {
-            if (Player == null || !Player.IsActive()) return;
-            _blueWeightStacks = Math.Min(_blueWeightStacks + 1, BlueMaxStacks);
-            EnforceBlueWeightCap();
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"Scholar's Weight: The knowledge settles in your limbs. [{_blueWeightStacks}/{BlueMaxStacks}]",
-                ColorSchoolData.GetMessageColor(ColorSchool.Blue)));
-        }
-
-        private static void EnforceBlueWeightCap()
-        {
-            if (Player == null || !Player.IsActive() || _blueWeightStacks <= 0) return;
-            float cap = Math.Max(1.5f, BlueBaseSpeed - _blueWeightStacks * BlueSpeedPenalty);
-            try { Player.SetMaximumSpeedLimit(cap, false); } catch { }
-        }
-
-        public static void TickBlueWeight(float dt)
-        {
-            if (_blueWeightStacks > 0) EnforceBlueWeightCap();
+            _pendingBlueCombo = null;
+            _pendingBlueDelay = 0f;
         }
 
         public static void TickHaltedAgents(float dt)
@@ -270,26 +252,19 @@ namespace ColoursOfCalradia
         public static void ResetCampaignCounters()
         {
             _orangeCastCount    = 0; _orangeFirstCastDay  = -1;
-            _yellowCastCount    = 0; _yellowFirstCastDay  = -1;
             _wordCastCount      = 0; _wordFirstCastDay    = -1;
             _redMarchActive     = false; _redMarchEndHour = -1.0;
         }
 
         public static void ClearSelfEffects()
         {
-            if (_scarletWardActive)   { _scarletWardActive = false; }
+            if (_scarletWardActive)    { _scarletWardActive = false; }
             if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; _ceruleanMirrorBlocks = 0; }
-            _shadowVeilActive  = false;
-            _hollowGazeTarget  = null;
+            _shadowVeilActive = false;
+            _hollowGazeTarget = null;
             try { _hollowGazeLight?.Remove(0); } catch { }
-            _hollowGazeLight   = null;
-            _confusionRemaining = 0f;
-            if (_blueWeightStacks > 0)
-            {
-                _blueWeightStacks = 0;
-                if (Player?.IsActive() == true)
-                    try { Player.SetMaximumSpeedLimit(10f, false); } catch { }
-            }
+            _hollowGazeLight  = null;
+            CancelBlueDelay();
             _haltedAgents.Clear();
         }
 

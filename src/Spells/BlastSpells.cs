@@ -45,7 +45,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 40f * power, ColorSchool.Red);
+                    DamageAgent(a, 55f * power, ColorSchool.Red);
                     if (a.IsActive() && a.Health > 0f)
                     {
                         Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
@@ -74,7 +74,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 12f * power, ColorSchool.Orange);
+                    DamageAgent(a, 18f * power, ColorSchool.Orange);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -100,9 +100,9 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 14f * power, ColorSchool.Yellow);
+                    DamageAgent(a, 20f * power, ColorSchool.Yellow);
                     if (!a.IsActive()) continue;
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f * power)); } catch { }
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 45f * power)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                     SpawnTempLight(a.Position, ColorSchool.Yellow, 6f, 1.5f);
                 }
@@ -125,7 +125,7 @@ namespace ColoursOfCalradia
                 if (a.Team != Player.Team) continue; // enemies excluded
                 try
                 {
-                    float h = Math.Min(15f * power, a.HealthLimit - a.Health);
+                    float h = Math.Min(22f * power, a.HealthLimit - a.Health);
                     if (h > 0f)
                     {
                         a.Health += h;
@@ -154,9 +154,9 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 12f * power, ColorSchool.Blue);
+                    DamageAgent(a, 18f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 25f)); } catch { }
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     if (a.MountAgent == null)
                     {
                         try { a.SetMaximumSpeedLimit(0f, false); } catch { }
