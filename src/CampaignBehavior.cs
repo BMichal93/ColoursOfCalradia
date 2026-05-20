@@ -31,6 +31,7 @@ namespace ColoursOfCalradia
     {
         private bool _selectionDone;
         private bool _blightLearnActive;
+        private bool _campaignWorldPrimed;
         private static readonly Random _rng = new Random();
 
         private static readonly ColorSchool[] _allSchoolsOrdered =
@@ -105,16 +106,12 @@ namespace ColoursOfCalradia
                         }
                     }
                     _selectionDone = true;
-                    ColourLordRegistry.SeedInitialLords();
-                    BlightSystem.InitializeBlights();
                 },
                 _ =>
                 {
                     _selectionDone = true;
                     InformationManager.DisplayMessage(new InformationMessage(
                         "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
-                    ColourLordRegistry.SeedInitialLords();
-                    BlightSystem.InitializeBlights();
                 },
                 "", false
             ), false, true);
@@ -229,25 +226,50 @@ namespace ColoursOfCalradia
             if (!_selectionDone)
                 _selectionDone = true;
 
-            ColourLordRegistry.SeedInitialLords();
-            ColourLordRegistry.FlushAnnouncements();
-            ColourLordRegistry.FlushDeferredPrismInquiry();
-            BlightSystem.InitializeBlights();
-            ColourLordRegistry.DailyMapCast();
-            ColourUnitRegistry.SeedInitialUnits();
-            ColourUnitRegistry.DailyMaintenance();
-            ColourUnitRegistry.DailyMapCast();
-            SaturationSystem.FlushMaxDepletionPrompt();
+            bool campaignReady = IsCampaignWorldReady();
+
+            if (campaignReady && !_campaignWorldPrimed)
+            {
+                try { ColourLordRegistry.SeedInitialLords(); } catch { }
+                try { BlightSystem.InitializeBlights(); } catch { }
+                try { ColourUnitRegistry.SeedInitialUnits(); } catch { }
+                _campaignWorldPrimed = true;
+            }
+
+            if (!_campaignWorldPrimed)
+                return;
+
+            try { ColourLordRegistry.FlushAnnouncements(); } catch { }
+            try { ColourLordRegistry.FlushDeferredPrismInquiry(); } catch { }
+            try { ColourLordRegistry.DailyMapCast(); } catch { }
+            try { ColourUnitRegistry.DailyMaintenance(); } catch { }
+            try { ColourUnitRegistry.DailyMapCast(); } catch { }
+            try { SaturationSystem.FlushMaxDepletionPrompt(); } catch { }
         }
 
         // ── Hourly tick ──────────────────────────────────────────────────────
         private void OnHourlyTick()
         {
-            ColourLordRegistry.CheckRespawnTimers();
-            BlightSystem.CheckRespawnTimers();
-            SpellEffects.TickHourlyMapEffects();
-            SaturationSystem.CheckNightReset();
+            try { ColourLordRegistry.CheckRespawnTimers(); } catch { }
+            try { BlightSystem.CheckRespawnTimers(); } catch { }
+            try { SpellEffects.TickHourlyMapEffects(); } catch { }
+            try { SaturationSystem.CheckNightReset(); } catch { }
         }
+
+        private static bool IsCampaignWorldReady()
+        {
+            try
+            {
+                if (Campaign.Current == null || Hero.MainHero == null) return false;
+                var kingdoms = Campaign.Current.Kingdoms;
+                return kingdoms != null && kingdoms.Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
 
         // ── Weekly tick ──────────────────────────────────────────────────────
         private void OnWeeklyTick()

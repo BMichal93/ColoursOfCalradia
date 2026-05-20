@@ -8,11 +8,11 @@
 //   Max = hero.Level + 10 (cap 30). Starts at 0.
 //   Each cast gains 0–3 saturation randomly.
 //   Resets to 0 when darkness falls (night time or dark location).
-//   Oversaturation (≥ max): knocked down 3 s, random trait shift, max −1 permanently.
+//   Oversaturation (≥ max): brief interruption, random trait shift, max −1 permanently.
 //   When max reaches 0: player chooses to lose all colours or become a Blight.
 //
 // Blights and the Prism are fully immune to all oversaturation effects.
-// NPC battle knockdown (5% per cast) is handled in ColourLordAI.
+// NPC battle interruption (5% per cast) is handled in ColourLordAI.
 // Weekly world event (2% NPC oversaturation) is handled in CampaignBehavior.
 // =============================================================================
 
@@ -38,8 +38,9 @@ namespace ColoursOfCalradia
         private static bool _saturationResetThisNight  = false;
         private static bool _maxDepletionPromptPending  = false;
 
-        // Knockdown timer for battle oversaturation
-        private static float _knockdownTimer = 0f;
+        // Brief battle interruption timer
+        private static readonly Dictionary<int, float> _knockdownTimers = new Dictionary<int, float>();
+        private static readonly ActionIndexCache _knockdownAction = ActionIndexCache.Create("act_knock_down");
 
         private static readonly Random _rng = new Random();
 
@@ -57,7 +58,7 @@ namespace ColoursOfCalradia
             _playerIsPrism            = false;
             _saturationResetThisNight = false;
             _maxDepletionPromptPending = false;
-            _knockdownTimer           = 0f;
+            _knockdownTimers.Clear();
         }
 
         // ── Called after each successful player cast ──────────────────────────
@@ -83,7 +84,7 @@ namespace ColoursOfCalradia
         // ── Called on hourly tick — resets saturation when darkness falls ─────
         public static void CheckNightReset()
         {
-            if (SpellEffects.GetLightLevel() == SpellEffects.LightLevel.Dark)
+            if (SpellEffects.GetCampaignLightLevel() == SpellEffects.LightLevel.Dark)
             {
                 if (!_saturationResetThisNight && _playerSaturation > 0)
                 {
@@ -116,13 +117,43 @@ namespace ColoursOfCalradia
             }
         }
 
-        // ── Mission-tick: clears knockdown freeze after 3 s ───────────────────
+        // ── Mission-tick: clears the temporary battle interruption after 3 s ───
         public static void TickKnockdown(float dt)
         {
-            if (_knockdownTimer <= 0f) return;
-            _knockdownTimer -= dt;
-            if (_knockdownTimer <= 0f)
-                try { if (Agent.Main?.IsActive() == true) Agent.Main.SetMaximumSpeedLimit(10f, false); } catch { }
+            if (_knockdownTimers.Count == 0 || Mission.Current == null) return;
+
+            foreach (int agentIndex in _knockdownTimers.Keys.ToList())
+            {
+                _knockdownTimers[agentIndex] -= dt;
+                if (_knockdownTimers[agentIndex] > 0f) continue;
+
+                _knockdownTimers.Remove(agentIndex);
+                try
+                {
+                    Agent agent = Mission.Current.Agents.FirstOrDefault(a => a.Index == agentIndex);
+                    if (agent?.IsActive() == true)
+                        agent.SetMaximumSpeedLimit(10f, false);
+                }
+                catch { }
+            }
+        }
+
+        public static void ApplyKnockdown(Agent agent, float duration = 3f)
+        {
+            if (agent == null || !agent.IsActive() || Mission.Current == null) return;
+
+            try { agent.SetActionChannel(0, _knockdownAction, true, 0UL); } catch { }
+            try { agent.SetMaximumSpeedLimit(0f, false); } catch { }
+
+            if (_knockdownTimers.TryGetValue(agent.Index, out float existing))
+                _knockdownTimers[agent.Index] = Math.Max(existing, duration);
+            else
+                _knockdownTimers[agent.Index] = duration;
+        }
+
+        public static void ClearKnockdowns()
+        {
+            _knockdownTimers.Clear();
         }
 
         // ── Deferred prompt flush (daily tick) ────────────────────────────────
@@ -139,13 +170,12 @@ namespace ColoursOfCalradia
             _playerMaxSaturation = Math.Max(0, _playerMaxSaturation - 1);
             _playerSaturation    = 0;
 
-            // Freeze player briefly (battle only — Agent.Main is null on campaign map)
+            // Briefly interrupt the player in battle only — Agent.Main is null on campaign map
             try
             {
                 if (Agent.Main?.IsActive() == true)
                 {
-                    Agent.Main.SetMaximumSpeedLimit(0f, false);
-                    _knockdownTimer = 3f;
+                    ApplyKnockdown(Agent.Main, 3f);
                 }
             }
             catch { }
@@ -172,7 +202,7 @@ namespace ColoursOfCalradia
             catch { }
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"OVERSATURATED — Light tears through you. Knocked down.{traitMsg} Max saturation now {_playerMaxSaturation}.",
+                $"OVERSATURATED — Light tears through you.{traitMsg} Max saturation now {_playerMaxSaturation}.",
                 new Color(0.9f, 0.5f, 1.0f)));
 
             if (_playerMaxSaturation <= 0)

@@ -33,6 +33,20 @@ namespace ColoursOfCalradia
 
         internal enum LightLevel { Bright, Dim, Dark }
 
+        internal static LightLevel GetCampaignLightLevel()
+        {
+            if (Campaign.Current == null) return LightLevel.Bright;
+
+            try
+            {
+                float hour = (float)(CampaignTime.Now.ToHours % 24.0);
+                if (hour < 5f  || hour >= 22f) return LightLevel.Dark;
+                if (hour < 7f  || hour >= 20f) return LightLevel.Dim;
+                return LightLevel.Bright;
+            }
+            catch { return LightLevel.Bright; }
+        }
+
         internal static LightLevel GetLightLevel()
         {
             // Scene-based check takes priority over time of day
@@ -50,16 +64,7 @@ namespace ColoursOfCalradia
             }
             catch { }
 
-            if (Campaign.Current == null) return LightLevel.Bright;
-
-            try
-            {
-                float hour = (float)(CampaignTime.Now.ToHours % 24.0);
-                if (hour < 5f  || hour >= 22f) return LightLevel.Dark; // 22:00–05:00 pitch night
-                if (hour < 7f  || hour >= 20f) return LightLevel.Dim;  // 05:00–07:00 dawn / 20:00–22:00 dusk
-                return LightLevel.Bright;                               // 07:00–20:00 full daylight
-            }
-            catch { return LightLevel.Bright; }
+            return GetCampaignLightLevel();
         }
 
         // 33 % chance used when casting in Dim light.

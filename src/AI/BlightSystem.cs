@@ -187,7 +187,8 @@ namespace ColoursOfCalradia
                 Clan banditClan = Clan.BanditFactions?.FirstOrDefault();
                 if (banditClan == null) return;
 
-                try { blight.Clan = banditClan; } catch { }
+                // Keep the blight hero itself untouched here; mutating hero clan state
+                // during early campaign bootstrap has been the riskiest native call.
 
                 MobileParty party = TaleWorlds.CampaignSystem.Party.PartyComponents.BanditPartyComponent.CreateBanditParty(
                     "coc_blight_" + (int)school, banditClan, null, false, null, pos);

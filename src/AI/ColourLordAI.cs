@@ -29,7 +29,7 @@ namespace ColoursOfCalradia
     //     Finds hero agents with colour schools and has them cast spells in battle.
     //     NPC limitations: Green → no weapon, Yellow → no horseback,
     //     Orange → party morale ≥ 45.
-    //     5% chance of 3s knockdown after each cast (non-Blight, non-Prism lords).
+    //     5% chance of 3s interruption after each cast (non-Blight, non-Prism lords).
     //     Impulsive lords cast more often; Calculating lords less often.
     // =========================================================================
     public static class ColourLordAI
@@ -38,7 +38,6 @@ namespace ColoursOfCalradia
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
         private static readonly Dictionary<string, float> _cooldowns        = new Dictionary<string, float>();
-        private static readonly Dictionary<int, float>    _knockdownTimers  = new Dictionary<int, float>();
         private static readonly Random _rng = new Random();
 
         private static float _tickAccum = 0f;
@@ -47,28 +46,11 @@ namespace ColoursOfCalradia
         public static void ClearCooldowns()
         {
             _cooldowns.Clear();
-            _knockdownTimers.Clear();
         }
 
         public static void MissionTick(float dt)
         {
             if (Mission.Current == null) return;
-
-            // Tick knockdown timers
-            foreach (int idx in _knockdownTimers.Keys.ToList())
-            {
-                _knockdownTimers[idx] -= dt;
-                if (_knockdownTimers[idx] <= 0f)
-                {
-                    _knockdownTimers.Remove(idx);
-                    try
-                    {
-                        Agent a = Mission.Current.Agents.FirstOrDefault(x => x.Index == idx);
-                        if (a?.IsActive() == true) a.SetMaximumSpeedLimit(10f, false);
-                    }
-                    catch { }
-                }
-            }
 
             _tickAccum += dt;
             if (_tickAccum < TickInterval) return;
@@ -607,16 +589,13 @@ namespace ColoursOfCalradia
                 $"{agent.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}).",
                 ColorSchoolData.GetMessageColor(school)));
 
-            // 5% knockdown from Oversaturation (non-Blight, non-Prism lords)
+            // 5% interruption from Oversaturation (non-Blight, non-Prism lords)
             if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero) && _rng.Next(100) < 5)
             {
                 try
                 {
                     if (agent.IsActive())
-                    {
-                        agent.SetMaximumSpeedLimit(0f, false);
-                        _knockdownTimers[agent.Index] = 3f;
-                    }
+                        SaturationSystem.ApplyKnockdown(agent, 3f);
                 }
                 catch { }
             }

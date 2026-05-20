@@ -154,7 +154,9 @@ namespace ColoursOfCalradia
 
             // Global: magic requires light — the mage acts as a prism.
             // School affinity (season/city) can upgrade Dark → Dim for specific schools.
-            var lightLevel = SpellEffects.GetEffectiveLightLevel(spell.School);
+            var lightLevel = inMission
+                ? SpellEffects.GetEffectiveLightLevel(spell.School)
+                : SpellEffects.GetCampaignLightLevel();
             if (lightLevel == SpellEffects.LightLevel.Dark)
             {
                 Fizzle("The colours require light. Magic cannot be woven in deep night or dark places.");

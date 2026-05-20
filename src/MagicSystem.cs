@@ -143,6 +143,7 @@ namespace ColoursOfCalradia
                 _orderHookRegistered = false;
             }
             SpellEffects.ClearAnimTimers();
+            SaturationSystem.ClearKnockdowns();
         }
 
         public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
