@@ -60,6 +60,10 @@ namespace ColoursOfCalradia
         // Deferred Prism offer (shown on next daily tick, not during a mission or event)
         private static Action _deferredPrismInquiry = null;
 
+        // Deferred oversaturation kills — KillCharacterAction must not fire inside a weekly tick
+        private static readonly List<(string heroId, ColorSchool blightSchool)> _deferredKills
+            = new List<(string, ColorSchool)>();
+
         // Desired trait level per colour school — applied when colours are assigned
         // Key: trait to set; Value: target level (positive or negative)
         private static readonly Dictionary<ColorSchool, List<(TraitObject Trait, int Level)>> _colourTraits =
@@ -391,6 +395,7 @@ namespace ColoursOfCalradia
         {
             bool wasPrism = IsPrismLord(hero);
             _lordColors.Remove(hero.StringId);
+            _campaignCooldowns.Remove(hero.StringId);
 
             if (wasPrism)
             {
@@ -491,6 +496,7 @@ namespace ColoursOfCalradia
             {
                 string factionId = (hero.MapFaction as Kingdom)?.StringId;
                 _lordColors.Remove(hero.StringId);
+                _campaignCooldowns.Remove(hero.StringId);
                 if (factionId != null) _respawnHours[factionId] = 168;
                 InformationManager.DisplayMessage(new InformationMessage(
                     $"{hero.Name} is destroyed by Oversaturation — their colours scatter.",
@@ -498,14 +504,39 @@ namespace ColoursOfCalradia
             }
             else
             {
+                // Defer the kill — KillCharacterAction fires HeroKilled events which are unsafe
+                // to trigger inside a weekly tick enumeration. Flushed on next daily tick.
                 ColorSchool blightSchool = schools[_rng.Next(schools.Count)];
                 _lordColors.Remove(hero.StringId);
-                try { KillCharacterAction.ApplyByMurder(hero, null, true); } catch { }
-                BlightSystem.SpawnBlightFromOversaturation(blightSchool);
+                _campaignCooldowns.Remove(hero.StringId);
+                _deferredKills.Add((hero.StringId, blightSchool));
                 InformationManager.DisplayMessage(new InformationMessage(
-                    $"{hero.Name} is consumed by Oversaturation — dead. " +
-                    $"The {ColorSchoolData.Info[blightSchool].Name} Blight rises from their ruin.",
+                    $"{hero.Name} is consumed by Oversaturation — they will not survive the night. " +
+                    $"The {ColorSchoolData.Info[blightSchool].Name} Blight stirs.",
                     new Color(0.6f, 0.4f, 0.9f)));
+            }
+        }
+
+        // Called from CampaignBehavior.OnDailyTick — safe context for KillCharacterAction
+        public static void FlushDeferredKills()
+        {
+            if (_deferredKills.Count == 0) return;
+            var toKill = new List<(string heroId, ColorSchool blightSchool)>(_deferredKills);
+            _deferredKills.Clear();
+            foreach (var (heroId, blightSchool) in toKill)
+            {
+                try
+                {
+                    Hero hero = Hero.AllAliveHeroes.FirstOrDefault(h => h.StringId == heroId);
+                    if (hero == null || !hero.IsAlive) continue;
+                    KillCharacterAction.ApplyByMurder(hero, null, true);
+                    BlightSystem.SpawnBlightFromOversaturation(blightSchool);
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"{hero.Name} has died from Oversaturation. " +
+                        $"The {ColorSchoolData.Info[blightSchool].Name} Blight rises from their ruin.",
+                        new Color(0.6f, 0.4f, 0.9f)));
+                }
+                catch { }
             }
         }
 
@@ -649,7 +680,7 @@ namespace ColoursOfCalradia
 
                 // Battle morale floor — maintained daily so it's in place before any battle resolves.
                 // Sets a minimum, not an addition, so it cannot accumulate unboundedly.
-                // 1 colour → 8 floor, 6 colours → 48 floor (hard cap 50).
+                // 1 colour → 10 floor, 6 colours → 60 floor (hard cap 60).
                 if (hero.PartyBelongedTo != null)
                 {
                     float floor = Math.Min(60f, kvp.Value.Count * 10f);
@@ -661,10 +692,10 @@ namespace ColoursOfCalradia
                     catch { }
                 }
 
-                if (castsToday >= MaxLordMapCastsPerDay) continue;
-
                 if (_campaignCooldowns.TryGetValue(kvp.Key, out int cd) && cd > 0)
                 { _campaignCooldowns[kvp.Key] = cd - 1; continue; }
+
+                if (castsToday >= MaxLordMapCastsPerDay) continue;
 
                 if (_rng.Next(100) >= 5) continue; // 5% chance per day
 
@@ -885,6 +916,8 @@ namespace ColoursOfCalradia
             bool seeded        = _seeded;
             var prismIdList    = _prismLordId != null ? new List<string> { _prismLordId } : new List<string>();
             int prismRespawn   = _prismRespawnHours;
+            var dkHeroIds      = _deferredKills.Select(x => x.heroId).ToList();
+            var dkSchools      = _deferredKills.Select(x => (int)x.blightSchool).ToList();
 
             store.SyncData("COC_LordIds",        ref lordIds);
             store.SyncData("COC_LordSchoolCnts", ref lordSchoolCnts);
@@ -896,10 +929,17 @@ namespace ColoursOfCalradia
             store.SyncData("COC_LordSeeded",     ref seeded);
             store.SyncData("COC_PrismId",        ref prismIdList);
             store.SyncData("COC_PrismRespawn",   ref prismRespawn);
+            store.SyncData("COC_DkHeroIds",      ref dkHeroIds);
+            store.SyncData("COC_DkSchools",      ref dkSchools);
 
             _seeded = seeded;
             _prismLordId = prismIdList?.Count > 0 ? prismIdList[0] : null;
             _prismRespawnHours = prismRespawn;
+
+            _deferredKills.Clear();
+            if (dkHeroIds != null && dkSchools != null)
+                for (int i = 0; i < Math.Min(dkHeroIds.Count, dkSchools.Count); i++)
+                    _deferredKills.Add((dkHeroIds[i], (ColorSchool)dkSchools[i]));
 
             _lordColors.Clear();
             if (lordIds != null && lordSchoolCnts != null && lordSchoolFlat != null)

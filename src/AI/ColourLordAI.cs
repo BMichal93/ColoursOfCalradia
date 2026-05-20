@@ -150,6 +150,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
+                            if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 40f * redPower);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
@@ -552,13 +553,15 @@ namespace ColoursOfCalradia
         private static int CountEnemiesNear(Agent agent, float radius) =>
             EnemiesOf(agent).Count(a => a.Position.Distance(agent.Position) < radius);
 
-        private static int CountEnemiesInCone(Agent agent, float radius, float dot) =>
-            EnemiesOf(agent).Count(a =>
+        private static int CountEnemiesInCone(Agent agent, float radius, float dot)
+        {
+            Vec3 fwd = agent.LookDirection.NormalizedCopy();
+            return EnemiesOf(agent).Count(a =>
             {
                 Vec3 to = a.Position - agent.Position;
-                return to.Length < radius &&
-                       Vec3.DotProduct(agent.LookDirection.NormalizedCopy(), to.NormalizedCopy()) > dot;
+                return to.Length < radius && Vec3.DotProduct(fwd, to.NormalizedCopy()) > dot;
             });
+        }
 
         private static IEnumerable<Agent> EnemiesOf(Agent agent)
         {

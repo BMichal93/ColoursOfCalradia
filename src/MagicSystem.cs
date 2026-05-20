@@ -44,7 +44,7 @@ namespace ColoursOfCalradia
         protected override void OnApplicationTick(float dt)
         {
             if (Campaign.Current == null || Mission.Current != null) return;
-            MagicInputHandler.Tick(inMission: false);
+            try { MagicInputHandler.Tick(inMission: false); } catch { }
             ActiveEffectManager.MapTick(dt);
         }
     }

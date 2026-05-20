@@ -31,7 +31,6 @@ namespace ColoursOfCalradia
     {
         private bool _selectionDone;
         private bool _blightLearnActive;
-        private bool _campaignWorldPrimed;
         private static readonly Random _rng = new Random();
 
         private static readonly ColorSchool[] _allSchoolsOrdered =
@@ -106,12 +105,16 @@ namespace ColoursOfCalradia
                         }
                     }
                     _selectionDone = true;
+                    ColourLordRegistry.SeedInitialLords();
+                    BlightSystem.InitializeBlights();
                 },
                 _ =>
                 {
                     _selectionDone = true;
                     InformationManager.DisplayMessage(new InformationMessage(
                         "No colour calls to you. You walk an uncoloured path.", Color.FromUint(0xFFAAAAAA)));
+                    ColourLordRegistry.SeedInitialLords();
+                    BlightSystem.InitializeBlights();
                 },
                 "", false
             ), false, true);
@@ -226,22 +229,13 @@ namespace ColoursOfCalradia
             if (!_selectionDone)
                 _selectionDone = true;
 
-            bool campaignReady = IsCampaignWorldReady();
-
-            if (campaignReady && !_campaignWorldPrimed)
-            {
-                try { ColourLordRegistry.SeedInitialLords(); } catch { }
-                try { BlightSystem.InitializeBlights(); } catch { }
-                try { ColourUnitRegistry.SeedInitialUnits(); } catch { }
-                _campaignWorldPrimed = true;
-            }
-
-            if (!_campaignWorldPrimed)
-                return;
-
+            try { ColourLordRegistry.SeedInitialLords(); } catch { }
             try { ColourLordRegistry.FlushAnnouncements(); } catch { }
             try { ColourLordRegistry.FlushDeferredPrismInquiry(); } catch { }
+            try { ColourLordRegistry.FlushDeferredKills(); } catch { }
+            try { BlightSystem.InitializeBlights(); } catch { }
             try { ColourLordRegistry.DailyMapCast(); } catch { }
+            try { ColourUnitRegistry.SeedInitialUnits(); } catch { }
             try { ColourUnitRegistry.DailyMaintenance(); } catch { }
             try { ColourUnitRegistry.DailyMapCast(); } catch { }
             try { SaturationSystem.FlushMaxDepletionPrompt(); } catch { }
@@ -256,70 +250,63 @@ namespace ColoursOfCalradia
             try { SaturationSystem.CheckNightReset(); } catch { }
         }
 
-        private static bool IsCampaignWorldReady()
-        {
-            try
-            {
-                if (Campaign.Current == null || Hero.MainHero == null) return false;
-                var kingdoms = Campaign.Current.Kingdoms;
-                return kingdoms != null && kingdoms.Any();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-
         // ── Weekly tick ──────────────────────────────────────────────────────
         private void OnWeeklyTick()
         {
             var rng = new Random();
 
             // Five or more colours on the player — the fracture never heals (Prism immune)
-            if (ColourKnowledge.AllSchools.Count() > 4 && !SaturationSystem.IsPlayerPrism)
+            try
             {
-                Hero player = Hero.MainHero;
-                if (player != null)
+                if (ColourKnowledge.AllSchools.Count() > 4 && !SaturationSystem.IsPlayerPrism)
                 {
-                    bool anyChanged = false;
+                    Hero player = Hero.MainHero;
+                    if (player != null)
+                    {
+                        bool anyChanged = false;
+                        foreach (TraitObject trait in MadnessTraits)
+                        {
+                            try
+                            {
+                                int next    = rng.Next(5) - 2;
+                                int current = player.GetTraitLevel(trait);
+                                if (next != current) { player.SetTraitLevel(trait, next); anyChanged = true; }
+                            }
+                            catch { }
+                        }
+                        if (anyChanged)
+                            InformationManager.DisplayMessage(new InformationMessage(
+                                "The Fracture: Five colours tear at your sense of self — your personality shifts without warning.",
+                                Color.FromUint(0xFFCC44FF)));
+                    }
+                }
+            }
+            catch { }
+
+            // NPC Prism lord — personality shifts every week (player Prism is immune)
+            try
+            {
+                Hero prism = ColourLordRegistry.GetPrismLord();
+                if (prism != null && prism != Hero.MainHero)
+                {
+                    bool prismChanged = false;
                     foreach (TraitObject trait in MadnessTraits)
                     {
                         try
                         {
                             int next    = rng.Next(5) - 2;
-                            int current = player.GetTraitLevel(trait);
-                            if (next != current) { player.SetTraitLevel(trait, next); anyChanged = true; }
+                            int current = prism.GetTraitLevel(trait);
+                            if (next != current) { prism.SetTraitLevel(trait, next); prismChanged = true; }
                         }
                         catch { }
                     }
-                    if (anyChanged)
+                    if (prismChanged)
                         InformationManager.DisplayMessage(new InformationMessage(
-                            "The Fracture: Five colours tear at your sense of self — your personality shifts without warning.",
-                            Color.FromUint(0xFFCC44FF)));
+                            $"The Prism — {prism.Name}'s personality fractures again. Their nature bends without reason.",
+                            new Color(0.9f, 0.7f, 1.0f)));
                 }
             }
-
-            // NPC Prism lord — personality shifts every week (player Prism is immune)
-            Hero prism = ColourLordRegistry.GetPrismLord();
-            if (prism != null && prism != Hero.MainHero)
-            {
-                bool prismChanged = false;
-                foreach (TraitObject trait in MadnessTraits)
-                {
-                    try
-                    {
-                        int next    = rng.Next(5) - 2;
-                        int current = prism.GetTraitLevel(trait);
-                        if (next != current) { prism.SetTraitLevel(trait, next); prismChanged = true; }
-                    }
-                    catch { }
-                }
-                if (prismChanged)
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        $"The Prism — {prism.Name}'s personality fractures again. Their nature bends without reason.",
-                        new Color(0.9f, 0.7f, 1.0f)));
-            }
+            catch { }
 
             // 2% chance a random NPC colour lord oversaturates each week
             try
@@ -339,14 +326,14 @@ namespace ColoursOfCalradia
         // ── Mission ended ────────────────────────────────────────────────────
         private void OnMissionEnded(IMission mission)
         {
-            ActiveEffectManager.ClearMissionEffects();
-            ColourLordAI.ClearCooldowns();
-            SpellEffects.ClearAreaEffects();   // removes all engine lights + particle emitters
-            SpellEffects.ClearSelfEffects();
-            SpellEffects.ClearGlows();
-            SpellEffects.ClearMoves();         // releases stale agent refs from Bastion pushes
-            SpellEffects.RestoreColourNamePrefixes();
-            ColourUnitRegistry.OnMissionEnded();
+            try { ActiveEffectManager.ClearMissionEffects(); } catch { }
+            try { ColourLordAI.ClearCooldowns(); } catch { }
+            try { SpellEffects.ClearAreaEffects(); } catch { }
+            try { SpellEffects.ClearSelfEffects(); } catch { }
+            try { SpellEffects.ClearGlows(); } catch { }
+            try { SpellEffects.ClearMoves(); } catch { }
+            try { SpellEffects.RestoreColourNamePrefixes(); } catch { }
+            try { ColourUnitRegistry.OnMissionEnded(); } catch { }
 
             // Offer colour learning for any blight the player personally killed this mission
             if (ColourKnowledge.HasAnySchool)
@@ -409,15 +396,15 @@ namespace ColoursOfCalradia
             KillCharacterAction.KillCharacterActionDetail detail, bool showNotification)
         {
             if (ColourLordRegistry.IsColourLord(victim))
-                ColourLordRegistry.OnLordDied(victim);
+                try { ColourLordRegistry.OnLordDied(victim); } catch { }
 
             if (BlightSystem.IsBlight(victim))
             {
                 ColorSchool school = BlightSystem.GetBlightSchool(victim);
-                BlightSystem.OnBlightKilled(victim);
+                try { BlightSystem.OnBlightKilled(victim); } catch { }
                 // NPC lord kills blight: 7% chance to absorb its colour
                 if (killer != null && killer != Hero.MainHero)
-                    BlightSystem.OnNpcKilledBlight(killer, school);
+                    try { BlightSystem.OnNpcKilledBlight(killer, school); } catch { }
                 // Player kill is handled via mission-level flag → OnMissionEnded
             }
         }
@@ -510,13 +497,13 @@ namespace ColoursOfCalradia
         private void OnHeroLevelledUp(Hero hero, bool shouldNotify)
         {
             if (hero == Hero.MainHero)
-                SaturationSystem.RecalcMax();
+                try { SaturationSystem.RecalcMax(); } catch { }
         }
 
         // ── Companions may have colours ──────────────────────────────────────
         private void OnCompanionAdded(Hero companion)
         {
-            ColourLordRegistry.TryGrantCompanionColours(companion);
+            try { ColourLordRegistry.TryGrantCompanionColours(companion); } catch { }
         }
 
         private void ApplyBlightCrimePenalty(ColorSchool school)

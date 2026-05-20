@@ -280,11 +280,12 @@ namespace ColoursOfCalradia
         // ── Save / Load ───────────────────────────────────────────────────────
         public static void Save(IDataStore store)
         {
-            store.SyncData("COC_Saturation",          ref _playerSaturation);
+            store.SyncData("COC_Saturation",            ref _playerSaturation);
             store.SyncData("COC_SatMax",              ref _playerMaxSaturation);
             store.SyncData("COC_IsPlayerBlight",      ref _playerIsBlight);
             store.SyncData("COC_IsPlayerPrism",       ref _playerIsPrism);
             store.SyncData("COC_SatResetThisNight",   ref _saturationResetThisNight);
+            store.SyncData("COC_MaxDepletionPending",  ref _maxDepletionPromptPending);
         }
     }
 }

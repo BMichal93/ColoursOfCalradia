@@ -187,11 +187,18 @@ namespace ColoursOfCalradia
                 Clan banditClan = Clan.BanditFactions?.FirstOrDefault();
                 if (banditClan == null) return;
 
+                // BanditPartyComponent.HomeSettlement is derived from Hideout — passing null
+                // leaves HomeSettlement null and the native campaign AI will crash when it
+                // first tries to navigate the party (~3 s after map start).
+                Hideout anchor = Settlement.All
+                    .FirstOrDefault(s => s.IsHideout && s.Hideout != null)?.Hideout;
+                if (anchor == null) return;
+
                 // Keep the blight hero itself untouched here; mutating hero clan state
                 // during early campaign bootstrap has been the riskiest native call.
 
                 MobileParty party = TaleWorlds.CampaignSystem.Party.PartyComponents.BanditPartyComponent.CreateBanditParty(
-                    "coc_blight_" + (int)school, banditClan, null, false, null, pos);
+                    "coc_blight_" + (int)school, banditClan, anchor, false, null, pos);
                 if (party == null) return;
 
                 try { party.ActualClan = banditClan; } catch { }
