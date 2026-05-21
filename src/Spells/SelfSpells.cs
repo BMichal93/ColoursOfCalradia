@@ -177,64 +177,47 @@ namespace ColoursOfCalradia
             Msg("Cerulean Mirror — missiles deflected for 18 seconds or 4 volleys. Steel still finds flesh.", ColorSchool.Blue);
         }
 
-        // Grief's Veil — the grey folds you from sight; nearby enemies lose nerve
+        // Grey Reaping — snuffs 1–2 nearby souls; those who remain lose all nerve
         private static void SpellSelfPurple()
         {
             if (Player == null || Mission.Current == null) return;
-            const float Radius = 20f;
-            const float Duration = 12f;
-            // Drain morale of nearby enemies — they falter and lose aggression
-            var halted = new HashSet<Formation>();
+            float power = SpellPower(ColorSchool.Purple);
+            const float Radius = 15f;
+
+            // Drain morale of all nearby enemies
+            int drained = 0;
             foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
             {
+                try { a.SetMorale(0f); BeginAgentGlow(a, ColorSchool.Purple, 1.5f); drained++; } catch { }
+            }
+
+            // Kill 1 (or 2 at high power) random non-hero enemies within radius
+            int killCount = power >= 1.0f ? 2 : 1;
+            var candidates = Enemies()
+                .Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(Player.Position) <= Radius)
+                .ToList();
+            int kills = 0;
+            for (int i = 0; i < killCount && candidates.Count > 0; i++)
+            {
+                int idx = _rng.Next(candidates.Count);
+                Agent target = candidates[idx];
+                candidates.RemoveAt(idx);
                 try
                 {
-                    BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                    SpawnTempLight(a.Position, ColorSchool.Purple, 6f, 1.5f);
-                    try { a.SetMorale(0f); } catch { }
-                    if (a.Formation != null) halted.Add(a.Formation);
-                } catch { }
+                    BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
+                    SpawnTempLight(target.Position, ColorSchool.Purple, 6f, 1.5f);
+                    KillAgent(target);
+                    kills++;
+                }
+                catch { }
             }
-            // The grey hides the caster — invulnerable while unseen
-            if (!_shadowVeilActive)
-            {
-                try { Player.ToggleInvulnerable(); _shadowVeilActive = true; } catch { }
-                ActiveEffectManager.Add(new ActiveEffect
-                {
-                    Name = "_griefs_veil", Duration = Duration, IsMissionEffect = true,
-                    OnExpire = () =>
-                    {
-                        if (_shadowVeilActive)
-                        {
-                            try { if (Player?.IsActive() == true) Player.ToggleInvulnerable(); } catch { }
-                            _shadowVeilActive = false;
-                            // Post-veil: 2s stagger — the world snaps back hard
-                            try { if (Player?.IsActive() == true) Player.SetMaximumSpeedLimit(0f, false); } catch { }
-                            try { if (Player?.IsActive() == true) DamageAgent(Player, 1f); } catch { }
-                            ActiveEffectManager.Add(new ActiveEffect
-                            {
-                                Name = "_veil_aftermath", Duration = 2f, IsMissionEffect = true,
-                                OnExpire = () =>
-                                {
-                                    try { if (Player?.IsActive() == true) Player.SetMaximumSpeedLimit(10f, false); } catch { }
-                                    Msg("The grey recedes. Your limbs return to you.", ColorSchool.Purple);
-                                }
-                            });
-                            Msg("Grief's Veil lifts. They see you again — and for a moment, you cannot move.", ColorSchool.Purple);
-                        }
-                        else
-                        {
-                            Msg("Grief's Veil lifts. The purple recedes.", ColorSchool.Purple);
-                        }
-                    }
-                });
-            }
-            BeginAgentGlow(Player, ColorSchool.Purple, 12f);
+
+            BeginAgentGlow(Player, ColorSchool.Purple, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
-            string haltedMsg = halted.Count > 0
-                ? $" {halted.Count} nearby {(halted.Count == 1 ? "formation pauses" : "formations pause")}."
-                : string.Empty;
-            Msg($"Grief's Veil — the purple folds you from sight for 12s.{haltedMsg}", ColorSchool.Purple);
+
+            string killMsg  = kills  > 0 ? $" {kills} {(kills == 1 ? "soul" : "souls")} snuffed." : "";
+            string drainMsg = drained > 0 ? $" {drained} {(drained == 1 ? "enemy loses" : "enemies lose")} their nerve." : " No enemies within range.";
+            Msg($"Grey Reaping —{killMsg}{drainMsg}", ColorSchool.Purple);
         }
     }
 }

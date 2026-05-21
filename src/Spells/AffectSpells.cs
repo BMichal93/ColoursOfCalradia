@@ -175,7 +175,7 @@ namespace ColoursOfCalradia
             }
 
             float power = SpellPower(ColorSchool.Green);
-            int amount = 1 + _rng.Next(Math.Max(1, (int)(power * 2f) + 1));
+            int amount = 3 + _rng.Next(Math.Max(1, (int)(power * 4f)));
 
             try
             {
@@ -601,7 +601,18 @@ namespace ColoursOfCalradia
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
-        // Scatter radius 2 map units. Cost: −1% fertility + 1 day aging.
+        // Scatter radius 15 map units, push 10 units. Also veils the next auto-resolve,
+        // reducing player-side casualties by 25% in OnMapEventEnded.
+        // Cost: −1% fertility + 1 day aging.
+        private static bool _greyVeilBattleActive = false;
+
+        public static bool ConsumeGreyVeilBattleBuff()
+        {
+            bool val = _greyVeilBattleActive;
+            _greyVeilBattleActive = false;
+            return val;
+        }
+
         private static void SpellAffectPurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -615,13 +626,16 @@ namespace ColoursOfCalradia
                 if (p.MapFaction == null) continue;
                 if (playerFaction != null && p.MapFaction == playerFaction) continue;
                 if (playerFaction != null && !playerFaction.IsAtWarWith(p.MapFaction)) continue;
-                if ((p.GetPosition2D - playerPos).Length > 2f) continue;
+                if ((p.GetPosition2D - playerPos).Length > 15f) continue;
 
                 Vec2 away = p.GetPosition2D - playerPos;
                 if (away.Length < 0.01f) away = new Vec2(1f, 0f); else away = away.Normalized();
-                Vec2 target = p.GetPosition2D + away * 3f;
-                try { p.SetMoveGoToPoint(new CampaignVec2(target, true), MobileParty.NavigationType.Default); scattered++; } catch { }
+                Vec2 dest = p.GetPosition2D + away * 10f;
+                try { p.SetMoveGoToPoint(new CampaignVec2(dest, true), MobileParty.NavigationType.Default); scattered++; } catch { }
             }
+
+            // Always set the battle veil — reduces casualties in the next auto-resolve
+            _greyVeilBattleActive = true;
 
             try
             {
@@ -633,10 +647,10 @@ namespace ColoursOfCalradia
                 int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
                 Msg($"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%", ColorSchool.Purple);
             }
-            string effect = scattered > 0
+            string scatterMsg = scattered > 0
                 ? $"{scattered} nearby {(scattered == 1 ? "party loses" : "parties lose")} your trail."
-                : "No enemies were close enough to scatter.";
-            Msg($"Grey Veil — {effect} [Age +1 day]", ColorSchool.Purple);
+                : "No enemies close enough to scatter.";
+            Msg($"Grey Veil — {scatterMsg} The grey veils your next battle. [Age +1 day]", ColorSchool.Purple);
         }
     }
 }

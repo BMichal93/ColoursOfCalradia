@@ -25,7 +25,7 @@ using TaleWorlds.CampaignSystem.MapEvents;
 namespace ColoursOfCalradia
 {
     // =========================================================================
-    // 7. INPUT HANDLER  — 5-key combo system (focus = Left Alt / LT)
+    // 7. INPUT HANDLER  — 4-key combo system (focus = Left Alt / LT)
     // =========================================================================
     public static class MagicInputHandler
     {
@@ -116,12 +116,12 @@ namespace ColoursOfCalradia
 
                 _lastDisplayedBuffer = "";
 
-                if (_buffer.Length >= 5)
+                if (_buffer.Length >= 4)
                     TryCast(_buffer, inMission);
                 else if (_buffer.Length == 2 && _formPrefixes.Contains(_buffer))
                     TryRandomFormCast(_buffer, inMission);
                 else if (_buffer.Length > 0)
-                    Fizzle("Incantation too short — colour magic requires five keys.");
+                    Fizzle("Incantation too short — colour magic requires four keys.");
 
                 _buffer = "";
             }

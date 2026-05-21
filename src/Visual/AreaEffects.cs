@@ -308,8 +308,19 @@ namespace ColoursOfCalradia
         {
             foreach (var e in _areaEffects)
                 try { e.LightEntity?.Remove(0); } catch { }
+            foreach (var kvp in _haltedAgents)
+            {
+                try
+                {
+                    Agent agent = Mission.Current?.Agents.FirstOrDefault(a => a.Index == kvp.Key);
+                    if (agent?.IsActive() == true)
+                        agent.SetMaximumSpeedLimit(10f, false);
+                }
+                catch { }
+            }
             _areaEffects.Clear();
             _haltedAgents.Clear();
+            _haltTeleportTimer = 0f;
         }
     }
 }

@@ -205,7 +205,7 @@ namespace ColoursOfCalradia
         private void ShowStartingSpells(List<ColorSchool> schools)
         {
             InformationManager.DisplayMessage(new InformationMessage(
-                "Your colours are chosen. Hold Left Alt and type a 5-key combo (WASD) then release to cast. S opens spellbook.",
+                "Your colours are chosen. Hold Left Alt and type a 4-key combo (WASD) then release to cast. S opens spellbook.",
                 new Color(0.8f, 0.8f, 0.8f)));
 
             foreach (ColorSchool school in schools)
@@ -283,30 +283,7 @@ namespace ColoursOfCalradia
             }
             catch { }
 
-            // NPC Prism lord — personality shifts every week (player Prism is immune)
-            try
-            {
-                Hero prism = ColourLordRegistry.GetPrismLord();
-                if (prism != null && prism != Hero.MainHero)
-                {
-                    bool prismChanged = false;
-                    foreach (TraitObject trait in MadnessTraits)
-                    {
-                        try
-                        {
-                            int next    = rng.Next(5) - 2;
-                            int current = prism.GetTraitLevel(trait);
-                            if (next != current) { prism.SetTraitLevel(trait, next); prismChanged = true; }
-                        }
-                        catch { }
-                    }
-                    if (prismChanged)
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"The Prism — {prism.Name}'s personality fractures again. Their nature bends without reason.",
-                            new Color(0.9f, 0.7f, 1.0f)));
-                }
-            }
-            catch { }
+            // NPC Prism lord is immune to madness — no weekly personality fracture.
 
             // 2% chance a random NPC colour lord oversaturates each week
             try
@@ -356,6 +333,50 @@ namespace ColoursOfCalradia
             if (mapEvent == null) return;
             try { ApplyBattleBonus(mapEvent.AttackerSide); } catch { }
             try { ApplyBattleBonus(mapEvent.DefenderSide); } catch { }
+            if (SpellEffects.ConsumeGreyVeilBattleBuff())
+                try { ApplyGreyVeilBattleResult(mapEvent); } catch { }
+        }
+
+        private void ApplyGreyVeilBattleResult(MapEvent mapEvent)
+        {
+            if (mapEvent == null) return;
+            MapEventSide playerSide = null;
+            try
+            {
+                foreach (var side in new[] { mapEvent.AttackerSide, mapEvent.DefenderSide })
+                {
+                    if (side == null) continue;
+                    foreach (var mp in side.Parties)
+                        if (mp?.Party?.MobileParty?.IsMainParty == true) { playerSide = side; break; }
+                    if (playerSide != null) break;
+                }
+            }
+            catch { }
+            if (playerSide == null) return;
+
+            int recovered = 0;
+            try
+            {
+                foreach (var mp in playerSide.Parties)
+                {
+                    PartyBase party = mp?.Party;
+                    if (party == null) continue;
+                    foreach (var element in party.MemberRoster.GetTroopRoster().ToList())
+                    {
+                        int wounded = element.WoundedNumber;
+                        if (wounded <= 0) continue;
+                        int heal = Math.Max(1, (int)(wounded * 0.25f));
+                        party.MemberRoster.AddToCounts(element.Character, 0, false, -heal);
+                        recovered += heal;
+                    }
+                }
+            }
+            catch { }
+
+            if (recovered > 0)
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"Grey Veil — the grey sheltered your soldiers. {recovered} {(recovered == 1 ? "troop recovers" : "troops recover")} from wounds.",
+                    ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
         }
 
         private void ApplyBattleBonus(MapEventSide side)

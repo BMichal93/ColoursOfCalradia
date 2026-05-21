@@ -229,20 +229,20 @@ namespace ColoursOfCalradia
         {
             const string guide =
 "HOW TO CAST\n" +
-"  Hold focus key, input a 5-key combo, release to cast.\n" +
+"  Hold focus key, input a 4-key combo, release to cast.\n" +
 "  Keyboard : Hold Left Alt + W/A/D (S with empty buffer opens spellbook).\n" +
 "  Controller: Hold LT + left stick. L3 opens spellbook.\n" +
 "  Shortcut  : Release after 2-key form prefix for a random known spell of that form.\n" +
 "\n" +
-"COMBO STRUCTURE  (first 2 keys = Form | last 3 keys = Colour)\n" +
+"COMBO STRUCTURE  (first 2 keys = Form | last 2 keys = Colour)\n" +
 "  ↑↑  Blast  — cone attack forward\n" +
 "  →←  Self   — aura on caster\n" +
 "  ←→  Create — area effect, toggleable\n" +
 "  ↑←  Affect — campaign map, situational\n" +
 "  ←↑  Invoke — campaign map, advanced\n" +
 "\n" +
-"COLOUR SUFFIXES (last 3 keys)\n" +
-"  Red →→→  Orange →←→  Yellow ↓←↓  Green ←↓←  Blue ↑←↑  Purple ↓↓↓\n" +
+"COLOUR SUFFIXES (last 2 keys)\n" +
+"  Red →→  Orange ←↓  Yellow ↓↓  Green ←←  Blue →↑  Purple ↓↑\n" +
 "\n" +
 "COLOUR LIMITATIONS\n" +
 "  Red    — Furious: each cast auto-issues a Charge order. Blood Price: −2 HP per cast.\n" +
@@ -250,7 +250,7 @@ namespace ColoursOfCalradia
 "  Yellow — Animal Fear: cannot cast from horseback.\n" +
 "  Green  — Pacifist: cannot cast while wielding a weapon.\n" +
 "  Blue   — Scholar's Weight: spells take 5 seconds to wind up in battle.\n" +
-"  Purple — The Slow Unravelling: each cast costs −1% fertility and +1 day of age.\n" +
+"  Purple — The Slow Unravelling: each Purple cast costs −1% fertility and +1 day of age.\n" +
 "\n" +
 "SATURATION\n" +
 "  Each cast gains 0–3 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (cap 30).\n" +

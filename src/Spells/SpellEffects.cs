@@ -146,7 +146,6 @@ namespace ColoursOfCalradia
         private static bool  _ceruleanMirrorActive = false;
         public  static bool  CeruleanMirrorActive => _ceruleanMirrorActive;
         private static int   _ceruleanMirrorBlocks = 0;
-        private static bool  _shadowVeilActive     = false;
         private static Agent      _hollowGazeTarget = null;
         private static float      _hollowGazeTimer  = 0f;
         private const  float      HollowGazeInterval = 0.3f;
@@ -265,7 +264,12 @@ namespace ColoursOfCalradia
         {
             if (_scarletWardActive)    { _scarletWardActive = false; }
             if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; _ceruleanMirrorBlocks = 0; }
-            _shadowVeilActive = false;
+            try
+            {
+                if (Player?.IsActive() == true)
+                    Player.SetMaximumSpeedLimit(10f, false);
+            }
+            catch { }
             _hollowGazeTarget = null;
             try { _hollowGazeLight?.Remove(0); } catch { }
             _hollowGazeLight  = null;
@@ -436,46 +440,46 @@ namespace ColoursOfCalradia
 
         // ── Execute switch ───────────────────────────────────────────────────
         // Combos: first 2 chars = form (UU=Blast, RL=Self, LR=Create, UL=Affect, LU=Invoke),
-        //         last 3 chars = colour (RRR=Red, RLR=Orange, DLD=Yellow, LDL=Green, ULU=Blue, DDD=Purple)
+        //         last 2 chars = colour (RR=Red, LD=Orange, DD=Yellow, LL=Green, RU=Blue, DU=Purple)
         public static bool Execute(string combo)
         {
             switch (combo)
             {
                 // BLAST (UU)
-                case "UURRR": SpellBlastRed();    break;
-                case "UURLR": SpellBlastOrange(); break;
-                case "UUDLD": SpellBlastYellow(); break;
-                case "UULDL": SpellBlastGreen();  break;
-                case "UUULU": SpellBlastBlue();   break;
-                case "UUDDD": SpellBlastPurple(); break;
+                case "UURR": SpellBlastRed();    break;
+                case "UULD": SpellBlastOrange(); break;
+                case "UUDD": SpellBlastYellow(); break;
+                case "UULL": SpellBlastGreen();  break;
+                case "UURU": SpellBlastBlue();   break;
+                case "UUDU": SpellBlastPurple(); break;
                 // SELF (RL)
-                case "RLRRR": SpellSelfRed();     break;
-                case "RLRLR": SpellSelfOrange();  break;
-                case "RLDLD": SpellSelfYellow();  break;
-                case "RLLDL": SpellSelfGreen();   break;
-                case "RLULU": SpellSelfBlue();    break;
-                case "RLDDD": SpellSelfPurple();  break;
+                case "RLRR": SpellSelfRed();     break;
+                case "RLLD": SpellSelfOrange();  break;
+                case "RLDD": SpellSelfYellow();  break;
+                case "RLLL": SpellSelfGreen();   break;
+                case "RLRU": SpellSelfBlue();    break;
+                case "RLDU": SpellSelfPurple();  break;
                 // CREATE (LR)
-                case "LRRRR": SpellCreateRed();    break;
-                case "LRRLR": SpellCreateOrange(); break;
-                case "LRDLD": SpellCreateYellow(); break;
-                case "LRLDL": SpellCreateGreen();  break;
-                case "LRULU": SpellCreateBlue();   break;
-                case "LRDDD": SpellCreatePurple(); break;
+                case "LRRR": SpellCreateRed();    break;
+                case "LRLD": SpellCreateOrange(); break;
+                case "LRDD": SpellCreateYellow(); break;
+                case "LRLL": SpellCreateGreen();  break;
+                case "LRRU": SpellCreateBlue();   break;
+                case "LRDU": SpellCreatePurple(); break;
                 // AFFECT (UL)
-                case "ULRRR": SpellAffectRed();    break;
-                case "ULRLR": SpellAffectOrange(); break;
-                case "ULDLD": SpellAffectYellow(); break;
-                case "ULLDL": SpellAffectGreen();  break;
-                case "ULULU": SpellAffectBlue();   break;
-                case "ULDDD": SpellAffectPurple(); break;
+                case "ULRR": SpellAffectRed();    break;
+                case "ULLD": SpellAffectOrange(); break;
+                case "ULDD": SpellAffectYellow(); break;
+                case "ULLL": SpellAffectGreen();  break;
+                case "ULRU": SpellAffectBlue();   break;
+                case "ULDU": SpellAffectPurple(); break;
                 // INVOKE (LU)
-                case "LURRR": SpellInvokeRed();    break;
-                case "LURLR": SpellInvokeOrange(); break;
-                case "LUDLD": SpellInvokeYellow(); break;
-                case "LULDL": SpellInvokeGreen();  break;
-                case "LUULU": SpellInvokeBlue();   break;
-                case "LUDDD": SpellInvokePurple(); break;
+                case "LURR": SpellInvokeRed();    break;
+                case "LULD": SpellInvokeOrange(); break;
+                case "LUDD": SpellInvokeYellow(); break;
+                case "LULL": SpellInvokeGreen();  break;
+                case "LURU": SpellInvokeBlue();   break;
+                case "LUDU": SpellInvokePurple(); break;
                 default: return false;
             }
             return true;
