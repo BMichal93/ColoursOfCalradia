@@ -164,7 +164,7 @@ namespace ColoursOfCalradia
                 Flavour="A warmth moves through the ranks. They stand a little straighter. The road ahead looks a little shorter." },
             new SpellEntry { Name="Press Gang",        Combo="ULDD", School=ColorSchool.Yellow,
                 Context=SpellContext.Map,
-                ShortDesc="Conscripts a random prisoner.",
+                ShortDesc="Conscripts a random prisoner. Own morale −3.",
                 Flavour="One prisoner is made to understand that their options have narrowed. They join the march." },
             new SpellEntry { Name="Mending Touch",     Combo="ULLL", School=ColorSchool.Green,
                 Context=SpellContext.Map,

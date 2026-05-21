@@ -84,9 +84,10 @@ namespace ColoursOfCalradia
             {
                 party.PrisonRoster.AddToCounts(element.Character, -1);
                 party.MemberRoster.AddToCounts(element.Character, 1);
+                party.RecentEventsMorale -= 3f;
             }
             catch { return; }
-            Msg($"Press Gang — a {element.Character.Name} is convinced to fight for you.", ColorSchool.Yellow);
+            Msg($"Press Gang — a {element.Character.Name} is forced into the ranks. Your soldiers are unsettled. Morale −3.", ColorSchool.Yellow);
         }
 
         // ── Green — Mending Touch ─────────────────────────────────────────
