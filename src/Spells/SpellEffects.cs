@@ -253,13 +253,6 @@ namespace ColoursOfCalradia
             foreach (int idx in _expiredHaltKeys) _haltedAgents.Remove(idx);
         }
 
-        public static void ResetCampaignCounters()
-        {
-            _orangeCastCount    = 0; _orangeFirstCastDay  = -1;
-            _wordCastCount      = 0; _wordFirstCastDay    = -1;
-            _redMarchActive     = false; _redMarchEndHour = -1.0;
-        }
-
         public static void ClearSelfEffects()
         {
             if (_scarletWardActive)    { _scarletWardActive = false; }

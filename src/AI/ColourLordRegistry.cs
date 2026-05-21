@@ -725,13 +725,13 @@ namespace ColoursOfCalradia
                     case ColorSchool.Red:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Bloodlust";
+                            spellName = "Rallying Call";
                             if (lord.PartyBelongedTo != null)
                             { lord.PartyBelongedTo.RecentEventsMorale += 10f; msg = $"{lord.Name}'s warband burns with purpose."; }
                         }
                         else
                         {
-                            spellName = "Carnage";
+                            spellName = "Pillager's Brand";
                             var target = PickRandom(Settlement.All.Where(s => s.IsVillage && s.Village != null));
                             if (target?.Village != null)
                             {
@@ -744,7 +744,7 @@ namespace ColoursOfCalradia
                     case ColorSchool.Orange:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Celebrate";
+                            spellName = "Rallying Call";
                             var ownVillage = PickRandom(Settlement.All
                                 .Where(s => s.IsVillage && s.MapFaction == lord.MapFaction && s.Village != null));
                             if (ownVillage?.Village != null)
@@ -755,7 +755,7 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            spellName = "Bribe";
+                            spellName = "Inspired Word";
                             var rival = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
                                      && h.PartyBelongedTo != null && h.IsAlive));
@@ -779,7 +779,7 @@ namespace ColoursOfCalradia
                     case ColorSchool.Yellow:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Fade";
+                            spellName = "Wither's Touch";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive));
                             if (target?.Clan != null)
@@ -790,7 +790,7 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            spellName = "Terror";
+                            spellName = "Creeping Fear";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
                                      && h.PartyBelongedTo != null && h.IsAlive));
@@ -805,7 +805,7 @@ namespace ColoursOfCalradia
                     case ColorSchool.Green:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Rejuvenate";
+                            spellName = "Mending Touch";
                             if (lord.PartyBelongedTo != null)
                             {
                                 int healed = 0;
@@ -819,7 +819,7 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
-                            spellName = "Crops";
+                            spellName = "Green's Bounty";
                             if (lord.PartyBelongedTo != null)
                             {
                                 ItemObject grain = MBObjectManager.Instance.GetObject<ItemObject>("grain");
@@ -832,22 +832,22 @@ namespace ColoursOfCalradia
                     case ColorSchool.Blue:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Schemes";
+                            spellName = "Scholar's Word";
                             if (lord.Clan != null)
                             {
                                 try { ChangeClanInfluenceAction.Apply(lord.Clan, 8f); } catch { }
-                                msg = $"{lord.Name}'s schemes bear fruit — their clan's influence grows.";
+                                msg = $"{lord.Name}'s insight earns favour — their clan's influence grows.";
                             }
                         }
                         else
                         {
-                            spellName = "Plots";
+                            spellName = "Scholar's Word";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive));
                             if (target?.Clan != null)
                             {
                                 try { ChangeClanInfluenceAction.Apply(target.Clan, -8f); } catch { }
-                                msg = $"{lord.Name}'s cold plots undermine {target.Name}'s standing.";
+                                msg = $"{lord.Name}'s cold insight undermines {target.Name}'s standing.";
                             }
                         }
                         break;
@@ -855,7 +855,7 @@ namespace ColoursOfCalradia
                     case ColorSchool.Purple:
                         if (_rng.Next(2) == 0)
                         {
-                            spellName = "Curse";
+                            spellName = "Wither's Touch";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
                                      && h.Clan != null && h.IsAlive && h.PartyBelongedTo != null));
@@ -863,12 +863,12 @@ namespace ColoursOfCalradia
                             {
                                 try { ChangeClanInfluenceAction.Apply(target.Clan, -5f); } catch { }
                                 try { target.PartyBelongedTo.RecentEventsMorale -= 10f; } catch { }
-                                msg = $"A curse falls on {target.Name} — their influence wanes and their soldiers are unsettled.";
+                                msg = $"A withering touches {target.Name} — their influence wanes and their soldiers are unsettled.";
                             }
                         }
                         else
                         {
-                            spellName = "Bind";
+                            spellName = "Press Gang";
                             if (lord.PartyBelongedTo != null)
                             {
                                 CharacterObject recruit = GetFactionRecruit(lord);

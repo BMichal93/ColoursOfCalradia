@@ -27,465 +27,92 @@ namespace ColoursOfCalradia
     public static partial class SpellEffects
     {
         // =================================================================
-        // AFFECT SPELLS — campaign map only, each tied to a specific situation.
-        // Daytime restriction is enforced by the global light-level check in
-        // MagicInputHandler — no additional guard needed here.
-        // Combos: UL prefix + colour (UL = W then A)
+        // AFFECT SPELLS (UL prefix) — campaign map, situational
+        // INVOKE SPELLS (LU prefix) — campaign map, advanced
         //
-        // Spam limiters (no cooldowns — all mechanical):
-        //   Red    −10% current HP per cast; blocked at ≤5 HP
-        //   Orange food cost doubles each cast within 24h (1→2→4→8…)
-        //   Yellow no self-cost (limitation is Animal Fear: no horseback)
-        //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   no cost — reveals nearby parties in a popup (no cooldown or HP cost)
-        //   Purple −1% fertility + 1 day aging per cast (Slow Unravelling)
+        // Spam limiter: saturation (handled by MagicInputHandler, same as
+        // battle spells). No HP, food, or gold costs unless noted.
+        // Purple spells apply The Slow Unravelling (+1 day age, −1% fertility).
         // =================================================================
 
-        // ── Orange escalation tracking ──────────────────────────────────────
-        private static int _orangeCastCount   = 0;
-        private static int _orangeFirstCastDay = -1; // campaign day of first cast; -1 = never
-
-
-        // ── Red — Ember Drive ─────────────────────────────────────────────
-        // During raid or hideout assault: +100×power gold per cast.
-        // Cost: −10% current HP. Blocked at ≤5 HP.
+        // ── Red — Pillager's Brand ────────────────────────────────────────
+        // During a raid or hideout assault: gain (50 + 100×power) gold.
         private static void SpellAffectRed()
         {
             var ev = MapEvent.PlayerMapEvent;
             if (ev == null || (!ev.IsRaid && !ev.IsHideoutBattle))
             {
-                Msg("Ember Drive — only usable while raiding a village or clearing a hideout.", ColorSchool.Red);
+                Msg("Pillager's Brand — only usable while raiding a village or clearing a hideout.", ColorSchool.Red);
                 return;
             }
             if (Hero.MainHero == null) return;
-            if (Hero.MainHero.HitPoints <= 5)
-            {
-                Msg("Ember Drive — you are too weakened to push further.", ColorSchool.Red);
-                return;
-            }
 
             float power = SpellPower(ColorSchool.Red);
-            int gold = (int)(130f * power);
+            int gold = 50 + (int)(100f * power);
             try { Hero.MainHero.ChangeHeroGold(gold); } catch { return; }
-            int hpCost = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.10f));
-            Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
-            string context = ev.IsRaid ? "village" : "hideout";
-            Msg($"Ember Drive — seized +{gold} gold from the {context}. Cost: HP −{hpCost}.", ColorSchool.Red);
+            Msg($"Pillager's Brand — the red seizes +{gold} gold from the plunder.", ColorSchool.Red);
         }
 
-        // ── Orange — Shared Feast ─────────────────────────────────────────
-        // Consume food → +8×power morale. Food cost doubles each consecutive cast
-        // within a calendar day (1→2→4→8…). Counter resets at the next campaign midnight.
+        // ── Orange — Rallying Call ────────────────────────────────────────
+        // Raise party morale by 3 per cast. Reliable, repeatable.
         private static void SpellAffectOrange()
         {
             var party = MobileParty.MainParty;
             if (party == null) return;
 
-            try
-            {
-                int today = (int)CampaignTime.Now.ToDays;
-                if (_orangeFirstCastDay >= 0 && today > _orangeFirstCastDay)
-                { _orangeCastCount = 0; _orangeFirstCastDay = -1; }
-            }
-            catch { }
-
-            int foodRequired = (int)Math.Pow(2, _orangeCastCount); // 1, 2, 4, 8…
-
-            int totalFood = 0;
-            foreach (ItemRosterElement el in party.ItemRoster)
-                if (el.EquipmentElement.Item?.IsFood == true) totalFood += el.Amount;
-
-            if (totalFood < foodRequired)
-            {
-                Msg($"Shared Feast — not enough food ({foodRequired} needed, {totalFood} available).", ColorSchool.Orange);
-                return;
-            }
-
-            // Collect how much to take from each food stack, then apply
-            int remaining = foodRequired;
-            var toConsume = new List<(EquipmentElement item, int amount)>();
-            foreach (ItemRosterElement el in party.ItemRoster)
-            {
-                if (remaining <= 0) break;
-                if (el.EquipmentElement.Item?.IsFood != true || el.Amount <= 0) continue;
-                int take = Math.Min(el.Amount, remaining);
-                toConsume.Add((el.EquipmentElement, take));
-                remaining -= take;
-            }
-            foreach (var (item, amount) in toConsume)
-                party.ItemRoster.AddToCounts(item, -amount);
-
-            float power = SpellPower(ColorSchool.Orange);
-            float gain = 12f * power;
-            try { party.RecentEventsMorale += gain; } catch { }
-
-            if (_orangeFirstCastDay < 0) try { _orangeFirstCastDay = (int)CampaignTime.Now.ToDays; } catch { }
-            _orangeCastCount++;
-
-            int nextCost = (int)Math.Pow(2, _orangeCastCount);
-            Msg($"Shared Feast — {foodRequired} food consumed. Party morale +{gain:F0}. (Next cast: {nextCost} food)", ColorSchool.Orange);
+            try { party.RecentEventsMorale += 3f; } catch { return; }
+            Msg("Rallying Call — your soldiers find new resolve. Morale +3.", ColorSchool.Orange);
         }
 
-        // ── Yellow — Dread Whisper ────────────────────────────────────────
-        // Drain enemy party morale. No self-cost (limitation is Animal Fear: no horseback).
+        // ── Yellow — Press Gang ───────────────────────────────────────────
+        // Conscript a random non-hero prisoner from your prison roster.
         private static void SpellAffectYellow()
-        {
-            var party = MobileParty.MainParty;
-            if (party == null || Hero.MainHero == null) return;
-
-            float power = SpellPower(ColorSchool.Yellow);
-            IFaction playerFaction = Hero.MainHero.MapFaction;
-            Vec2 playerPos = party.GetPosition2D;
-
-            MobileParty closest = null;
-            float minDist = float.MaxValue;
-            foreach (MobileParty p in MobileParty.All)
-            {
-                if (p == party || !p.IsActive || p.IsMainParty) continue;
-                if (p.MapFaction == null) continue;
-                if (playerFaction != null && p.MapFaction == playerFaction) continue;
-                if (playerFaction != null && !playerFaction.IsAtWarWith(p.MapFaction)) continue;
-                float d = (p.GetPosition2D - playerPos).Length;
-                if (d < minDist) { minDist = d; closest = p; }
-            }
-
-            if (closest == null)
-            {
-                Msg("Dread Whisper — no enemy at war found.", ColorSchool.Yellow);
-                return;
-            }
-
-            float enemyLoss = 22f * power;
-            try { closest.RecentEventsMorale -= enemyLoss; } catch { }
-            Msg($"Dread Whisper — {closest.Name} morale −{enemyLoss:F0} ({minDist:F1} km).", ColorSchool.Yellow);
-        }
-
-        // ── Green — Verdant Hour ─────────────────────────────────────────
-        // Produce 1–4 grain (scales with Endurance attribute).
-        // Cost: −5% current HP per cast. Forcing nature drains life from the caster.
-        private static void SpellAffectGreen()
-        {
-            var party = MobileParty.MainParty;
-            if (party == null || Hero.MainHero == null) return;
-
-            if (Hero.MainHero.HitPoints <= 5)
-            {
-                Msg("Verdant Hour — you are too depleted to draw from the earth.", ColorSchool.Green);
-                return;
-            }
-
-            float power = SpellPower(ColorSchool.Green);
-            int amount = 3 + _rng.Next(Math.Max(1, (int)(power * 4f)));
-
-            try
-            {
-                ItemObject grain = Game.Current.ObjectManager.GetObject<ItemObject>("grain");
-                if (grain == null) { Msg("Verdant Hour — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
-                party.ItemRoster.AddToCounts(new EquipmentElement(grain), amount);
-                int hpCost = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.05f));
-                Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
-                Msg($"Verdant Hour — {amount} {(amount == 1 ? "unit of grain ripens" : "units of grain ripen")} at your touch. HP −{hpCost}.", ColorSchool.Green);
-            }
-            catch { Msg("Verdant Hour — the green stirs, but nothing takes form.", ColorSchool.Green); }
-        }
-
-        // ── Blue — Scholar's Gaze ─────────────────────────────────────────
-        // Double the party's sight range for several hours (scales with power).
-        // Sight is re-enforced each hourly tick; expires naturally at end time.
-        // Only one gaze may be active at a time.
-        private static void SpellAffectBlue()
         {
             var party = MobileParty.MainParty;
             if (party == null) return;
 
-            const float Radius = 80f;
-            Vec2 pos = party.GetPosition2D;
+            var prisoners = party.PrisonRoster.GetTroopRoster()
+                .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
+            if (prisoners.Count == 0)
+            {
+                Msg("Press Gang — no prisoners to conscript.", ColorSchool.Yellow);
+                return;
+            }
 
-            IFaction playerFaction = Hero.MainHero?.MapFaction;
-
-            List<MobileParty> nearby;
+            var element = prisoners[_rng.Next(prisoners.Count)];
             try
             {
-                nearby = MobileParty.All
-                    .Where(p =>
-                    {
-                        if (p == party || p.LeaderHero == null) return false;
-                        if ((p.GetPosition2D - pos).Length > Radius) return false;
-                        var f = p.MapFaction;
-                        if (f == null) return false;
-                        bool allied = f == playerFaction;
-                        bool enemy  = playerFaction != null && playerFaction.IsAtWarWith(f);
-                        return allied || enemy;
-                    })
-                    .OrderBy(p => p.MapFaction == playerFaction ? 0 : 1)
-                    .ThenBy(p => p.MapFaction?.Name?.ToString() ?? "")
-                    .ThenBy(p => (p.GetPosition2D - pos).Length)
-                    .ToList();
+                party.PrisonRoster.AddToCounts(element.Character, -1);
+                party.MemberRoster.AddToCounts(element.Character, 1);
             }
-            catch { Msg("Scholar's Gaze — the sight finds no purchase here.", ColorSchool.Blue); return; }
-
-            if (nearby.Count == 0)
-            {
-                Msg("Scholar's Gaze — no allies or enemies within range.", ColorSchool.Blue);
-                return;
-            }
-
-            var lines = new List<string>();
-            foreach (var grp in nearby.GroupBy(p => p.MapFaction == playerFaction ? "Allied" : p.MapFaction?.Name?.ToString() ?? "Enemy"))
-            {
-                lines.Add($"── {grp.Key} ──");
-                foreach (var p in grp)
-                {
-                    string dir   = CompassDir(pos, p.GetPosition2D);
-                    int    count = p.MemberRoster.TotalManCount;
-                    string name  = p.LeaderHero?.Name?.ToString() ?? p.Name.ToString();
-                    lines.Add($"  {name}  [{dir}]  —  {count} troops");
-                }
-                lines.Add("");
-            }
-            if (lines.Count > 0 && lines[lines.Count - 1] == "")
-                lines.RemoveAt(lines.Count - 1);
-
-            InformationManager.ShowInquiry(new InquiryData(
-                "Scholar's Gaze — Nearby Lords",
-                string.Join("\n", lines),
-                true, false, "Close", "",
-                () => { }, null
-            ), true, true);
-
-            Msg("Scholar's Gaze — the horizon opens.", ColorSchool.Blue);
+            catch { return; }
+            Msg($"Press Gang — a {element.Character.Name} is convinced to fight for you.", ColorSchool.Yellow);
         }
 
-        private static string CompassDir(Vec2 from, Vec2 to)
+        // ── Green — Mending Touch ─────────────────────────────────────────
+        // Heal one random wounded soldier to full (1 troop removed from wounded).
+        private static void SpellAffectGreen()
         {
-            float dx = to.x - from.x;
-            float dy = to.y - from.y;
-            double a = Math.Atan2(dx, dy) * 180.0 / Math.PI;
-            if (a < 0) a += 360.0;
-            if (a < 22.5  || a >= 337.5) return "N";
-            if (a < 67.5)  return "NE";
-            if (a < 112.5) return "E";
-            if (a < 157.5) return "SE";
-            if (a < 202.5) return "S";
-            if (a < 247.5) return "SW";
-            if (a < 292.5) return "W";
-            return "NW";
-        }
+            var party = MobileParty.MainParty;
+            if (party == null) return;
 
-        // =================================================================
-        // INVOKE SPELLS (LU prefix) — campaign map only, advanced forms.
-        // Combos: LU prefix + colour (LU = A then W)
-        //
-        // Spam limiters (no cooldowns — all mechanical):
-        //   Red    −8% current HP per cast; blocked at ≤5 HP
-        //   Orange gold cost 100→200→400 (capped), resets at campaign midnight
-        //   Yellow −2 own clan renown per cast (self-limiting)
-        //   Green  −5% current HP per cast; blocked at ≤5 HP
-        //   Blue   −2 renown per cast; siege required
-        //   Purple −1% fertility + 1 day aging per cast (Slow Unravelling)
-        // =================================================================
-
-        // ── Orange Invoke (Golden Word) tracking ────────────────────────────
-        private static int _wordCastCount    = 0;
-        private static int _wordFirstCastDay = -1;
-
-        // ── Red Invoke march tracking ────────────────────────────────────────
-        private static bool   _redMarchActive  = false;
-        private static double _redMarchEndHour = -1.0;
-
-        // ── Blue Affect (Scholar's Gaze) ─────────────────────────────────────
-
-        // ── Red — Crimson March ──────────────────────────────────────────────
-        // Sacrifice 8% HP to sustain a blood-fuelled march for several hours.
-        // Each hourly tick keeps party morale above Bannerlord's speed-bonus threshold
-        // (≥78) and drains 2 HP. Morale above 75 grants the engine's built-in +3%
-        // speed bonus; this spell keeps that bonus active continuously for the duration.
-        private static void SpellInvokeRed()
-        {
-            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
-            if (_redMarchActive)
+            var wounded = party.MemberRoster.GetTroopRoster()
+                .Where(e => !e.Character.IsHero && e.WoundedNumber > 0).ToList();
+            if (wounded.Count == 0)
             {
-                Msg("Crimson March — the blood already drives the march. It cannot be doubled.", ColorSchool.Red);
-                return;
-            }
-            if (Hero.MainHero.HitPoints <= 5)
-            {
-                Msg("Crimson March — you are too weakened to sustain the march.", ColorSchool.Red);
+                Msg("Mending Touch — no wounded soldiers to tend.", ColorSchool.Green);
                 return;
             }
 
-            float power   = SpellPower(ColorSchool.Red);
-            int   hpCost  = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.08f));
-            Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
-
-            int hours = Math.Max(4, (int)(8f * power));
-            try { _redMarchEndHour = CampaignTime.Now.ToHours + hours; } catch { return; }
-            _redMarchActive = true;
-
-            try { MobileParty.MainParty.RecentEventsMorale += 40f; } catch { }
-            Msg($"Crimson March — a small wound, held open. Morale sustained above march threshold for {hours}h. HP −{hpCost}. 2 HP/hour.", ColorSchool.Red);
-        }
-
-        // Called from CampaignBehavior.OnHourlyTick.
-        public static void TickHourlyMapEffects()
-        {
-            if (_redMarchActive)
-            {
-                try
-                {
-                    var hero  = Hero.MainHero;
-                    var party = MobileParty.MainParty;
-                    if (hero == null || party == null || hero.HitPoints <= 1)
-                    {
-                        _redMarchActive = false; _redMarchEndHour = -1.0;
-                        Msg("Crimson March collapses — you have nothing left to bleed.", ColorSchool.Red);
-                    }
-                    else if (CampaignTime.Now.ToHours >= _redMarchEndHour)
-                    {
-                        _redMarchActive = false; _redMarchEndHour = -1.0;
-                        Msg("Crimson March ends. The blood drive fades.", ColorSchool.Red);
-                    }
-                    else
-                    {
-                        if (party.Morale < 78f) try { party.RecentEventsMorale += 20f; } catch { }
-                        hero.HitPoints = Math.Max(1, hero.HitPoints - 2);
-                    }
-                }
-                catch { }
-            }
-
-        }
-
-        // ── Orange — Golden Word ──────────────────────────────────────────
-        // Spend gold as generous patronage → gain influence.
-        // Gold cost: 100→200→400 (capped at 400), resets at campaign midnight.
-        // Requires kingdom membership — influence has no meaning outside one.
-        private static void SpellInvokeOrange()
-        {
-            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
-            if (Hero.MainHero.Clan?.Kingdom == null)
-            {
-                Msg("Golden Word — you must belong to a kingdom for influence to mean anything.", ColorSchool.Orange);
-                return;
-            }
-
-            try
-            {
-                int today = (int)CampaignTime.Now.ToDays;
-                if (_wordFirstCastDay >= 0 && today > _wordFirstCastDay)
-                { _wordCastCount = 0; _wordFirstCastDay = -1; }
-            }
-            catch { }
-
-            const int MaxGold = 400;
-            int goldCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _wordCastCount));
-
-            if (Hero.MainHero.Gold < goldCost)
-            {
-                Msg($"Golden Word — not enough gold ({goldCost} needed).", ColorSchool.Orange);
-                return;
-            }
-
-            float power     = SpellPower(ColorSchool.Orange);
-            int   influence = (int)(20f * power);
-            Hero.MainHero.ChangeHeroGold(-goldCost);
-            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, influence); } catch { return; }
-
-            if (_wordFirstCastDay < 0) try { _wordFirstCastDay = (int)CampaignTime.Now.ToDays; } catch { }
-            _wordCastCount++;
-
-            int nextCost = Math.Min(MaxGold, 100 * (int)Math.Pow(2, _wordCastCount));
-            Msg($"Golden Word — {goldCost} gold spent as generous patronage. Influence: +{influence}. (Next: {nextCost}g)", ColorSchool.Orange);
-        }
-
-        // ── Yellow — Whispered Ruin ──────────────────────────────────────
-        // Drain 8 renown from the nearest enemy lord's clan. Costs 2 own renown.
-        // Requires active war.
-        private static void SpellInvokeYellow()
-        {
-            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
-            if (Hero.MainHero.Clan == null)
-            {
-                Msg("Whispered Ruin — you have no clan standing to spend.", ColorSchool.Yellow);
-                return;
-            }
-
-            IFaction playerFaction = Hero.MainHero.MapFaction;
-            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
-
-            Hero targetLord = null;
-            float minDist = float.MaxValue;
-            try
-            {
-                foreach (Hero h in Hero.AllAliveHeroes)
-                {
-                    if (!h.IsLord || h.Clan == null || !h.IsAlive) continue;
-                    if (h.MapFaction == null) continue;
-                    if (playerFaction != null && h.MapFaction == playerFaction) continue;
-                    if (playerFaction != null && !playerFaction.IsAtWarWith(h.MapFaction)) continue;
-                    if (h.PartyBelongedTo == null) continue;
-                    float d = (h.PartyBelongedTo.GetPosition2D - playerPos).Length;
-                    if (d < minDist) { minDist = d; targetLord = h; }
-                }
-            }
-            catch { }
-
-            if (targetLord == null)
-            {
-                Msg("Whispered Ruin — no enemy lord at war to target.", ColorSchool.Yellow);
-                return;
-            }
-
-            try { Hero.MainHero.Clan.AddRenown(-2f); } catch { }
-            try { targetLord.Clan.AddRenown(-8f); } catch { }
-            Msg($"Whispered Ruin — own renown −2; {targetLord.Name}'s clan renown −8 ({minDist:F1} km away).", ColorSchool.Yellow);
-        }
-
-        // ── Green — Tend the Fallen ──────────────────────────────────────
-        // Heal 3+power*2 wounded troops in own party roster. Cost: −5% HP.
-        private static void SpellInvokeGreen()
-        {
-            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
-            if (Hero.MainHero.HitPoints <= 5)
-            {
-                Msg("Tend the Fallen — you are too depleted to channel life into others.", ColorSchool.Green);
-                return;
-            }
-
-            float power = SpellPower(ColorSchool.Green);
-            int healBudget = 5 + (int)(power * 3f);
-
-            int totalHealed = 0;
-            try
-            {
-                foreach (TroopRosterElement e in MobileParty.MainParty.MemberRoster.GetTroopRoster().ToList())
-                {
-                    if (totalHealed >= healBudget) break;
-                    if (e.WoundedNumber <= 0) continue;
-                    int heal = Math.Min(e.WoundedNumber, healBudget - totalHealed);
-                    MobileParty.MainParty.MemberRoster.AddToCounts(e.Character, 0, false, -heal);
-                    totalHealed += heal;
-                }
-            }
-            catch { }
-
-            if (totalHealed == 0)
-            {
-                Msg("Tend the Fallen — no wounded troops to mend.", ColorSchool.Green);
-                return;
-            }
-
-            int hpCost = Math.Max(1, (int)(Hero.MainHero.HitPoints * 0.05f));
-            Hero.MainHero.HitPoints = Math.Max(1, Hero.MainHero.HitPoints - hpCost);
-            Msg($"Tend the Fallen — {totalHealed} {(totalHealed == 1 ? "soldier recovers" : "soldiers recover")} from wounds. HP −{hpCost}.", ColorSchool.Green);
+            var element = wounded[_rng.Next(wounded.Count)];
+            try { party.MemberRoster.AddToCounts(element.Character, 0, false, -1); } catch { return; }
+            Msg($"Mending Touch — one {element.Character.Name} is restored to full health.", ColorSchool.Green);
         }
 
         // ── Blue — Scholar's Blueprint ────────────────────────────────────
-        // Requires an active siege. Spends 500 gold and -3 renown to advance siege engine
-        // construction progress directly (one-time, not permanent). Uses field reflection to
-        // locate construction progress floats on SiegeEngines and BesiegerCamp. Gold is only
-        // charged if at least one progress field was successfully advanced.
-        private static void SpellInvokeBlue()
+        // Requires an active siege. Advances construction of siege engines via
+        // field reflection (construction float fields on SiegeEngines / BesiegerCamp).
+        private static void SpellAffectBlue()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
 
@@ -497,10 +124,8 @@ namespace ColoursOfCalradia
             }
 
             float power = SpellPower(ColorSchool.Blue);
-            float bonus = 150f * power; // construction progress units to add
+            float bonus = 150f * power;
 
-            // Scan SiegeEngines and BesiegerCamp for float fields whose name suggests
-            // construction work progress. All numeric values are one-time — not permanent.
             bool advanced = false;
             try
             {
@@ -509,7 +134,7 @@ namespace ColoursOfCalradia
                 var engines = camp?.SiegeEngines;
 
                 string[] keywords = { "work", "progress", "construct", "stage", "build" };
-                const float MaxSane = 50000f; // sanity cap: reject fields above this (clearly not progress)
+                const float MaxSane = 50000f;
 
                 foreach (object target in new object[] { engines, camp })
                 {
@@ -550,69 +175,12 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { Hero.MainHero.Clan?.AddRenown(-2f); } catch { }
-            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}. (Renown −2)", ColorSchool.Blue);
-        }
-
-        // ── Purple — Wither's Touch ──────────────────────────────────────
-        // Curse the nearest enemy lord: −10 party morale, −8 clan renown.
-        // Cost: −1% fertility + 1 day aging (The Slow Unravelling).
-        private static void SpellInvokePurple()
-        {
-            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
-
-            IFaction playerFaction = Hero.MainHero.MapFaction;
-            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
-
-            Hero targetLord = null;
-            float minDist = float.MaxValue;
-            try
-            {
-                foreach (Hero h in Hero.AllAliveHeroes)
-                {
-                    if (!h.IsLord || !h.IsAlive) continue;
-                    if (h.MapFaction == null || h.MapFaction == playerFaction) continue;
-                    if (h.PartyBelongedTo == null) continue;
-                    float d = (h.PartyBelongedTo.GetPosition2D - playerPos).Length;
-                    if (d < minDist) { minDist = d; targetLord = h; }
-                }
-            }
-            catch { }
-
-            if (targetLord == null)
-            {
-                Msg("Wither's Touch — no enemy lord found.", ColorSchool.Purple);
-                return;
-            }
-
-            try { targetLord.PartyBelongedTo?.RecentEventsMorale -= 10f; } catch { }
-            try { targetLord.Clan?.AddRenown(-8f); } catch { }
-            try
-            {
-                Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(1));
-            }
-            catch { }
-            if (ColourKnowledge.ReducePurpleFertility())
-            {
-                int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
-                Msg($"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%", ColorSchool.Purple);
-            }
-            Msg($"Wither's Touch — {targetLord.Name}: morale −10, renown −8 ({minDist:F1} km). [Age +1 day]", ColorSchool.Purple);
+            Msg($"Scholar's Blueprint — construction progress +{(int)bonus}.", ColorSchool.Blue);
         }
 
         // ── Purple — Grey Veil ────────────────────────────────────────────
-        // Scatter radius 15 map units, push 10 units. Also veils the next auto-resolve,
-        // reducing player-side casualties by 25% in OnMapEventEnded.
+        // Scatter nearby enemy parties (15 map-unit radius, 10-unit push).
         // Cost: −1% fertility + 1 day aging.
-        private static bool _greyVeilBattleActive = false;
-
-        public static bool ConsumeGreyVeilBattleBuff()
-        {
-            bool val = _greyVeilBattleActive;
-            _greyVeilBattleActive = false;
-            return val;
-        }
-
         private static void SpellAffectPurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
@@ -634,23 +202,160 @@ namespace ColoursOfCalradia
                 try { p.SetMoveGoToPoint(new CampaignVec2(dest, true), MobileParty.NavigationType.Default); scattered++; } catch { }
             }
 
-            // Always set the battle veil — reduces casualties in the next auto-resolve
-            _greyVeilBattleActive = true;
+            string effect = scattered > 0
+                ? $"{scattered} nearby {(scattered == 1 ? "enemy loses" : "enemies lose")} your trail."
+                : "No enemies close enough to scatter.";
+            Msg($"Grey Veil — {effect}", ColorSchool.Purple);
+        }
+
+        // =================================================================
+        // INVOKE SPELLS (LU prefix) — campaign map, advanced
+        // =================================================================
+
+        // ── Red — Withering Strike ────────────────────────────────────────
+        // Wound one random non-hero soldier in the nearest enemy party at war.
+        private static void SpellInvokeRed()
+        {
+            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
+
+            IFaction playerFaction = Hero.MainHero.MapFaction;
+            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
+
+            MobileParty target = null;
+            float minDist = float.MaxValue;
+            foreach (MobileParty p in MobileParty.All)
+            {
+                if (p == MobileParty.MainParty || !p.IsActive) continue;
+                if (p.MapFaction == null || p.MapFaction == playerFaction) continue;
+                if (playerFaction != null && !playerFaction.IsAtWarWith(p.MapFaction)) continue;
+                float d = (p.GetPosition2D - playerPos).Length;
+                if (d < minDist) { minDist = d; target = p; }
+            }
+
+            if (target == null) { Msg("Withering Strike — no enemy party at war found.", ColorSchool.Red); return; }
+
+            var troops = target.MemberRoster.GetTroopRoster()
+                .Where(e => !e.Character.IsHero && e.Number > e.WoundedNumber).ToList();
+            if (troops.Count == 0) { Msg("Withering Strike — no healthy soldiers to wound.", ColorSchool.Red); return; }
+
+            var element = troops[_rng.Next(troops.Count)];
+            try { target.MemberRoster.AddToCounts(element.Character, 0, false, 1); } catch { return; }
+            Msg($"Withering Strike — one {element.Character.Name} in {target.Name} falls wounded ({minDist:F1} km).", ColorSchool.Red);
+        }
+
+        // ── Orange — Inspired Word ────────────────────────────────────────
+        // Grant XP to a random soldier in your party. Uses reflection to call
+        // TroopRoster.AddXpToTroop — if unavailable, shows a flavour message only.
+        private static MethodInfo _addXpToTroopMethod;
+        private static bool _addXpResolved;
+
+        private static void SpellInvokeOrange()
+        {
+            var party = MobileParty.MainParty;
+            if (party == null) return;
+
+            var troops = party.MemberRoster.GetTroopRoster()
+                .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
+            if (troops.Count == 0) { Msg("Inspired Word — no soldiers to inspire.", ColorSchool.Orange); return; }
+
+            float power = SpellPower(ColorSchool.Orange);
+            var element = troops[_rng.Next(troops.Count)];
+            int xp = (int)(150f * power);
+
+            if (!_addXpResolved)
+            {
+                _addXpResolved = true;
+                _addXpToTroopMethod = typeof(TroopRoster).GetMethod("AddXpToTroop",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+
+            bool applied = false;
+            if (_addXpToTroopMethod != null)
+            {
+                try { _addXpToTroopMethod.Invoke(party.MemberRoster, new object[] { xp, element.Character }); applied = true; } catch { }
+            }
+
+            Msg(applied
+                ? $"Inspired Word — {element.Character.Name} gains {xp} experience."
+                : $"Inspired Word — inspiration stirs in {element.Character.Name}.", ColorSchool.Orange);
+        }
+
+        // ── Yellow — Creeping Fear ────────────────────────────────────────
+        // The nearest enemy party at war loses 3 morale.
+        private static void SpellInvokeYellow()
+        {
+            if (Hero.MainHero == null || MobileParty.MainParty == null) return;
+
+            IFaction playerFaction = Hero.MainHero.MapFaction;
+            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
+
+            MobileParty target = null;
+            float minDist = float.MaxValue;
+            foreach (MobileParty p in MobileParty.All)
+            {
+                if (p == MobileParty.MainParty || !p.IsActive) continue;
+                if (p.MapFaction == null || p.MapFaction == playerFaction) continue;
+                if (playerFaction != null && !playerFaction.IsAtWarWith(p.MapFaction)) continue;
+                float d = (p.GetPosition2D - playerPos).Length;
+                if (d < minDist) { minDist = d; target = p; }
+            }
+
+            if (target == null) { Msg("Creeping Fear — no enemy party at war found.", ColorSchool.Yellow); return; }
+
+            try { target.RecentEventsMorale -= 3f; } catch { return; }
+            Msg($"Creeping Fear — {target.Name} loses 3 morale ({minDist:F1} km).", ColorSchool.Yellow);
+        }
+
+        // ── Green — Green's Bounty ────────────────────────────────────────
+        // Add 1 grain to the party.
+        private static void SpellInvokeGreen()
+        {
+            var party = MobileParty.MainParty;
+            if (party == null) return;
 
             try
             {
-                Hero.MainHero.SetBirthDay(Hero.MainHero.BirthDay - CampaignTime.Days(1));
+                ItemObject grain = Game.Current.ObjectManager.GetObject<ItemObject>("grain");
+                if (grain == null) { Msg("Green's Bounty — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
+                party.ItemRoster.AddToCounts(new EquipmentElement(grain), 1);
             }
-            catch { }
-            if (ColourKnowledge.ReducePurpleFertility())
-            {
-                int pct = (int)(ColourKnowledge.PurpleFertilityLevel * 100f);
-                Msg($"The Slow Unravelling: Something within grows quieter. Fertility: {pct}%", ColorSchool.Purple);
-            }
-            string scatterMsg = scattered > 0
-                ? $"{scattered} nearby {(scattered == 1 ? "party loses" : "parties lose")} your trail."
-                : "No enemies close enough to scatter.";
-            Msg($"Grey Veil — {scatterMsg} The grey veils your next battle. [Age +1 day]", ColorSchool.Purple);
+            catch { Msg("Green's Bounty — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
+            Msg("Green's Bounty — 1 unit of grain ripens at your touch.", ColorSchool.Green);
         }
+
+        // ── Blue — Scholar's Word ─────────────────────────────────────────
+        // Gain 1 influence. Requires kingdom membership.
+        private static void SpellInvokeBlue()
+        {
+            if (Hero.MainHero == null) return;
+            if (Hero.MainHero.Clan?.Kingdom == null)
+            {
+                Msg("Scholar's Word — you must belong to a kingdom for influence to mean anything.", ColorSchool.Blue);
+                return;
+            }
+
+            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 1); } catch { return; }
+            Msg("Scholar's Word — the Scholar's insight earns 1 influence.", ColorSchool.Blue);
+        }
+
+        // ── Purple — Wither's Touch ───────────────────────────────────────
+        // A random enemy lord loses 2 renown. Cost: −1% fertility + 1 day aging.
+        private static void SpellInvokePurple()
+        {
+            if (Hero.MainHero == null) return;
+
+            IFaction playerFaction = Hero.MainHero.MapFaction;
+            var enemies = Hero.AllAliveHeroes
+                .Where(h => h.IsLord && h.IsAlive && h.Clan != null
+                         && h.MapFaction != null && h.MapFaction != playerFaction)
+                .ToList();
+            if (enemies.Count == 0) { Msg("Wither's Touch — no enemy lords found.", ColorSchool.Purple); return; }
+
+            Hero target = enemies[_rng.Next(enemies.Count)];
+            try { target.Clan.AddRenown(-2f); } catch { return; }
+
+            Msg($"Wither's Touch — {target.Name}'s clan loses 2 renown.", ColorSchool.Purple);
+        }
+
     }
 }

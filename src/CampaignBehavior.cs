@@ -57,7 +57,6 @@ namespace ColoursOfCalradia
         private void OnNewGameCreated()
         {
             ColourKnowledge.ResetForNewGame();
-            SpellEffects.ResetCampaignCounters();
             BlightSystem.ResetForNewGame();
             SaturationSystem.ResetForNewGame();
 
@@ -246,7 +245,6 @@ namespace ColoursOfCalradia
         {
             try { ColourLordRegistry.CheckRespawnTimers(); } catch { }
             try { BlightSystem.CheckRespawnTimers(); } catch { }
-            try { SpellEffects.TickHourlyMapEffects(); } catch { }
             try { SaturationSystem.CheckNightReset(); } catch { }
         }
 
@@ -333,50 +331,6 @@ namespace ColoursOfCalradia
             if (mapEvent == null) return;
             try { ApplyBattleBonus(mapEvent.AttackerSide); } catch { }
             try { ApplyBattleBonus(mapEvent.DefenderSide); } catch { }
-            if (SpellEffects.ConsumeGreyVeilBattleBuff())
-                try { ApplyGreyVeilBattleResult(mapEvent); } catch { }
-        }
-
-        private void ApplyGreyVeilBattleResult(MapEvent mapEvent)
-        {
-            if (mapEvent == null) return;
-            MapEventSide playerSide = null;
-            try
-            {
-                foreach (var side in new[] { mapEvent.AttackerSide, mapEvent.DefenderSide })
-                {
-                    if (side == null) continue;
-                    foreach (var mp in side.Parties)
-                        if (mp?.Party?.MobileParty?.IsMainParty == true) { playerSide = side; break; }
-                    if (playerSide != null) break;
-                }
-            }
-            catch { }
-            if (playerSide == null) return;
-
-            int recovered = 0;
-            try
-            {
-                foreach (var mp in playerSide.Parties)
-                {
-                    PartyBase party = mp?.Party;
-                    if (party == null) continue;
-                    foreach (var element in party.MemberRoster.GetTroopRoster().ToList())
-                    {
-                        int wounded = element.WoundedNumber;
-                        if (wounded <= 0) continue;
-                        int heal = Math.Max(1, (int)(wounded * 0.25f));
-                        party.MemberRoster.AddToCounts(element.Character, 0, false, -heal);
-                        recovered += heal;
-                    }
-                }
-            }
-            catch { }
-
-            if (recovered > 0)
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"Grey Veil — the grey sheltered your soldiers. {recovered} {(recovered == 1 ? "troop recovers" : "troops recover")} from wounds.",
-                    ColorSchoolData.GetMessageColor(ColorSchool.Purple)));
         }
 
         private void ApplyBattleBonus(MapEventSide side)
