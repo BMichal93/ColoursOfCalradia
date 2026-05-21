@@ -1,5 +1,5 @@
-// =============================================================================
-// COLOURS OF CALRADIA — ColourKnowledge.cs
+﻿// =============================================================================
+// COLOURS OF CALRADIA â€” ColourKnowledge.cs
 // Mount & Blade II: Bannerlord Mod  v1.2.0.0
 // =============================================================================
 
@@ -25,12 +25,12 @@ using TaleWorlds.CampaignSystem.MapEvents;
 namespace ColoursOfCalradia
 {
     // =========================================================================
-    // 4. COLOUR KNOWLEDGE  — tracks chosen schools, cast counts, grimoire
+    // 4. COLOUR KNOWLEDGE  â€” tracks chosen schools, cast counts, grimoire
     // =========================================================================
     public static class ColourKnowledge
     {
         private static readonly HashSet<ColorSchool> _chosenSchools = new HashSet<ColorSchool>();
-        // Accumulated casts per school — every 25 casts shifts the associated trait
+        // Accumulated casts per school â€” every 25 casts shifts the associated trait
         private static readonly Dictionary<ColorSchool, int> _castCounters =
             new Dictionary<ColorSchool, int>
             {
@@ -112,7 +112,7 @@ namespace ColoursOfCalradia
 
             if (school == ColorSchool.Purple)
             {
-                // Purple hollows out all personality — each threshold nudges every trait toward 0
+                // Purple hollows out all personality â€” each threshold nudges every trait toward 0
                 try
                 {
                     if (Hero.MainHero == null) return;
@@ -156,7 +156,7 @@ namespace ColoursOfCalradia
         }
 
         private static string ComboToArrows(string combo) =>
-            combo.Replace("U", "↑").Replace("D", "↓").Replace("L", "←").Replace("R", "→");
+            combo.Replace("U", "â†‘").Replace("D", "â†“").Replace("L", "â†").Replace("R", "â†’");
 
         public static void ShowGrimoire(bool inMission = false, bool usingController = false)
         {
@@ -182,7 +182,7 @@ namespace ColoursOfCalradia
             {
                 if (lines.Count > 0) lines.Add("");
                 string schoolName = ColorSchoolData.Info[grp.Key].Name;
-                lines.Add($"── {schoolName} ──");
+                lines.Add($"â”€â”€ {schoolName} â”€â”€");
 
                 var battle = grp.Where(s => s.Context == SpellContext.Mission).ToList();
                 var map    = grp.Where(s => s.Context == SpellContext.Map).ToList();
@@ -211,7 +211,7 @@ namespace ColoursOfCalradia
 
             string active      = inBattle ? "battle" : "campaign map";
             string inputHint   = usingController
-                ? "Hold LT + left stick (↑/←/→), then release."
+                ? "Hold LT + left stick (â†‘/â†/â†’), then release."
                 : "Hold Left Alt + combo (W/A/D keys), then release.";
             string description = $"{inputHint}  Active: {active}.\n\n"
                                + string.Join("\n", lines);
@@ -235,28 +235,29 @@ namespace ColoursOfCalradia
 "  Shortcut  : Release after 2-key form prefix for a random known spell of that form.\n" +
 "\n" +
 "COMBO STRUCTURE  (first 2 keys = Form | last 3 keys = Colour)\n" +
-"  ↑↑  Blast  — cone attack forward\n" +
-"  →←  Self   — aura on caster\n" +
-"  ←→  Create — area effect, toggleable\n" +
-"  ↑←  Affect — campaign map, situational\n" +
-"  ←↑  Invoke — campaign map, advanced\n" +
+"  â†‘â†‘  Blast  â€” cone attack forward\n" +
+"  â†’â†  Self   â€” aura on caster\n" +
+"  â†â†’  Create â€” area effect, toggleable\n" +
+"  â†‘â†  Affect â€” campaign map, situational\n" +
+"  â†â†‘  Invoke â€” campaign map, advanced\n" +
 "\n" +
 "COLOUR SUFFIXES (last 3 keys)\n" +
-"  Red →→→  Orange →←→  Yellow ↓←↓  Green ←↓←  Blue ↑←↑  Purple ↓↓↓\n" +
+"  Red â†’â†’â†’  Orange â†’â†â†’  Yellow â†“â†â†“  Green â†â†“â†  Blue â†‘â†â†‘  Purple â†“â†“â†“\n" +
 "\n" +
 "COLOUR LIMITATIONS\n" +
-"  Red    — Furious: each cast auto-issues a Charge order. Blood Price: −2 HP per cast.\n" +
-"  Orange — Joyful Cast: cannot cast if party morale is below 45.\n" +
-"  Yellow — Animal Fear: cannot cast from horseback.\n" +
-"  Green  — Pacifist: cannot cast while wielding a weapon.\n" +
-"  Blue   — Scholar's Weight: spells take 5 seconds to wind up in battle.\n" +
-"  Purple — The Slow Unravelling: each cast costs −1% fertility and +1 day of age.\n" +
+"  Red    â€” Furious: each cast auto-issues a Charge order. Blood Price: â’2 HP per cast.\n" +
+"  Orange â€” Joyful Cast: cannot cast if party morale is below 45.\n" +
+"  Yellow â€” Animal Fear: cannot cast from horseback.\n" +
+"  Green  â€” Pacifist: cannot cast while wielding a weapon.\n" +
+"  Blue   â€” Scholar's Weight: spells take 5 seconds to wind up in battle.\n" +
+"  Purple â€” The Slow Unravelling: each cast costs â’1% fertility and +1 day of age.\n" +
 "\n" +
 "SATURATION\n" +
-"  Each cast gains 0–3 Saturation. Max = hero level + 10 (cap 30).\n" +
+"  Each cast gains 0â€“3 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (cap 30).\n" +
 "  Resets to 0 when darkness falls (night or dark locations).\n" +
-"  Oversaturation: knocked down 3s, random trait shift, Max −1 (permanent).\n" +
-"  Max reaches 0: choose to lose all colours OR embrace the Blight (−100 relations, immune).\n" +
+"  Oversaturation: knocked down 3s, random trait shift, Max â’1 (permanent).\n" +
+"  Leveling up restores 1 max Saturation per level, but never removes prior reductions.\n" +
+"  Max reaches 0: choose to lose all colours OR embrace the Blight (â’100 relations, immune).\n" +
 "  Prism and Blights are immune to all Oversaturation effects.\n" +
 "\n" +
 "PERSONALITY DRIFT\n" +
@@ -264,23 +265,23 @@ namespace ColoursOfCalradia
 "\n" +
 "MADNESS\n" +
 "  Non-adjacent colour schools conflict. On each cast:\n" +
-"  Non-contiguous mix — 3% chance the spell fires as a random other-colour spell.\n" +
-"  5 schools — 5% chance. Weekly trait fracture.\n" +
-"  6 schools — 7% chance. Weekly trait fracture.\n" +
+"  Non-contiguous mix â€” 3% chance the spell fires as a random other-colour spell.\n" +
+"  5 schools â€” 5% chance. Weekly trait fracture.\n" +
+"  6 schools â€” 7% chance. Weekly trait fracture.\n" +
 "  Adjacent colours (e.g. Red+Orange+Yellow) never trigger madness.\n" +
 "\n" +
 "DAY / NIGHT\n" +
-"  Bright (07:00–20:00) — full casting.\n" +
-"  Dim   (05:00–07:00 and 20:00–22:00) — 33% fizzle chance.\n" +
-"  Dark  (22:00–05:00) — casting blocked entirely. Saturation resets.\n" +
+"  Bright (07:00â€“20:00) â€” full casting.\n" +
+"  Dim   (05:00â€“07:00 and 20:00â€“22:00) â€” 33% fizzle chance.\n" +
+"  Dark  (22:00â€“05:00) â€” casting blocked entirely. Saturation resets.\n" +
 "\n" +
 "LORDS & COLOURS\n" +
 "  Colour lords cast in battle and on the campaign map.\n" +
-"  Lords sharing a colour (1–2 schools each) are drawn together — higher relations.\n" +
+"  Lords sharing a colour (1â€“2 schools each) are drawn together â€” higher relations.\n" +
 "  Lords with 5+ schools are feared and distrusted by all magical peers.\n" +
 "  Colour lords maintain a morale floor before battle (10 per colour, max 60) and recover\n" +
 "  wounded troops after battle (5% per colour of wounded healed).\n" +
-"  Weekly: 2% chance a random colour lord oversaturates — 80% lose colours (re-seeded in\n" +
+"  Weekly: 2% chance a random colour lord oversaturates â€” 80% lose colours (re-seeded in\n" +
 "  one week), 20% die and spawn a Blight of their colour. Blights no longer auto-respawn.\n" +
 "\n" +
 "THE PRISM\n" +
@@ -292,7 +293,7 @@ namespace ColoursOfCalradia
 "  all six colours and full immunity, with no attribute penalties.";
 
             InformationManager.ShowInquiry(new InquiryData(
-                "Mechanics — Colours of Calradia",
+                "Mechanics â€” Colours of Calradia",
                 guide,
                 true, true,
                 "Close", "Back",
