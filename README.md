@@ -15,7 +15,7 @@ ColoursOfCalradia/
 ├── src/                             ~4 400 lines across 18 source files
 │   ├── MagicSystem.cs               module entry point + mission behaviour
 │   ├── SchoolData.cs                ColorSchool enum + ColorSchoolData (glow colours, traits, attributes)
-│   ├── SpellDatabase.cs             SpellDatabase — 30 spell entries (18 battle + 12 campaign map) + Find/BySchool helpers
+│   ├── SpellDatabase.cs             SpellDatabase — 36 spell entries (18 battle + 18 campaign map) + Find/BySchool helpers
 │   ├── ColourKnowledge.cs           player school knowledge, limitations, and madness tracking
 │   ├── ActiveEffects.cs             ActiveEffectManager — timed callbacks for spell durations
 │   ├── MagicInputHandler.cs         keyboard combo detection (U/L/R/D buffer → spell execution)
@@ -342,7 +342,7 @@ When an order is scrambled, the formation receives a random command (Charge or H
 | **Orange** | Generous Hunger — joyful, open-handed | Intelligence | Generosity +1 |
 | **Yellow** | The Fearful Eye — dread, revulsion | Social | Mercy −1 |
 | **Green** | Gentle Burden — kind, restorative | Control | Mercy +1 |
-| **Blue** | Scholar's Weight — cold, ordered | Vigor | Calculating +1 |
+| **Blue** | Scholar's Craft — cold, ordered | Vigor | Calculating +1 |
 | **Purple** | The Waning Art — melancholic, fading | Endurance | All traits → 0 |
 
 ### Limitations by School
@@ -360,10 +360,10 @@ Each school carries a permanent limitation that activates on every cast.
 - **Animal Fear:** You cannot cast Yellow magic from horseback. Animals sense the wrongness and refuse to carry you while you channel it.
 
 **Green — Gentle Burden**
-- **Pacifist:** You cannot use Green magic while wielding a weapon. Sheathe it first.
+- **Nature's Calling:** You cannot cast Green campaign map spells inside settlements — not in cities, castles, or villages. The colour requires open sky and living earth. (Green has no battle limitation.)
 
-**Blue — Scholar's Weight**
-- **Scholar's Weight:** Blue spells take **5 seconds** to wind up in battle. The stillness must settle through your limbs before it can reach the world — you stand motionless during the delay.
+**Blue — Scholar's Craft**
+- **Scholar's Craft:** You cannot cast Blue magic in battle while wielding a weapon. Sheathe it first — the colour demands empty hands and a focused mind.
 
 **Purple — The Waning Art**
 - **The Slow Unravelling:** Each Purple cast reduces your fertility by 1% and ages you by 1 day — both are permanent. The future, sacrificed piece by piece.
@@ -387,24 +387,24 @@ NPC mage lords require full daylight and will not cast during dim or dark condit
 ### Keyboard
 
 1. Hold **Left Alt** to enter spell mode.
-2. Input a **5-key combo** using **W / A / S / D**, which map to:
+2. Input a **4-key combo** using **W / A / S / D**, which map to:
    - **W** → U (Up)
    - **A** → L (Left)
    - **D** → R (Right)
    - **S** with an empty buffer → opens the spellbook instantly
-   - **S** with a non-empty buffer → appends D to the combo (used in Yellow, Green, and Purple suffixes)
+   - **S** with a non-empty buffer → appends D to the combo (used in Orange, Yellow, Purple suffixes)
 3. Release **Left Alt** to fire.
 
 ### Gamepad
 
-1. Hold **Left Trigger** to enter spell mode.
+1. Hold **Left Bumper (LB)** to enter spell mode.
 2. Push the **left stick** in a direction:
    - Stick Up → U
    - Stick Down with empty buffer → Open spellbook; with non-empty buffer → D
    - Stick Left → L
    - Stick Right → R
 3. Press **L3 (left stick click)** to open the spellbook (instead of casting).
-4. Release **Left Trigger** to fire.
+4. Release **Left Bumper** to fire.
 
 ### Spellbook
 
@@ -412,35 +412,38 @@ Press **S** (keyboard) or **Left stick Down / L3** (gamepad) while holding the f
 
 A **Guide** button on the spellbook opens the full mechanics reference. A **Back** button returns to the spellbook from the guide.
 
+Controller hint: **Hold LB** then push the left stick.
+
 ---
 
 ## The Spell System
 
-All 30 spells follow a strict **Form + Colour** combo structure:
+All 36 spells follow a strict **Form + Colour** combo structure:
 
 - The **first two characters** encode the *form* (how the spell behaves).
-- The **last three characters** encode the *colour school*.
+- The **last two characters** encode the *colour school*.
 
 ### Forms
 
-| Prefix | Form | Shape / Context |
-|--------|------|-----------------|
-| `UU` | **Blast** | Cone in front of the caster (battle) |
-| `RL` | **Self** | Aura or effect centred on the caster (battle) |
-| `LR` | **Create** | Persistent area effect placed on the battlefield (battle) |
-| `UL` | **Affect** | Campaign map — situational, resource-based |
-| `LU` | **Invoke** | Campaign map — advanced, targets heroes and rosters |
+| Prefix | Keys | Form | Shape / Context |
+|--------|------|------|-----------------|
+| `UU` | W W | **Blast** | Cone in front of the caster (battle) |
+| `RL` | D A | **Self** | Aura or effect centred on the caster (battle) |
+| `LR` | A D | **Create** | Persistent area effect placed on the battlefield (battle) |
+| `UL` | W A | **Affect** | Campaign map — situational, resource-based |
+| `LU` | A W | **Invoke** | Campaign map — advanced, targets heroes and rosters |
+| `UR` | W D | **Commune** | Campaign map — ambient, world-affecting |
 
 ### Colour Suffixes
 
 | Suffix | School |
 |--------|--------|
-| `RRR` | Red |
-| `RLR` | Orange |
-| `DLD` | Yellow |
-| `LDL` | Green |
-| `ULU` | Blue |
-| `DDD` | Purple |
+| `RR` | Red |
+| `LD` | Orange |
+| `DD` | Yellow |
+| `LL` | Green |
+| `RU` | Blue |
+| `DU` | Purple |
 
 Note: **D** (S key) is valid mid-combo. It cannot appear as the first character of a combo (holding S with an empty buffer opens the spellbook instead).
 
@@ -452,34 +455,34 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UURRR` | Red | 55 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UURLR` | Orange | 18 damage to cone enemies (15 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UUDLD` | Yellow | 20 damage to cone enemies (15 m); drains 45 morale from each. |
-| **Verdant Surge** | `UULDL` | Green | Heals allies in the cone (15 m) for up to 22 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UUULU` | Blue | 18 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
-| **Grey Harvest** | `UUDDD` | Purple | Instantly kills 1–3 random creatures in the cone (15 m); kill count scales with Vigor. |
+| **Crimson Torrent** | `UURR` | Red | 55 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
+| **Golden Tide** | `UULD` | Orange | 18 damage to cone enemies (15 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UUDD` | Yellow | 20 damage to cone enemies (15 m); drains 45 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 22 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UURU` | Blue | 18 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
+| **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (15 m); kill count scales with Vigor. |
 
 ### Self Spells (RL prefix) — Caster-centred effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Ward** | `RLRRR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 12 s if nothing hits. |
-| **Warm Beacon** | `RLRLR` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
-| **Nausea Bloom** | `RLDLD` | Yellow | Persistent 30 s aura (radius 8 m) that deals 22 damage every 2 s to all nearby creatures. |
-| **Verdant Touch** | `RLLDL` | Green | Heals the caster for 28 HP. |
-| **Cerulean Mirror** | `RLULU` | Blue | 18 s missile deflection — up to 4 volleys blocked; shatters after the 4th block or when time expires. Physical attacks still connect. |
-| **Grief's Veil** | `RLDDD` | Purple | The grey folds you from sight for 12 s — you become invulnerable and nearby enemy formations lose their nerve. Shorter but stronger than the Mirror. |
+| **Scarlet Ward** | `RLRR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 12 s if nothing hits. |
+| **Warm Beacon** | `RLLD` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
+| **Nausea Bloom** | `RLDD` | Yellow | Persistent 30 s aura (radius 8 m) that deals 22 damage every 2 s to all nearby creatures. |
+| **Verdant Touch** | `RLLL` | Green | Heals the caster for 28 HP. |
+| **Cerulean Mirror** | `RLRU` | Blue | 18 s missile deflection — up to 4 volleys blocked; shatters after the 4th block or when time expires. Physical attacks still connect. |
+| **Grey Reaping** | `RLDU` | Purple | Drains morale from all nearby enemies; kills 1–2 random non-hero enemies within 15 m (scales with Purple attribute). |
 
 ### Create Spells (LR prefix) — Persistent battlefield effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Cinder Burst** | `LRRRR` | Red | Instant 50 damage to all creatures within 10 m. |
-| **Golden Recoil** | `LRRLR` | Orange | Toggle: zone of retribution — any creature that strikes while inside returns the blow upon themselves. Cast again to dismiss. |
-| **Creeping Dread** | `LRDLD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 30 damage every 2 s to creatures they pass through. Cast again to dismiss. |
-| **Emerald Font** | `LRLDL` | Green | Toggle: two healing pools that restore 15 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
-| **Sapphire Bastion** | `LRULU` | Blue | Toggle: four pillars of force in a line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
-| **Hollow Gaze** | `LRDDD` | Purple | Toggle: pins one random nearby non-hero enemy into a catatonic state — they stand still and do nothing. Cast again to release them. |
+| **Cinder Burst** | `LRRR` | Red | Instant 50 damage to all creatures within 10 m. |
+| **Golden Recoil** | `LRLD` | Orange | Toggle: zone of retribution — any creature that strikes while inside returns 25% of the blow upon themselves. Cast again to dismiss. |
+| **Creeping Dread** | `LRDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 30 damage every 2 s to creatures they pass through. Cast again to dismiss. |
+| **Emerald Font** | `LRLL` | Green | Toggle: two healing pools that restore 15 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
+| **Sapphire Bastion** | `LRRU` | Blue | Toggle: four pillars of force in a line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
+| **Hollow Gaze** | `LRDU` | Purple | Toggle: pins one random nearby non-hero enemy into a catatonic state — they stand still and do nothing. Cast again to release them. |
 
 ### Notes on Create Spells
 
@@ -599,7 +602,7 @@ After each battle resolves, colour lords also **heal a fraction of their wounded
 
 NPC mage lords cast in battle using a priority-driven AI:
 
-1. **Self-heal** with Verdant Touch if below 35 % HP (Green lords only, if not wielding a weapon).
+1. **Self-heal** with Verdant Touch if below 35 % HP (Green lords only).
 2. **8 % random wild cast** — fires a random applicable school spell.
 3. **Swarm response** — if 3+ enemies within 8 m, prefer Cinder Burst (Red) or Grey Harvest (Purple).
 4. **Cone attack** — Crimson Torrent (Red) or Azure Arrest (Blue) if enemies are in the forward arc.
@@ -609,20 +612,20 @@ NPC mage lords cast in battle using a priority-driven AI:
 
 All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **12-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often; Calculating lords cast 50 % less often. The Prism uses a **4-second base cooldown**.
 
-NPC lords apply their school limitations: Green lords cannot cast while wielding a weapon; Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. After each cast, non-Blight non-Prism lords have a **5 % chance of a 3-second knockdown** from Oversaturation.
+NPC lords apply their school limitations: Blue lords cannot cast while wielding a weapon (Scholar's Craft); Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. Green lords have no battle limitation (Nature's Calling applies only on the campaign map, where NPCs act through a separate system). After each cast, non-Blight non-Prism lords have a **5 % chance of a 3-second knockdown** from Oversaturation.
 
 ### Campaign Map Spells
 
 Each mage lord has a **5 % daily chance** to cast a campaign-map spell. At most **1 lord map-cast fires per day** across the entire world. Each lord has a cooldown of **12–16 days** after casting.
 
-| School | Effect A (50 %) | Effect B (50 %) |
-|--------|-----------------|-----------------|
-| **Red** | Own party morale +10 (*Bloodlust*) | Random enemy village hearth ×0.8 (*Carnage*) |
-| **Orange** | Nearest friendly village hearth ×1.05 (*Celebrate*) | Transfer 1–2 troops from rival lord to own party (*Bribe*) |
-| **Yellow** | Random enemy lord renown −10 (*Fade*) | Random enemy party morale −15 (*Terror*) |
-| **Green** | Heal up to 3 wounded in own party per troop type (*Rejuvenate*) | Add 5 grain to own inventory (*Crops*) |
-| **Blue** | Own clan influence +8 (*Schemes*) | Enemy clan influence −8 (*Plots*) |
-| **Purple** | Enemy influence −5, enemy morale −10 (*Curse*) | Add 10 recruits to own party (*Bind*) |
+| School | Effect A (33 %) | Effect B (33 %) | Effect C (33 %) |
+|--------|-----------------|-----------------|-----------------|
+| **Red** | Own party morale +10 (*Bloodlust*) | Random enemy village hearth ×0.8 (*Carnage*) | Sacrifice soldier → morale +15 (*Crimson Tithe*) |
+| **Orange** | Nearest friendly village hearth ×1.05 (*Celebrate*) | Transfer 1–2 troops from rival lord (*Bribe*) | Nearby lord/notable relations +3 (*Good Word*) |
+| **Yellow** | Random enemy lord renown −10 (*Fade*) | Random enemy party morale −15 (*Terror*) | Enemy town loyalty −10 (*Sow Doubt*) |
+| **Green** | Heal up to 3 wounded per troop type (*Rejuvenate*) | Add 5 grain to own inventory (*Crops*) | Own village hearth +15 (*Verdant Bond*) |
+| **Blue** | Own clan influence +8 (*Schemes*) | Enemy clan influence −8 (*Plots*) | Nearest enemy party morale −10 (*Arcane Sight*) |
+| **Purple** | Enemy influence −5, enemy morale −10 (*Curse*) | Add 10 recruits to own party (*Bind*) | Enemy lord age +3 days, renown −2 (*Grey Curse*) |
 
 ---
 
@@ -697,47 +700,54 @@ The colours form a **spectrum**, not a ring. Adjacent colours on the spectrum do
 
 ## Campaign Map Spells
 
-Two additional spell forms work exclusively on the campaign map and require the same daytime light conditions as battle spells. They cannot be cast during battles or while in a settlement menu.
-
-### Forms
-
-| Prefix | Form | Keys |
-|--------|------|------|
-| `UL` | **Affect** | W then A (U then L) |
-| `LU` | **Invoke** | A then W (L then U) |
+Three spell forms work exclusively on the campaign map and require the same daytime light conditions as battle spells. They cannot be cast during battles. Green Invoke/Affect spells additionally cannot be cast while inside a settlement (Nature's Calling).
 
 ### Affect Spells (UL prefix) — situation-based
 
-Each Affect spell is tied to a specific situation or resource. No cooldowns — all costs are mechanical.
+Each Affect spell is tied to a specific situation or resource. Saturation cost is the only shared limiter.
 
-| Spell | Combo | School | Effect | Cost / Limiter |
-|-------|-------|--------|--------|----------------|
-| **Ember Drive** | `ULRRR` | Red | +130×power gold during a village raid or hideout assault | −10% current HP per cast; blocked at ≤5 HP |
-| **Shared Feast** | `ULRLR` | Orange | Consume food → party morale +12×power | Food cost doubles each cast within the day (1→2→4→8…), resets at midnight |
-| **Dread Whisper** | `ULDLD` | Yellow | Nearest enemy party loses 22×power morale | No self-cost (limitation is Animal Fear: no horseback) |
-| **Verdant Hour** | `ULLDL` | Green | Produce 1–4 grain | −5% current HP per cast; blocked at ≤5 HP |
-| **Scholar's Gaze** | `ULULU` | Blue | Reveals all allied and enemy parties within 80 map units — shows direction, leader, and troop count in a popup | No cost |
-| **Grey Veil** | `ULDDD` | Purple | Scatter nearby enemy parties (within 2 map units); enemies lose your trail | −1% fertility + 1 day aging per cast |
+| Spell | Combo | School | Effect |
+|-------|-------|--------|--------|
+| **Pillager's Brand** | `ULRR` | Red | Curse a random enemy village at war — hearth falls by 10%. |
+| **Rallying Call** | `ULLD` | Orange | Your party finds new resolve — morale +2. |
+| **Press Gang** | `ULDD` | Yellow | Conscript one random prisoner from your prison roster into the ranks — they join unwillingly. Morale −2. |
+| **Mending Touch** | `ULLL` | Green | 50% chance to heal one wounded soldier. Cannot be cast inside a settlement. |
+| **Philosopher's Stone** | `ULRU` | Blue | Gold flows: +50×power. Time ebbs — you become 1 day younger (minimum age 22). |
+| **Grey Veil** | `ULDU` | Purple | Scatter nearby enemy parties (15 map-unit radius); enemies lose your trail. Cost: −1% fertility + 1 day aging. |
 
 ### Invoke Spells (LU prefix) — advanced campaign effects
 
-Invoke spells target heroes, rosters, and rival lords directly. No cooldowns — all costs are mechanical.
+Invoke spells target heroes, rosters, and rival lords directly.
 
-| Spell | Combo | School | Effect | Cost / Limiter |
-|-------|-------|--------|--------|----------------|
-| **Crimson March** | `LURRR` | Red | Sustains party morale above Bannerlord's march-speed threshold (≥78) each hour for the duration, keeping the engine's built-in +3% speed bonus active continuously | −8% current HP on cast; −2 HP per hour; 4–8 h duration scaled by power; blocked at ≤5 HP |
-| **Golden Word** | `LURLR` | Orange | Spend gold as patronage → +20×power influence | Gold cost 100→200→400 (capped at 400), resets at midnight; kingdom required |
-| **Whispered Ruin** | `LUDLD` | Yellow | Nearest enemy lord (at war) clan renown −8 | −2 own clan renown per cast |
-| **Tend the Fallen** | `LULDL` | Green | Heal 5+(power×3) wounded troops in own party | −5% current HP per cast; blocked at ≤5 HP |
-| **Scholar's Blueprint** | `LUULU` | Blue | Advances siege engine construction progress (+150×power) on all machines currently being built | Renown −2 per cast; requires active siege; no effect if nothing is under construction |
-| **Wither's Touch** | `LUDDD` | Purple | Nearest enemy lord: party morale −10, clan renown −8 | −1% fertility + 1 day aging per cast |
+| Spell | Combo | School | Effect |
+|-------|-------|--------|--------|
+| **Withering Strike** | `LURR` | Red | Wound one random healthy soldier in the nearest enemy party at war. |
+| **Inspired Word** | `LULD` | Orange | Grant one random soldier in your party 150×power experience. |
+| **Creeping Fear** | `LUDD` | Yellow | The nearest enemy party at war loses 2 morale. |
+| **Green's Bounty** | `LULL` | Green | 80% grain / 10% sheep / 10% cow ripens at your touch. Cannot be cast inside a settlement. |
+| **Scholar's Word** | `LURU` | Blue | Your insight earns 1 influence. Kingdom membership required. |
+| **Wither's Touch** | `LUDU` | Purple | A random enemy lord's clan loses 2 renown. Cost: −1% fertility + 1 day aging. |
+
+### Commune Spells (UR prefix) — ambient, world-affecting
+
+Commune spells reach beyond your immediate position to reshape the world around you.
+
+| Spell | Combo | School | Effect |
+|-------|-------|--------|--------|
+| **Crimson Tithe** | `URRR` | Red | Sacrifice one soldier — a random combat skill gains 200×power XP. Party morale −1. |
+| **Good Word** | `URLD` | Orange | Your warmth reaches a random lord or notable — relations +1. |
+| **Sow Doubt** | `URDD` | Yellow | Unease spreads through a random enemy town — loyalty −10. |
+| **Verdant Bond** | `URLL` | Green | A friendly village is blessed — hearth +20. |
+| **Arcane Sight** | `URRU` | Blue | The Scholar's eye opens — lists the 10 nearest colour lords with their schools and distances. |
+| **Grey Curse** | `URDU` | Purple | A random enemy lord ages 3 days and their clan loses 2 renown. Cost: −1% fertility + 1 day aging. |
 
 ### Notes
 
-- **Orange Golden Word** gold cost is capped at 400 — once at the cap, each cast costs 400 gold. The cap resets each campaign day. Kingdom membership required.
-- **Yellow Whispered Ruin** and **Dread Whisper** require an active war with the target's faction. **Scholar's Blueprint** requires an active siege by the player's party. **Wither's Touch** works against any non-player faction.
-- **Scholar's Blueprint** requires no kingdom but does require an ongoing siege.
-- **Red** HP costs apply to campaign HP, which carries into the next battle. Ember Drive during a raid means you fight the battle with reduced health.
+- **Purple** campaign spells (Grey Veil, Wither's Touch, Grey Curse) all apply The Slow Unravelling: −1% fertility + 1 day aging per cast.
+- **Green** Mending Touch and Green's Bounty cannot be cast inside a settlement (Nature's Calling).
+- **Blue** Philosopher's Stone respects a minimum age of 22 — no further rejuvenation below that threshold.
+- **Orange** Rallying Call and Inspired Word work anywhere with no additional resource cost.
+- **Red** Pillager's Brand requires an active war with the target village's faction.
 
 ---
 
