@@ -182,8 +182,12 @@ namespace ColoursOfCalradia
 
             // Reuse static collections to keep TickHaltedAgents allocation-free
             _haltAgentMap.Clear();
-            foreach (Agent a in Mission.Current.Agents)
-                if (a.IsActive() && a.Health > 0f) _haltAgentMap[a.Index] = a;
+            try
+            {
+                foreach (Agent a in Mission.Current.Agents)
+                    if (a.IsActive() && a.Health > 0f) _haltAgentMap[a.Index] = a;
+            }
+            catch { }
 
             _haltKeySnap.Clear();
             _haltKeySnap.AddRange(_haltedAgents.Keys);

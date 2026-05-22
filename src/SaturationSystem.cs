@@ -125,7 +125,7 @@ namespace ColoursOfCalradia
                 try
                 {
                     Agent agent = Mission.Current.Agents.FirstOrDefault(a => a.Index == agentIndex);
-                    if (agent?.IsActive() == true)
+                    if (agent?.IsActive() == true && agent.MountAgent == null)
                         agent.SetMaximumSpeedLimit(10f, false);
                 }
                 catch { }
@@ -135,6 +135,15 @@ namespace ColoursOfCalradia
         public static void ApplyKnockdown(Agent agent, float duration = 3f)
         {
             if (agent == null || !agent.IsActive() || Mission.Current == null) return;
+            // SetActionChannel on a mounted agent corrupts the riding animation state and
+            // causes a native engine crash. Apply a health drain instead.
+            if (agent.MountAgent != null)
+            {
+                float reduced = Math.Max(1f, agent.HealthLimit * 0.30f);
+                if (reduced < agent.Health)
+                    try { agent.Health = reduced; } catch { }
+                return;
+            }
 
             try { agent.SetActionChannel(0, _knockdownAction, true, 0UL); } catch { }
             try { agent.SetMaximumSpeedLimit(0f, false); } catch { }
