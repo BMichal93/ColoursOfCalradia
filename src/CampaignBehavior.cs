@@ -179,14 +179,13 @@ namespace ColoursOfCalradia
 
         private void ApplyMadness(Hero player)
         {
-            var rng = new Random();
-            var shuffled = MadnessTraits.OrderBy(_ => rng.Next()).Take(2).ToList();
+            var shuffled = MadnessTraits.OrderBy(_ => _rng.Next()).Take(2).ToList();
             foreach (TraitObject trait in shuffled)
             {
                 try
                 {
                     int current = player.GetTraitLevel(trait);
-                    int shift   = rng.Next(2) == 0 ? 1 : -1;
+                    int shift   = _rng.Next(2) == 0 ? 1 : -1;
                     int next    = Math.Max(-2, Math.Min(2, current + shift));
                     if (next != current)
                     {
@@ -251,7 +250,6 @@ namespace ColoursOfCalradia
         // ── Weekly tick ──────────────────────────────────────────────────────
         private void OnWeeklyTick()
         {
-            var rng = new Random();
 
             // Five or more colours on the player — the fracture never heals (Prism immune)
             try
@@ -266,7 +264,7 @@ namespace ColoursOfCalradia
                         {
                             try
                             {
-                                int next    = rng.Next(5) - 2;
+                                int next    = _rng.Next(5) - 2;
                                 int current = player.GetTraitLevel(trait);
                                 if (next != current) { player.SetTraitLevel(trait, next); anyChanged = true; }
                             }
@@ -292,8 +290,8 @@ namespace ColoursOfCalradia
                              && !BlightSystem.IsBlight(h)
                              && !ColourLordRegistry.IsPrismLord(h))
                     .ToList();
-                if (npcLords.Count > 0 && rng.Next(20) == 0)
-                    ColourLordRegistry.OnLordOversaturated(npcLords[rng.Next(npcLords.Count)]);
+                if (npcLords.Count > 0 && _rng.Next(20) == 0)
+                    ColourLordRegistry.OnLordOversaturated(npcLords[_rng.Next(npcLords.Count)]);
             }
             catch { }
         }

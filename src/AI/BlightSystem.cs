@@ -146,7 +146,7 @@ namespace ColoursOfCalradia
                 // Level to 35
                 try
                 {
-                    while (candidate.Level < 35)
+                    for (int i = 0; i < 500 && candidate.Level < 35; i++)
                         candidate.HeroDeveloper.AddSkillXp(DefaultSkills.OneHanded, 10000);
                 }
                 catch { }
