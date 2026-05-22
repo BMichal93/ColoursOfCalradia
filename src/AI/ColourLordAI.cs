@@ -30,23 +30,29 @@ namespace ColoursOfCalradia
     //     NPC limitations: Blue → no weapon (Scholar's Craft), Yellow → no horseback,
     //     Orange → party morale ≥ 45. Green has no battle limitation (Nature's Calling
     //     is campaign-map only: cannot cast inside settlements).
-    //     Per cast (non-Blight, non-Prism): 3% lethal exposure (health→1), 5% knockdown.
+    //     12-second warmup before lords/companions cast (blights exempt).
+    //     Per cast (non-Blight, non-Prism): 4% lethal (health→1), 5% knockdown — 9% total.
     //     Impulsive lords cast more often; Calculating lords less often.
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval       = 20f;
+        private const float CastInterval       = 40f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
-        private static readonly Dictionary<string, float> _cooldowns        = new Dictionary<string, float>();
+        private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
         private static readonly Random _rng = new Random();
 
-        private static float _tickAccum = 0f;
-        private const  float TickInterval = 0.5f;
+        private static float _tickAccum    = 0f;
+        private const  float TickInterval  = 0.5f;
+        private static float _warmupTimer  = 0f;
+        private static bool  _warmupDone   = false;
+        private const  float WarmupDuration = 12f;
 
         public static void ClearCooldowns()
         {
             _cooldowns.Clear();
+            _warmupTimer = 0f;
+            _warmupDone  = false;
         }
 
         public static void MissionTick(float dt)
@@ -66,6 +72,25 @@ namespace ColoursOfCalradia
                 if (_cooldowns[key] <= 0f) _cooldowns.Remove(key);
             }
 
+            // Blights are exempt from warmup — they act immediately.
+            foreach (Agent agent in Mission.Current.Agents.ToList())
+            {
+                if (!agent.IsActive() || agent.IsMount || !agent.IsHero) continue;
+                if (agent == Agent.Main) continue;
+                Hero hero = (agent.Character as CharacterObject)?.HeroObject;
+                if (hero == null || !BlightSystem.IsBlight(hero)) continue;
+                if (!_cooldowns.ContainsKey(hero.StringId))
+                    CastBlightSpell(agent, hero);
+            }
+
+            // Lords and companions wait out the planning-phase cooldown before casting.
+            if (!_warmupDone)
+            {
+                _warmupTimer += TickInterval;
+                if (_warmupTimer < WarmupDuration) return;
+                _warmupDone = true;
+            }
+
             foreach (Agent agent in Mission.Current.Agents.ToList())
             {
                 if (!agent.IsActive() || agent.IsMount || !agent.IsHero) continue;
@@ -74,13 +99,7 @@ namespace ColoursOfCalradia
                 Hero hero = (agent.Character as CharacterObject)?.HeroObject;
                 if (hero == null) continue;
 
-                // Blights cast much faster and without NPC limitations
-                if (BlightSystem.IsBlight(hero))
-                {
-                    if (!_cooldowns.ContainsKey(hero.StringId))
-                        CastBlightSpell(agent, hero);
-                    continue;
-                }
+                if (BlightSystem.IsBlight(hero)) continue; // already handled above
 
                 if (!ColourLordRegistry.IsColourLord(hero)) continue;
                 if (_cooldowns.ContainsKey(hero.StringId)) continue;
@@ -586,13 +605,13 @@ namespace ColoursOfCalradia
                 ColorSchoolData.GetMessageColor(school)));
 
             // Oversaturation risk (non-Blight, non-Prism lords only).
-            // 3% lethal: health set to 1 — near-certain death against any standing enemy.
+            // 4% lethal: health → 1, near-certain death against any standing enemy.
             // 5% knockdown: 3-second stagger.
-            // Ratio matches the longer cooldown (20s vs old 12s) to keep equivalent risk per minute.
+            // 9% total — rate-preserving reduction from 11% at 50s cooldown to 40s.
             if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero))
             {
                 int overRoll = _rng.Next(100);
-                if (overRoll < 3)
+                if (overRoll < 4)
                 {
                     try
                     {
@@ -606,7 +625,7 @@ namespace ColoursOfCalradia
                     }
                     catch { }
                 }
-                else if (overRoll < 8)
+                else if (overRoll < 9)
                 {
                     try
                     {

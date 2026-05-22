@@ -610,9 +610,9 @@ NPC mage lords cast in battle using a priority-driven AI:
 6. **Morale drain** — Tide of Dread (Yellow).
 7. **Reinforcement** — Calling (Orange) if outnumbered; Warm Beacon as fallback.
 
-All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **20-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often; Calculating lords cast 50 % less often. The Prism uses a **4-second base cooldown**. Blights cast every **2 seconds**.
+All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. Lords and companions do not cast for the first **12 seconds** of combat (planning phase). After that, NPC lords have a **40-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often (30 s); Calculating lords cast 50 % less often (60 s). The Prism uses a **4-second base cooldown**. Blights cast every **2 seconds** and are exempt from the planning-phase delay.
 
-NPC lords apply their school limitations: Blue lords cannot cast while wielding a weapon (Scholar's Craft); Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. Green lords have no battle limitation (Nature's Calling applies only on the campaign map, where NPCs act through a separate system). After each cast, non-Blight non-Prism lords face an oversaturation risk: **3 % chance** their health drops to 1 (near-certain death against any standing enemy); **5 % chance** of a 3-second knockdown. Prism and Blights are immune to both.
+NPC lords apply their school limitations: Blue lords cannot cast while wielding a weapon (Scholar's Craft); Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. Green lords have no battle limitation (Nature's Calling applies only on the campaign map, where NPCs act through a separate system). After each cast, non-Blight non-Prism lords face an oversaturation risk: **4 % chance** their health drops to 1 (near-certain death against any standing enemy); **5 % chance** of a 3-second knockdown (9 % total — rate-preserved from 11 % at 50 s cooldown scaled to 40 s). Prism and Blights are immune to both.
 
 ### Campaign Map Spells
 
@@ -658,7 +658,7 @@ Each named unit receives 1 colour school. Their names are generated from a pool 
 
 ### Battle Behaviour
 
-Named magical units cast spells in battle using the same AI rules as mage lords, with a **20-second cooldown** between casts and a **0.5 s AI evaluation tick**. The same light-level restriction applies — dim conditions carry a 33 % silent failure chance.
+Named magical units do not cast for the first **12 seconds** of combat (matching the lord planning-phase delay). After that, they cast with a **120-second cooldown** and a **0.5 s AI evaluation tick**. Each cast carries the same oversaturation risk as lords: **4 % lethal** (health → 1) and **5 % knockdown** (3 s stagger) — 9 % total. The same light-level restriction applies — dim conditions carry a 33 % silent failure chance.
 
 ### Campaign Map Effects
 
@@ -670,7 +670,12 @@ Each named unit has a **3 % daily chance** to trigger a minor campaign map effec
 
 ### Children
 
-Children of the main hero born during the campaign have a **30 % chance** to inherit magical colours. When they do:
+Children of the main hero born during the campaign have a chance to inherit magical colours depending on how many parents carry them:
+
+- **One parent** (player only): **50 % chance** of inheriting.
+- **Both parents** (player + NPC spouse who is a colour lord): **85 % chance** of inheriting.
+
+When they do:
 
 - They always inherit at least one of the parent's schools.
 - Their total number of schools equals the parent's count ±1, clamped to 1–6.
@@ -784,6 +789,6 @@ When max Saturation reaches **0**, you must choose:
 ### NPC Saturation
 
 - Every NPC colour lord has a **5 % chance of a 3-second knockdown** after each battle cast.
-- Every week there is a **2 % chance** a random NPC colour lord oversaturates:
+- Every week there is a **5 % chance** a random NPC colour lord oversaturates:
   - **79 % outcome:** they lose all colours. Another lord in the same kingdom inherits them within 7 days.
   - **21 % outcome:** they die and a Blight of one of their colours spawns immediately. **Blights no longer auto-respawn** — each Blight that is slain is gone until the next oversaturation event spawns one.

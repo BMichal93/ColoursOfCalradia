@@ -283,7 +283,7 @@ namespace ColoursOfCalradia
 
             // NPC Prism lord is immune to madness — no weekly personality fracture.
 
-            // 2% chance a random NPC colour lord oversaturates each week
+            // 5% chance a random NPC colour lord oversaturates each week
             try
             {
                 var npcLords = Hero.AllAliveHeroes
@@ -292,7 +292,7 @@ namespace ColoursOfCalradia
                              && !BlightSystem.IsBlight(h)
                              && !ColourLordRegistry.IsPrismLord(h))
                     .ToList();
-                if (npcLords.Count > 0 && rng.Next(50) == 0)
+                if (npcLords.Count > 0 && rng.Next(20) == 0)
                     ColourLordRegistry.OnLordOversaturated(npcLords[rng.Next(npcLords.Count)]);
             }
             catch { }
@@ -392,7 +392,11 @@ namespace ColoursOfCalradia
             {
                 bool parentIsPlayer = hero.Mother == Hero.MainHero || hero.Father == Hero.MainHero;
                 if (!parentIsPlayer) return;
-                if (MBRandom.RandomInt(100) >= 30) return;
+
+                Hero otherParent = hero.Mother == Hero.MainHero ? hero.Father : hero.Mother;
+                bool otherHasColours = otherParent != null && ColourLordRegistry.IsColourLord(otherParent);
+                int threshold = otherHasColours ? 85 : 50;
+                if (MBRandom.RandomInt(100) >= threshold) return;
 
                 var parentSchools = ColourKnowledge.AllSchools.ToList();
                 int parentCount   = parentSchools.Count;

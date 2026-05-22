@@ -282,8 +282,8 @@ namespace ColoursOfCalradia
 "  Lords with 5+ schools are feared and distrusted by all magical peers.\n" +
 "  Colour lords maintain a morale floor before battle (10 per colour, max 60) and recover\n" +
 "  wounded troops after battle (5% per colour of wounded healed).\n" +
-"  Weekly: 2% chance a random colour lord oversaturates — 80% lose colours (re-seeded in\n" +
-"  one week), 20% die and spawn a Blight of their colour. Blights no longer auto-respawn.\n" +
+"  Weekly: 5% chance a random colour lord oversaturates — 79% lose colours (re-seeded in\n" +
+"  one week), 21% die and spawn a Blight of their colour. Blights no longer auto-respawn.\n" +
 "\n" +
 "THE PRISM\n" +
 "  One lord carries all six colours. They cast constantly and their personality shifts\n" +

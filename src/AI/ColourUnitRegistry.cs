@@ -72,8 +72,11 @@ namespace ColoursOfCalradia
         private static readonly Dictionary<string, int> _mapCooldowns = new Dictionary<string, int>();
         private static readonly List<RespawnEntry>      _respawnQueue  = new List<RespawnEntry>();
 
-        private const float CastCooldown   = 20f;
-        private const float AiTickInterval = 0.5f;
+        private const float CastCooldown    = 120f;
+        private const float AiTickInterval  = 0.5f;
+        private const float WarmupDuration  = 12f;
+        private static float _warmupTimer   = 0f;
+        private static bool  _warmupDone    = false;
 
         // ── Name generation ───────────────────────────────────────────────────
         private static readonly string[] _firstNames =
@@ -330,6 +333,13 @@ namespace ColoursOfCalradia
 
             if (_missionAgents.Count == 0) return;
 
+            if (!_warmupDone)
+            {
+                _warmupTimer += AiTickInterval;
+                if (_warmupTimer < WarmupDuration) return;
+                _warmupDone = true;
+            }
+
             foreach (string key in _cooldowns.Keys.ToList())
             {
                 _cooldowns[key] -= AiTickInterval;
@@ -479,6 +489,32 @@ namespace ColoursOfCalradia
                 ColorSchoolData.GetMessageColor(school)));
 
             _cooldowns[unit.Id] = CastCooldown;
+
+            // Oversaturation risk — 4% lethal (health→1), 5% knockdown, 9% total.
+            int overRoll = _rng.Next(100);
+            if (overRoll < 4)
+            {
+                try
+                {
+                    if (agent.IsActive())
+                    {
+                        agent.Health = 1f;
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"{unit.DisplayName} is overwhelmed — fatally exposed.",
+                            ColorSchoolData.GetMessageColor(school)));
+                    }
+                }
+                catch { }
+            }
+            else if (overRoll < 9)
+            {
+                try
+                {
+                    if (agent.IsActive())
+                        SaturationSystem.ApplyKnockdown(agent, 3f);
+                }
+                catch { }
+            }
         }
 
         // ── Death tracking ────────────────────────────────────────────────────
@@ -510,7 +546,9 @@ namespace ColoursOfCalradia
             _missionAgents.Clear();
             _missionInitialized = false;
             _cooldowns.Clear();
-            _aiAccum = 0f;
+            _aiAccum    = 0f;
+            _warmupTimer = 0f;
+            _warmupDone  = false;
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

@@ -13,7 +13,7 @@
 //
 // Blights and the Prism are fully immune to all oversaturation effects.
 // NPC battle interruption (5% per cast) is handled in ColourLordAI.
-// Weekly world event (2% NPC oversaturation) is handled in CampaignBehavior.
+// Weekly world event (5% NPC oversaturation) is handled in CampaignBehavior.
 // =============================================================================
 
 using System;
