@@ -30,12 +30,12 @@ namespace ColoursOfCalradia
     //     NPC limitations: Blue → no weapon (Scholar's Craft), Yellow → no horseback,
     //     Orange → party morale ≥ 45. Green has no battle limitation (Nature's Calling
     //     is campaign-map only: cannot cast inside settlements).
-    //     5% chance of 3s interruption after each cast (non-Blight, non-Prism lords).
+    //     Per cast (non-Blight, non-Prism): 3% lethal exposure (health→1), 5% knockdown.
     //     Impulsive lords cast more often; Calculating lords less often.
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval       = 12f;
+        private const float CastInterval       = 20f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
         private static readonly Dictionary<string, float> _cooldowns        = new Dictionary<string, float>();
@@ -585,15 +585,36 @@ namespace ColoursOfCalradia
                 $"{agent.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}).",
                 ColorSchoolData.GetMessageColor(school)));
 
-            // 5% interruption from Oversaturation (non-Blight, non-Prism lords)
-            if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero) && _rng.Next(100) < 5)
+            // Oversaturation risk (non-Blight, non-Prism lords only).
+            // 3% lethal: health set to 1 — near-certain death against any standing enemy.
+            // 5% knockdown: 3-second stagger.
+            // Ratio matches the longer cooldown (20s vs old 12s) to keep equivalent risk per minute.
+            if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero))
             {
-                try
+                int overRoll = _rng.Next(100);
+                if (overRoll < 3)
                 {
-                    if (agent.IsActive())
-                        SaturationSystem.ApplyKnockdown(agent, 3f);
+                    try
+                    {
+                        if (agent.IsActive())
+                        {
+                            agent.Health = 1f;
+                            InformationManager.DisplayMessage(new InformationMessage(
+                                $"{agent.Name} is overwhelmed by the casting — fatally exposed.",
+                                ColorSchoolData.GetMessageColor(school)));
+                        }
+                    }
+                    catch { }
                 }
-                catch { }
+                else if (overRoll < 8)
+                {
+                    try
+                    {
+                        if (agent.IsActive())
+                            SaturationSystem.ApplyKnockdown(agent, 3f);
+                    }
+                    catch { }
+                }
             }
         }
 

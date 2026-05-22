@@ -610,9 +610,9 @@ NPC mage lords cast in battle using a priority-driven AI:
 6. **Morale drain** — Tide of Dread (Yellow).
 7. **Reinforcement** — Calling (Orange) if outnumbered; Warm Beacon as fallback.
 
-All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **12-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often; Calculating lords cast 50 % less often. The Prism uses a **4-second base cooldown**.
+All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. NPC lords have a **20-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often; Calculating lords cast 50 % less often. The Prism uses a **4-second base cooldown**. Blights cast every **2 seconds**.
 
-NPC lords apply their school limitations: Blue lords cannot cast while wielding a weapon (Scholar's Craft); Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. Green lords have no battle limitation (Nature's Calling applies only on the campaign map, where NPCs act through a separate system). After each cast, non-Blight non-Prism lords have a **5 % chance of a 3-second knockdown** from Oversaturation.
+NPC lords apply their school limitations: Blue lords cannot cast while wielding a weapon (Scholar's Craft); Yellow lords cannot cast from horseback; Orange lords cannot cast if their party morale is below 45. Green lords have no battle limitation (Nature's Calling applies only on the campaign map, where NPCs act through a separate system). After each cast, non-Blight non-Prism lords face an oversaturation risk: **3 % chance** their health drops to 1 (near-certain death against any standing enemy); **5 % chance** of a 3-second knockdown. Prism and Blights are immune to both.
 
 ### Campaign Map Spells
 
@@ -753,7 +753,7 @@ Commune spells reach beyond your immediate position to reshape the world around 
 
 ## Saturation
 
-Every cast generates **0–3 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap scales with your level: **max = hero level + 10** (hard cap 30).
+Every cast generates **0–5 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap scales with your level: **max = hero level + 10** (hard cap 30).
 
 | Condition | Effect |
 |-----------|--------|
@@ -785,5 +785,5 @@ When max Saturation reaches **0**, you must choose:
 
 - Every NPC colour lord has a **5 % chance of a 3-second knockdown** after each battle cast.
 - Every week there is a **2 % chance** a random NPC colour lord oversaturates:
-  - **80 % outcome:** they lose all colours. Another lord in the same kingdom inherits them within 7 days.
-  - **20 % outcome:** they die and a Blight of one of their colours spawns immediately. **Blights no longer auto-respawn** — each Blight that is slain is gone until the next oversaturation event spawns one.
+  - **79 % outcome:** they lose all colours. Another lord in the same kingdom inherits them within 7 days.
+  - **21 % outcome:** they die and a Blight of one of their colours spawns immediately. **Blights no longer auto-respawn** — each Blight that is slain is gone until the next oversaturation event spawns one.

@@ -68,7 +68,7 @@ namespace ColoursOfCalradia
             if (_playerIsBlight || _playerIsPrism) return;
             if (_playerMaxSaturation <= 0) return;
 
-            int gain = _rng.Next(0, 4); // 0, 1, 2, or 3
+            int gain = _rng.Next(0, 6); // 0–5
             _playerSaturation = Math.Min(_playerSaturation + gain, _playerMaxSaturation);
 
             string gainStr = gain > 0 ? $" (+{gain})" : "";

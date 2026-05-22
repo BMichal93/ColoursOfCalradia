@@ -496,7 +496,7 @@ namespace ColoursOfCalradia
             if (!_lordColors.TryGetValue(hero?.StringId ?? "", out var schools)) return;
 
             int roll = _rng.Next(100);
-            if (roll < 80)
+            if (roll < 79)
             {
                 string factionId = (hero.MapFaction as Kingdom)?.StringId;
                 _lordColors.Remove(hero.StringId);
