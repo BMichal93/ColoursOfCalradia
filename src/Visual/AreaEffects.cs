@@ -201,10 +201,9 @@ namespace ColoursOfCalradia
                 {
                     case "create_orange": // Golden Recoil — glow agents inside; retribution handled in OnAgentHit
                     {
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        foreach (Agent a in Mission.Current.Agents)
                         {
+                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
                             try { BeginAgentGlow(a, e.School, 2f); } catch { }
                         }
                         break;
@@ -243,10 +242,9 @@ namespace ColoursOfCalradia
                     case "create_green": // Emerald Font — heal all agents in area
                     {
                         float fontHeal = 15f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        foreach (Agent a in Mission.Current.Agents)
                         {
+                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
                             try
                             {
                                 float h = Math.Min(fontHeal, a.HealthLimit - a.Health);
@@ -259,10 +257,10 @@ namespace ColoursOfCalradia
 
                     case "create_blue": // Sapphire Bastion — push all agents inside the radius every tick
                     {
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        foreach (Agent a in Mission.Current.Agents)
                         {
+                            if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
+                            if (a.Position.Distance(e.Position) > e.Radius) continue;
                             try
                             {
                                 Vec3 dir = (a.Position - e.Position);

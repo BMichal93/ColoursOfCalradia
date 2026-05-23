@@ -578,6 +578,55 @@ namespace ColoursOfCalradia
         // Roll once per battle when the warmup completes (~8% base chance).
         // Season and the cultures present on the field bias school selection.
         // Spawns a dim overhead ambient light and applies one immediate school effect.
+
+        private static readonly string[][] _battleEventFlavour = {
+            new[] { // Red
+                "The sky bleeds red over Calradia. Every blade bites deeper.",
+                "A Battanian elder would call this the Butcher's Hour. The field agrees.",
+                "Crimson light floods the air -- the colour of conquest. All are marked by it.",
+                "The red boils up from old Calradic battlegrounds. Both sides feel it.",
+            },
+            new[] { // Orange
+                "Gold fills the horizon. In Vlandia, they call this the Warlord's Blessing.",
+                "A warmth like Aserai noon presses through the ranks. Resolve stiffens on all sides.",
+                "Gilded air -- the kind the old Empire promised in its oaths. It holds.",
+                "The orange rises. Somewhere a banner catches the light and refuses to fall.",
+            },
+            new[] { // Yellow
+                "Something wrong hangs in the air. Sturgian shamans know this dread.",
+                "Yellow mist -- the colour Battanian clans feared in the old forest hollows.",
+                "Creeping unease. Even veterans of the Empire find their hands unsteady.",
+                "Sickness in the light. The nerve of every soldier here begins to fray.",
+            },
+            new[] { // Green
+                "The old Battanian faith stirs. The earth drinks from the wounds of the field.",
+                "Life surges from Calradia's soil. Even Imperial physicians pause in awe.",
+                "Green light floods the air. The Khuzaits call this the Grass Mother's touch.",
+                "The earth breathes. Every wound on this field begins to close.",
+            },
+            new[] { // Blue
+                "Stillness descends -- the Scholar's Veil, as the old Calradic texts described it.",
+                "Blue cold drops from nowhere -- the air of Sturgia's northern peaks, here and sudden.",
+                "The Scholar's hand, unlooked-for. Barriers of force rise across the field.",
+                "The veil drops. Movement grows laboured on every side.",
+            },
+            new[] { // Purple
+                "The grey comes for someone. It has, since before the Calradic Empire's founding.",
+                "Purple dusk at midday. One soul on this field will not see the sunset.",
+                "A Khuzait fortune-reader would leave the field now. One flame goes out.",
+                "The grey shroud falls over Calradia. Someone is taken -- quietly, as always.",
+            },
+        };
+
+        private static readonly string[] _npcCastSuffix = {
+            "The red has come to Calradia.",                         // Red
+            "The warmth of the old roads, remembered.",             // Orange
+            "Something the Battanian shamans would recognise.",     // Yellow
+            "The old faith stirs in Calradia's soil.",              // Green
+            "The Scholar's craft, as the old Empire described it.", // Blue
+            "The grey takes no sides in Calradia's wars.",          // Purple
+        };
+
         private static void TryTriggerBattleEvent()
         {
             if (Mission.Current == null) return;
@@ -604,20 +653,25 @@ namespace ColoursOfCalradia
                 if (roll < cum) { school = (ColorSchool)i; break; }
             }
 
-            string eventName, eventDesc;
+            string eventName;
             switch (school)
             {
-                case ColorSchool.Red:    eventName = "Crimson Sky";     eventDesc = "The sky bleeds red. Bloodlust grips the field."; break;
-                case ColorSchool.Orange: eventName = "Gilded Hour";     eventDesc = "Warm gold fills the air. Courage swells."; break;
-                case ColorSchool.Yellow: eventName = "Sickly Haze";     eventDesc = "A wrong colour fills the air. Something hollows out."; break;
-                case ColorSchool.Green:  eventName = "Living Surge";    eventDesc = "The earth breathes. Wounds knit faster."; break;
-                case ColorSchool.Blue:   eventName = "Scholar's Veil";  eventDesc = "Still blue settles over the field. Movement grows laboured."; break;
-                case ColorSchool.Purple: eventName = "Grey Shroud";     eventDesc = "The grey descends. One soul is taken before it begins."; break;
-                default:                 eventName = "Colour Surge";    eventDesc = "Colour magic fills the air."; break;
+                case ColorSchool.Red:    eventName = "Crimson Sky";    break;
+                case ColorSchool.Orange: eventName = "Gilded Hour";    break;
+                case ColorSchool.Yellow: eventName = "Sickly Haze";   break;
+                case ColorSchool.Green:  eventName = "Living Surge";   break;
+                case ColorSchool.Blue:   eventName = "Scholar's Veil"; break;
+                case ColorSchool.Purple: eventName = "Grey Shroud";    break;
+                default:                 eventName = "Colour Surge";   break;
             }
+            int schoolIdx = (int)school < _battleEventFlavour.Length ? (int)school : 0;
+            string eventDesc = _battleEventFlavour[schoolIdx][_rng.Next(_battleEventFlavour[schoolIdx].Length)];
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"✦ {eventName}: {eventDesc} ✦",
+                $"-- {eventName} --",
+                ColorSchoolData.GetMessageColor(school)));
+            InformationManager.DisplayMessage(new InformationMessage(
+                eventDesc,
                 ColorSchoolData.GetMessageColor(school)));
 
             // Spawn dim ambient overhead light
@@ -748,8 +802,9 @@ namespace ColoursOfCalradia
             SpellEffects.TryCastSound(agent.Position, school);
             SpellEffects.TryCastAnimation(agent);
 
+            string npcSuffix = (int)school < _npcCastSuffix.Length ? " " + _npcCastSuffix[(int)school] : "";
             InformationManager.DisplayMessage(new InformationMessage(
-                $"{agent.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}).",
+                $"✦ {agent.Name} channels {spellName}.{npcSuffix} ✦",
                 ColorSchoolData.GetMessageColor(school)));
 
             // Oversaturation risk (non-Blight, non-Prism lords only).

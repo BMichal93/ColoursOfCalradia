@@ -575,7 +575,12 @@ namespace ColoursOfCalradia
                 {
                     var a = _animClearTimers[i].agent;
                     if (a != null && a.IsActive())
-                        try { a.SetActionChannel(1, _castAnimClearCache, true, 0UL); } catch { }
+                    {
+                        bool mounted = false;
+                        try { mounted = a.MountAgent != null; } catch { }
+                        if (!mounted)
+                            try { a.SetActionChannel(1, _castAnimClearCache, true, 0UL); } catch { }
+                    }
                     _animClearTimers.RemoveAt(i);
                 }
                 else
@@ -588,6 +593,7 @@ namespace ColoursOfCalradia
         public static void TryCastAnimation(Agent agent)
         {
             if (agent == null || !agent.IsActive()) return;
+            try { if (agent.MountAgent != null) return; } catch { }
             try
             {
                 agent.SetActionChannel(1, _castAnimCache, false, 0UL);
