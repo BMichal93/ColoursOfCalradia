@@ -294,6 +294,170 @@ namespace ColoursOfCalradia
                     ColourLordRegistry.OnLordOversaturated(npcLords[_rng.Next(npcLords.Count)]);
             }
             catch { }
+
+            // ~3% chance per school per week for a campaign magical event
+            // Season biases which schools are active
+            try { ApplyCampaignMagicEvents(); } catch { }
+        }
+
+        private void ApplyCampaignMagicEvents()
+        {
+            if (Campaign.Current == null || MobileParty.MainParty == null) return;
+
+            CampaignTime.Seasons season = CampaignTime.Seasons.Spring;
+            try { season = CampaignTime.Now.GetSeasonOfYear; } catch { }
+
+            foreach (ColorSchool school in _allSchoolsOrdered)
+            {
+                // Season modifier: in-season schools roll 5%, off-season 3%, opposite season 1%
+                int threshold;
+                bool inSeason = IsSchoolInSeason(school, season);
+                bool opposite = IsSchoolOpposite(school, season);
+                if (inSeason) threshold = 95;     // 5% chance
+                else if (opposite) threshold = 99; // 1% chance
+                else threshold = 97;               // 3% chance
+
+                if (_rng.Next(100) < threshold) continue;
+
+                ApplyOneCampaignMagicEvent(school);
+            }
+        }
+
+        private bool IsSchoolInSeason(ColorSchool school, CampaignTime.Seasons season)
+        {
+            switch (season)
+            {
+                case CampaignTime.Seasons.Spring: return school == ColorSchool.Green;
+                case CampaignTime.Seasons.Summer: return school == ColorSchool.Red || school == ColorSchool.Yellow;
+                case CampaignTime.Seasons.Autumn: return school == ColorSchool.Orange || school == ColorSchool.Red;
+                case CampaignTime.Seasons.Winter: return school == ColorSchool.Blue || school == ColorSchool.Purple;
+                default: return false;
+            }
+        }
+
+        private bool IsSchoolOpposite(ColorSchool school, CampaignTime.Seasons season)
+        {
+            switch (season)
+            {
+                case CampaignTime.Seasons.Summer: return school == ColorSchool.Blue || school == ColorSchool.Purple;
+                case CampaignTime.Seasons.Winter: return school == ColorSchool.Red || school == ColorSchool.Yellow;
+                default: return false;
+            }
+        }
+
+        private void ApplyOneCampaignMagicEvent(ColorSchool school)
+        {
+            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
+            IFaction playerFaction = Hero.MainHero?.MapFaction;
+
+            switch (school)
+            {
+                case ColorSchool.Red:
+                {
+                    // A nearby party — any faction — loses soldiers to a surge of red
+                    var target = MobileParty.All
+                        .Where(p => p.IsActive && p.MemberRoster.TotalRegulars > 5
+                                 && (p.GetPosition2D - playerPos).Length < 30f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    if (target != null)
+                    {
+                        var troops = target.MemberRoster.GetTroopRoster()
+                            .Where(e => !e.Character.IsHero && e.Number > e.WoundedNumber).ToList();
+                        if (troops.Count > 0)
+                        {
+                            var e = troops[_rng.Next(troops.Count)];
+                            try { target.MemberRoster.AddToCounts(e.Character, 0, false, 1 + _rng.Next(3)); } catch { }
+                            InformationManager.DisplayMessage(new InformationMessage(
+                                $"✦ Crimson Sky: A surge of red tears through {target.Name}. Soldiers fall wounded. ✦",
+                                ColorSchoolData.GetMessageColor(school)));
+                        }
+                    }
+                    break;
+                }
+                case ColorSchool.Orange:
+                {
+                    // A random nearby party — any faction — receives a morale surge
+                    var target = MobileParty.All
+                        .Where(p => p.IsActive && (p.GetPosition2D - playerPos).Length < 30f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault() ?? MobileParty.MainParty;
+                    try { target.RecentEventsMorale += 8f; } catch { }
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"✦ Gilded Hour: Warmth sweeps through {target.Name} without warning. Morale +8. ✦",
+                        ColorSchoolData.GetMessageColor(school)));
+                    break;
+                }
+                case ColorSchool.Yellow:
+                {
+                    // Random nearby settlement (any) loses loyalty
+                    var target = Settlement.All
+                        .Where(s => s.IsTown && s.Town != null
+                                 && (s.GetPosition2D - playerPos).Length < 40f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    if (target?.Town != null)
+                    {
+                        float before = target.Town.Loyalty;
+                        try { target.Town.Loyalty = Math.Max(0f, before - 8f); } catch { }
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"✦ Sickly Haze: Dread drifts through {target.Name}. Loyalty falls. ✦",
+                            ColorSchoolData.GetMessageColor(school)));
+                    }
+                    break;
+                }
+                case ColorSchool.Green:
+                {
+                    // Random nearby village — any faction — gets a hearth boost
+                    var target = Settlement.All
+                        .Where(s => s.IsVillage && s.Village != null
+                                 && (s.GetPosition2D - playerPos).Length < 40f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    if (target?.Village != null)
+                    {
+                        target.Village.Hearth += 10f;
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"✦ Living Surge: The green breathes into {target.Name}. Hearth grows. ✦",
+                            ColorSchoolData.GetMessageColor(school)));
+                    }
+                    break;
+                }
+                case ColorSchool.Blue:
+                {
+                    // A random nearby lord — any kingdom — gains influence
+                    var target = Hero.AllAliveHeroes
+                        .Where(h => h.IsLord && h.IsAlive && h.Clan?.Kingdom != null
+                                 && h.PartyBelongedTo != null
+                                 && (h.PartyBelongedTo.GetPosition2D - playerPos).Length < 30f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault() ?? Hero.MainHero;
+                    if (target?.Clan?.Kingdom != null)
+                    {
+                        try { GainKingdomInfluenceAction.ApplyForDefault(target, 2); } catch { }
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"✦ Scholar's Veil: An insight arrives for {target.Name}. Influence +2. ✦",
+                            ColorSchoolData.GetMessageColor(school)));
+                    }
+                    break;
+                }
+                case ColorSchool.Purple:
+                {
+                    // A random nearby lord — any faction — ages 3 days
+                    var target = Hero.AllAliveHeroes
+                        .Where(h => h.IsLord && h.IsAlive && h.Clan != null
+                                 && h.PartyBelongedTo != null
+                                 && (h.PartyBelongedTo.GetPosition2D - playerPos).Length < 30f)
+                        .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    if (target == null)
+                        target = Hero.AllAliveHeroes
+                            .Where(h => h.IsLord && h.IsAlive && h.Clan != null)
+                            .OrderBy(_ => _rng.Next()).FirstOrDefault();
+                    if (target != null)
+                    {
+                        try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(3)); } catch { }
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"✦ Grey Shroud: Three days quietly taken from {target.Name}. ✦",
+                            ColorSchoolData.GetMessageColor(school)));
+                    }
+                    break;
+                }
+            }
         }
 
         // ── Mission ended ────────────────────────────────────────────────────

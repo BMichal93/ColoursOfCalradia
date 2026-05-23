@@ -137,7 +137,7 @@ namespace ColoursOfCalradia
             Msg("Creeping Dread takes shape — nine clouds of formless terror drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
         }
 
-        // Emerald Font — two healing pools side by side, perpendicular to caster's look direction
+        // Emerald Font — three healing pools in a triangle around the caster
         private static void SpellCreateGreen()
         {
             if (Player == null) return;
@@ -155,9 +155,11 @@ namespace ColoursOfCalradia
             if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
             else right = right.NormalizedCopy();
             Vec3 centre = Player.Position;
+            // Triangle: one node forward, two back-flanking
             Vec3[] nodePos = {
-                centre - right * (NodeSpacing * 0.5f),
-                centre + right * (NodeSpacing * 0.5f),
+                centre + fwd  * (NodeSpacing * 0.8f),
+                centre - fwd  * (NodeSpacing * 0.4f) - right * NodeSpacing,
+                centre - fwd  * (NodeSpacing * 0.4f) + right * NodeSpacing,
             };
             foreach (Vec3 pos in nodePos)
             {
@@ -173,11 +175,10 @@ namespace ColoursOfCalradia
             }
             BeginAgentGlow(Player, ColorSchool.Green, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
-            Msg("The Emerald Font opens — two pools of living light, mending all who stand within. Cast again to dismiss.", ColorSchool.Green);
+            Msg("The Emerald Font opens — three points of living light mend all who stand within. Cast again to dismiss.", ColorSchool.Green);
         }
 
-        // Sapphire Bastion — four repulsion nodes in a line perpendicular to the caster's look direction,
-        // forming a wall of force across the battlefield.
+        // Sapphire Bastion — six repulsion nodes in a wide line perpendicular to the caster's look direction.
         private static void SpellCreateBlue()
         {
             if (Player == null) return;
@@ -189,9 +190,8 @@ namespace ColoursOfCalradia
             }
 
             const float NodeRadius  = 3f;
-            const float NodeSpacing = 4f; // distance between adjacent node centres
+            const float NodeSpacing = 5f; // wider spacing for broader wall coverage
 
-            // Wall runs perpendicular to the player's look direction
             Vec3 fwd   = Player.LookDirection.NormalizedCopy();
             Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
             if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
@@ -199,10 +199,12 @@ namespace ColoursOfCalradia
 
             Vec3 centre = Player.Position;
             Vec3[] nodePos = {
+                centre - right * (NodeSpacing * 2.5f),
                 centre - right * (NodeSpacing * 1.5f),
                 centre - right * (NodeSpacing * 0.5f),
                 centre + right * (NodeSpacing * 0.5f),
-                centre + right * (NodeSpacing * 1.5f)
+                centre + right * (NodeSpacing * 1.5f),
+                centre + right * (NodeSpacing * 2.5f),
             };
 
             foreach (Vec3 pos in nodePos)
@@ -219,7 +221,7 @@ namespace ColoursOfCalradia
 
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
-            Msg("Sapphire Bastion rises — four pillars of force seal the line. None shall cross. Cast again to dismiss.", ColorSchool.Blue);
+            Msg("Sapphire Bastion rises — six pillars of force seal a wide line. Cast again to dismiss.", ColorSchool.Blue);
         }
 
         // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect
@@ -246,6 +248,29 @@ namespace ColoursOfCalradia
             try { _hollowGazeLight?.Remove(0); } catch { }
             _hollowGazeLight = SpawnAreaLight(_hollowGazeTarget.Position, ColorSchool.Purple, 6f);
             Msg($"Hollow Gaze — {_hollowGazeTarget.Name} empties out. They stand and wait for nothing.", ColorSchool.Purple);
+        }
+
+        // Spawns random Sapphire Bastion repulsion nodes for battle events (not player-cast)
+        public static void SpawnBattleEventBlueWalls(Vec3 centre)
+        {
+            if (Mission.Current == null) return;
+            int count = 4 + _rng.Next(3); // 4-6 nodes
+            for (int i = 0; i < count; i++)
+            {
+                double angle = _rng.NextDouble() * Math.PI * 2;
+                float  dist  = 8f + (float)(_rng.NextDouble() * 20f);
+                Vec3 pos = centre + new Vec3((float)Math.Cos(angle) * dist,
+                                             (float)Math.Sin(angle) * dist, 0f);
+                pos.z = centre.z;
+                var node = new AreaEffect
+                {
+                    Id = "create_blue", School = ColorSchool.Blue,
+                    Position = pos, Radius = 3f,
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 25f
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, ColorSchool.Blue, node.Radius);
+                _areaEffects.Add(node);
+            }
         }
 
         // Recruit helpers (used by Calling and NPC AI)

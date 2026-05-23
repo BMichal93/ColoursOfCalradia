@@ -35,7 +35,7 @@ namespace ColoursOfCalradia
         // Purple spells apply The Slow Unravelling (+1 day age, −1% fertility).
         // =================================================================
 
-        // ── Red — Pillager's Brand ────────────────────────────────────────
+        // ── Red — Burning Winds ───────────────────────────────────────────
         // Curse a random enemy village: reduce hearth by 10%.
         private static void SpellAffectRed()
         {
@@ -50,29 +50,29 @@ namespace ColoursOfCalradia
 
             if (candidates.Count == 0)
             {
-                Msg("Pillager's Brand — no enemy villages to curse.", ColorSchool.Red);
+                Msg("Burning Winds — no enemy villages to reach.", ColorSchool.Red);
                 return;
             }
 
             Settlement village = candidates[_rng.Next(candidates.Count)];
             float before = village.Village.Hearth;
             village.Village.Hearth = Math.Max(10f, before * 0.9f);
-            Msg($"Pillager's Brand — the red reaches {village.Name}. Hearth falls from {before:F0} to {village.Village.Hearth:F0}.", ColorSchool.Red);
+            Msg($"Burning Winds — the red rides the wind to {village.Name}. Hearth falls from {before:F0} to {village.Village.Hearth:F0}.", ColorSchool.Red);
         }
 
         // ── Orange — Rallying Call ────────────────────────────────────────
-        // Raise party morale by 3 per cast. Reliable, repeatable.
+        // Raise party morale by 5 per cast.
         private static void SpellAffectOrange()
         {
             var party = MobileParty.MainParty;
             if (party == null) return;
 
-            try { party.RecentEventsMorale += 2f; } catch { return; }
-            Msg("Rallying Call — your soldiers find new resolve. Morale +2.", ColorSchool.Orange);
+            try { party.RecentEventsMorale += 5f; } catch { return; }
+            Msg("Rallying Call — warmth moves through the ranks. They stand taller. Morale +5.", ColorSchool.Orange);
         }
 
-        // ── Yellow — Press Gang ───────────────────────────────────────────
-        // Conscript a random non-hero prisoner from your prison roster.
+        // ── Yellow — Chains of Fear ───────────────────────────────────────
+        // Conscript a random non-hero prisoner from your prison roster. Morale -1.
         private static void SpellAffectYellow()
         {
             var party = MobileParty.MainParty;
@@ -82,7 +82,7 @@ namespace ColoursOfCalradia
                 .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
             if (prisoners.Count == 0)
             {
-                Msg("Press Gang — no prisoners to conscript.", ColorSchool.Yellow);
+                Msg("Chains of Fear — no prisoners to conscript.", ColorSchool.Yellow);
                 return;
             }
 
@@ -91,10 +91,10 @@ namespace ColoursOfCalradia
             {
                 party.PrisonRoster.AddToCounts(element.Character, -1);
                 party.MemberRoster.AddToCounts(element.Character, 1);
-                party.RecentEventsMorale -= 2f;
+                party.RecentEventsMorale -= 1f;
             }
             catch { return; }
-            Msg($"Press Gang — a {element.Character.Name} is forced into the ranks. Your soldiers are unsettled. Morale −2.", ColorSchool.Yellow);
+            Msg($"Chains of Fear — a {element.Character.Name} is coerced into the ranks. Your soldiers watch in silence. Morale −1.", ColorSchool.Yellow);
         }
 
         // ── Green — Mending Touch ─────────────────────────────────────────
@@ -143,7 +143,7 @@ namespace ColoursOfCalradia
             }
         }
 
-        // ── Purple — Grey Veil ────────────────────────────────────────────
+        // ── Purple — Purple Confusion ─────────────────────────────────────
         // Scatter nearby enemy parties (15 map-unit radius, 10-unit push).
         // Cost: −1% fertility + 1 day aging.
         private static void SpellAffectPurple()
@@ -168,16 +168,16 @@ namespace ColoursOfCalradia
             }
 
             string effect = scattered > 0
-                ? $"{scattered} nearby {(scattered == 1 ? "enemy loses" : "enemies lose")} your trail."
-                : "No enemies close enough to scatter.";
-            Msg($"Grey Veil — {effect}", ColorSchool.Purple);
+                ? $"{scattered} nearby {(scattered == 1 ? "enemy loses" : "enemies lose")} the thread of pursuit."
+                : "No enemies close enough to unsettle.";
+            Msg($"Purple Confusion — {effect}", ColorSchool.Purple);
         }
 
         // =================================================================
         // INVOKE SPELLS (LU prefix) — campaign map, advanced
         // =================================================================
 
-        // ── Red — Withering Strike ────────────────────────────────────────
+        // ── Red — Red Lightning ───────────────────────────────────────────
         // Wound one random non-hero soldier in the nearest enemy party at war.
         // Prefers kingdom enemies over bandits/looters when the player is in a kingdom.
         private static void SpellInvokeRed()
@@ -215,18 +215,18 @@ namespace ColoursOfCalradia
                 }
             }
 
-            if (target == null) { Msg("Withering Strike — no enemy party at war found.", ColorSchool.Red); return; }
+            if (target == null) { Msg("Red Lightning — no enemy party at war found.", ColorSchool.Red); return; }
 
             var troops = target.MemberRoster.GetTroopRoster()
                 .Where(e => !e.Character.IsHero && e.Number > e.WoundedNumber).ToList();
-            if (troops.Count == 0) { Msg("Withering Strike — no healthy soldiers to wound.", ColorSchool.Red); return; }
+            if (troops.Count == 0) { Msg("Red Lightning — no healthy soldiers to wound.", ColorSchool.Red); return; }
 
             var element = troops[_rng.Next(troops.Count)];
             try { target.MemberRoster.AddToCounts(element.Character, 0, false, 1); } catch { return; }
-            Msg($"Withering Strike — one {element.Character.Name} in {target.Name} falls wounded ({minDist:F1} km).", ColorSchool.Red);
+            Msg($"Red Lightning — one {element.Character.Name} in {target.Name} falls before the battle starts ({minDist:F1} km).", ColorSchool.Red);
         }
 
-        // ── Orange — Inspired Word ────────────────────────────────────────
+        // ── Orange — Guidance ────────────────────────────────────────────
         // Grant XP to a random soldier in your party. Uses reflection to call
         // TroopRoster.AddXpToTroop — if unavailable, shows a flavour message only.
         private static MethodInfo _addXpToTroopMethod;
@@ -259,8 +259,8 @@ namespace ColoursOfCalradia
             }
 
             Msg(applied
-                ? $"Inspired Word — {element.Character.Name} gains {xp} experience."
-                : $"Inspired Word — inspiration stirs in {element.Character.Name}.", ColorSchool.Orange);
+                ? $"Guidance — {element.Character.Name} gains {xp} experience."
+                : $"Guidance — something shifts in {element.Character.Name}.", ColorSchool.Orange);
         }
 
         // ── Yellow — Creeping Fear ────────────────────────────────────────
@@ -303,22 +303,35 @@ namespace ColoursOfCalradia
 
             if (target == null) { Msg("Creeping Fear — no enemy party at war found.", ColorSchool.Yellow); return; }
 
-            try { target.RecentEventsMorale -= 2f; } catch { return; }
-            Msg($"Creeping Fear — {target.Name} loses 2 morale ({minDist:F1} km).", ColorSchool.Yellow);
+            float moraleLoss = 15f + _rng.Next(16); // 15–30
+            try { target.RecentEventsMorale -= moraleLoss; } catch { return; }
+            Msg($"Creeping Fear — {target.Name} loses {moraleLoss:F0} morale ({minDist:F1} km).", ColorSchool.Yellow);
         }
 
-        // ── Green — Green's Bounty ────────────────────────────────────────
-        // 80% grain, 10% sheep, 10% cow.
+        // ── Green — Animal Friendship ─────────────────────────────────────
+        // A random living thing finds its way to you: grain(50%), pig(15%), sheep(12%),
+        // horse(8%), mule(8%), cow(7%).
         private static void SpellInvokeGreen()
         {
             var party = MobileParty.MainParty;
             if (party == null) return;
 
-            int roll = _rng.Next(10);
-            string itemId, itemName;
-            if      (roll < 8) { itemId = "grain"; itemName = "1 unit of grain"; }
-            else if (roll < 9) { itemId = "sheep"; itemName = "a sheep"; }
-            else               { itemId = "cow";   itemName = "a cow"; }
+            // Weighted item table: [id, display name, cumulative threshold]
+            var table = new[] {
+                ("grain",       "1 unit of grain",  50),
+                ("pig",         "a pig",            65),
+                ("sheep",       "a sheep",          77),
+                ("sumpter_horse","a sumpter horse", 85),
+                ("mule",        "a mule",           93),
+                ("cow",         "a cow",            100),
+            };
+
+            int roll = _rng.Next(100);
+            string itemId = "grain", itemName = "1 unit of grain";
+            foreach (var (id, name, threshold) in table)
+            {
+                if (roll < threshold) { itemId = id; itemName = name; break; }
+            }
 
             try
             {
@@ -326,32 +339,32 @@ namespace ColoursOfCalradia
                 if (item == null)
                 {
                     item = Game.Current.ObjectManager.GetObject<ItemObject>("grain");
-                    if (item == null) { Msg("Green's Bounty — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
+                    if (item == null) { Msg("Animal Friendship — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
                     itemName = "1 unit of grain";
                 }
                 party.ItemRoster.AddToCounts(new EquipmentElement(item), 1);
             }
-            catch { Msg("Green's Bounty — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
-            Msg($"Green's Bounty — {itemName} ripens at your touch.", ColorSchool.Green);
+            catch { Msg("Animal Friendship — the green stirs, but nothing takes form.", ColorSchool.Green); return; }
+            Msg($"Animal Friendship — {itemName} finds its way to you.", ColorSchool.Green);
         }
 
-        // ── Blue — Scholar's Word ─────────────────────────────────────────
-        // Gain 1 influence. Requires kingdom membership.
+        // ── Blue — Blue Influence ─────────────────────────────────────────
+        // Gain 4 influence. Requires kingdom membership.
         private static void SpellInvokeBlue()
         {
             if (Hero.MainHero == null) return;
             if (Hero.MainHero.Clan?.Kingdom == null)
             {
-                Msg("Scholar's Word — you must belong to a kingdom for influence to mean anything.", ColorSchool.Blue);
+                Msg("Blue Influence — you must belong to a kingdom for influence to mean anything.", ColorSchool.Blue);
                 return;
             }
 
-            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 1); } catch { return; }
-            Msg("Scholar's Word — the Scholar's insight earns 1 influence.", ColorSchool.Blue);
+            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 4); } catch { return; }
+            Msg("Blue Influence — the Scholar's insight earns 4 influence.", ColorSchool.Blue);
         }
 
-        // ── Purple — Wither's Touch ───────────────────────────────────────
-        // A random enemy lord loses 2 renown. Cost: −1% fertility + 1 day aging.
+        // ── Purple — Purple Isolation ─────────────────────────────────────
+        // A random enemy lord loses 8 renown. Cost: −1% fertility + 1 day aging.
         private static void SpellInvokePurple()
         {
             if (Hero.MainHero == null) return;
@@ -361,12 +374,12 @@ namespace ColoursOfCalradia
                 .Where(h => h.IsLord && h.IsAlive && h.Clan != null
                          && h.MapFaction != null && h.MapFaction != playerFaction)
                 .ToList();
-            if (enemies.Count == 0) { Msg("Wither's Touch — no enemy lords found.", ColorSchool.Purple); return; }
+            if (enemies.Count == 0) { Msg("Purple Isolation — no enemy lords found.", ColorSchool.Purple); return; }
 
             Hero target = enemies[_rng.Next(enemies.Count)];
-            try { target.Clan.AddRenown(-2f); } catch { return; }
+            try { target.Clan.AddRenown(-8f); } catch { return; }
 
-            Msg($"Wither's Touch — {target.Name}'s clan loses 2 renown.", ColorSchool.Purple);
+            Msg($"Purple Isolation — something significant leaves {target.Name}. Clan renown −8.", ColorSchool.Purple);
         }
 
         // =================================================================
@@ -416,8 +429,8 @@ namespace ColoursOfCalradia
             if (candidates.Count == 0) { Msg("Good Word — no one to speak well of you.", ColorSchool.Orange); return; }
 
             Hero target = candidates[_rng.Next(candidates.Count)];
-            try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(Hero.MainHero, target, 1, false); } catch { return; }
-            Msg($"Good Word — your warmth reaches {target.Name}. Relations +1.", ColorSchool.Orange);
+            try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(Hero.MainHero, target, 2, false); } catch { return; }
+            Msg($"Good Word — your warmth reaches {target.Name}. Relations +2.", ColorSchool.Orange);
         }
 
         // ── Yellow — Sow Doubt ────────────────────────────────────────────
@@ -490,8 +503,8 @@ namespace ColoursOfCalradia
             }
         }
 
-        // ── Purple — Grey Curse ───────────────────────────────────────────
-        // A random enemy lord ages 3 days; their clan loses 2 renown.
+        // ── Purple — The Waning ───────────────────────────────────────────
+        // A random enemy lord ages 7 days; their clan loses 3 renown.
         private static void SpellCommunePurple()
         {
             if (Hero.MainHero == null) return;
@@ -501,12 +514,12 @@ namespace ColoursOfCalradia
                 .Where(h => h.IsLord && h.IsAlive && h.Clan != null
                          && h.MapFaction != null && h.MapFaction != playerFaction)
                 .ToList();
-            if (enemies.Count == 0) { Msg("Grey Curse — no enemy lords to curse.", ColorSchool.Purple); return; }
+            if (enemies.Count == 0) { Msg("The Waning — no enemy lords to reach.", ColorSchool.Purple); return; }
 
             Hero target = enemies[_rng.Next(enemies.Count)];
-            try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(3)); } catch { }
-            try { target.Clan.AddRenown(-2f); } catch { return; }
-            Msg($"Grey Curse — {target.Name} ages three days. Clan renown dims. | {target.Name} age: {(int)target.Age}", ColorSchool.Purple);
+            try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(7)); } catch { }
+            try { target.Clan.AddRenown(-3f); } catch { return; }
+            Msg($"The Waning — seven days taken from {target.Name}. Clan renown falls. | {target.Name} age: {(int)target.Age}", ColorSchool.Purple);
         }
 
     }

@@ -384,11 +384,56 @@ namespace ColoursOfCalradia
             else if (roll < 30) count = 1;
             else                return;
 
-            _lordColors[companion.StringId] = PickColors(count);
-            ApplyColourTraits(companion, _lordColors[companion.StringId]);
-            ApplyColorRelationships(companion, _lordColors[companion.StringId]);
-            string colorNames = string.Join(", ", _lordColors[companion.StringId]
-                .Select(c => ColorSchoolData.Info[c].Name));
+            // Build a trait-weighted school pool so companions align with their personality
+            var weights = new Dictionary<ColorSchool, int>
+            {
+                [ColorSchool.Red]    = 1,
+                [ColorSchool.Orange] = 1,
+                [ColorSchool.Yellow] = 1,
+                [ColorSchool.Green]  = 1,
+                [ColorSchool.Blue]   = 1,
+                [ColorSchool.Purple] = 1,
+            };
+            try
+            {
+                int mercy      = companion.GetTraitLevel(DefaultTraits.Mercy);
+                int calc       = companion.GetTraitLevel(DefaultTraits.Calculating);
+                int valor      = companion.GetTraitLevel(DefaultTraits.Valor);
+                int generosity = companion.GetTraitLevel(DefaultTraits.Generosity);
+                int honor      = companion.GetTraitLevel(DefaultTraits.Honor);
+
+                if (mercy      > 0) weights[ColorSchool.Green]  += 2;
+                if (mercy      < 0) weights[ColorSchool.Yellow] += 2;
+                if (calc       > 0) weights[ColorSchool.Blue]   += 2;
+                if (calc       < 0) weights[ColorSchool.Red]    += 2;
+                if (valor      > 0) weights[ColorSchool.Orange] += 1;
+                if (valor      < 0) weights[ColorSchool.Purple] += 2;
+                if (generosity > 0) weights[ColorSchool.Orange] += 2;
+                if (honor      > 0) weights[ColorSchool.Green]  += 1;
+                if (honor      < 0) weights[ColorSchool.Yellow] += 1;
+            }
+            catch { }
+
+            // Build weighted list and pick without replacement
+            var pool = new List<ColorSchool>();
+            foreach (var kvp in weights)
+                for (int i = 0; i < kvp.Value; i++)
+                    pool.Add(kvp.Key);
+
+            var assigned = new List<ColorSchool>();
+            for (int i = 0; i < count && pool.Count > 0; i++)
+            {
+                int idx = _rng.Next(pool.Count);
+                ColorSchool chosen = pool[idx];
+                if (!assigned.Contains(chosen)) assigned.Add(chosen);
+                pool.RemoveAll(s => s == chosen);
+            }
+            if (assigned.Count == 0) assigned = PickColors(count);
+
+            _lordColors[companion.StringId] = assigned;
+            ApplyColourTraits(companion, assigned);
+            ApplyColorRelationships(companion, assigned);
+            string colorNames = string.Join(", ", assigned.Select(c => ColorSchoolData.Info[c].Name));
             InformationManager.DisplayMessage(new InformationMessage(
                 $"{companion.Name} carries colour magic: {colorNames}.",
                 new Color(0.7f, 0.7f, 0.5f)));
@@ -707,6 +752,19 @@ namespace ColoursOfCalradia
                 ColorSchool school = kvp.Value[_rng.Next(kvp.Value.Count)];
                 CastLordMapSpell(hero, school);
                 castsToday++;
+
+                // Prism reactive: when any lord casts, the Prism responds if off cooldown
+                if (_prismLordId != null && _prismLordId != kvp.Key)
+                {
+                    Hero prism = GetPrismLord();
+                    if (prism != null && (!_campaignCooldowns.TryGetValue(_prismLordId, out int pcd) || pcd <= 0))
+                    {
+                        _campaignCooldowns[_prismLordId] = 6 + _rng.Next(4);
+                        var prismColors = _lordColors.TryGetValue(_prismLordId, out var pcols) ? pcols : null;
+                        if (prismColors != null && prismColors.Count > 0)
+                            CastLordMapSpell(prism, prismColors[_rng.Next(prismColors.Count)]);
+                    }
+                }
             }
         }
 
@@ -716,6 +774,95 @@ namespace ColoursOfCalradia
             var list = source.ToList();
             return list.Count > 0 ? list[_rng.Next(list.Count)] : null;
         }
+
+        // Per-school NPC cast flavour pools (4–6 variants each)
+        private static readonly string[][] _redCastFlavour = {
+            new[] { "{0} soldier{1} in {2} fall before the battle starts.",
+                    "The red strikes unseen — {0} soldier{1} in {2} crumple.",
+                    "{2} bleeds early. {0} soldier{1} down.",
+                    "Red lightning finds {2}. {0} soldier{1} wounded." },
+            new[] { "Fire rides the wind to {0}. Hearth collapses.",
+                    "{0} burns in the distance. The red needed no presence.",
+                    "Burning Winds reach {0}. The village suffers.",
+                    "The red touches {0} from afar. Hearth falls.",
+                    "{0} smoulders. {1} sent it no army." },
+            new[] { "{0} burns one of their own. The host finds new fury.",
+                    "A soldier's life feeds the red in {0}'s ranks.",
+                    "{0} pays the tithe. The soldiers march harder for it.",
+                    "Blood spent wisely — {0}'s ranks surge with purpose." },
+        };
+        private static readonly string[][] _orangeCastFlavour = {
+            new[] { "Warmth moves through {0}'s ranks. Morale rises.",
+                    "{0}'s host stands a little taller. The warmth holds.",
+                    "The rallying call sounds — {0}'s soldiers find new resolve.",
+                    "Something lifts in {0}'s column. They march with purpose.",
+                    "{0} breathes the orange into their ranks. Confidence returns." },
+            new[] { "Purpose finds {0} in {1}. Something unlocks.",
+                    "Guidance — {1} in {0}'s ranks understands something they did not before.",
+                    "{0} passes knowledge to {1}. The lesson takes hold.",
+                    "{1} grows under {0}'s instruction. Experience gained." },
+            new[] { "A word of warmth from {0} reaches {1}. Relations improve.",
+                    "{0}'s warmth finds {1} across the distance.",
+                    "Good Word — {1} thinks well of {0} and cannot say why.",
+                    "{0} speaks well of the world. {1} feels it.",
+                    "The warmth travels far. {1} is grateful to {0}." },
+        };
+        private static readonly string[][] _yellowCastFlavour = {
+            new[] { "{0} loses {1} morale — {2}'s fear precedes them.",
+                    "Dread settles over {0}. {1} morale drains away.",
+                    "Creeping Fear — {0}'s nerve fails by {1}.",
+                    "Something wrong moves through {0}'s ranks. {1} morale gone." },
+            new[] { "{0} soldier{1} coerced from {2} into {3}'s service.",
+                    "Chains of Fear bind {0} soul{1} from {2} to {3}.",
+                    "{3} conscripts {0} from {2}. The prisoners had no say." },
+            new[] { "Doubt seeps through {0}. Loyalty falls.",
+                    "{1} sows doubt in {0}. The town grows uneasy.",
+                    "Unease spreads through {0} — {1}'s shadow reaches far.",
+                    "Sow Doubt — {0}'s walls feel less certain tonight." },
+        };
+        private static readonly string[][] _greenCastFlavour = {
+            new[] { "{0} tends the wounded. {1} soldiers recover.",
+                    "The green mends {1} in {0}'s ranks.",
+                    "Mending Touch — {1} soldier{2} healed under {0}.",
+                    "{0}'s green stirs. {1} wounded recover." },
+            new[] { "Grain ripens in {0}'s stores.",
+                    "Animal Friendship — food finds {0}'s column.",
+                    "The green provides. {0}'s stores grow.",
+                    "{0} draws food from the living world. The march continues." },
+            new[] { "The green breathes into {0}. The village flourishes.",
+                    "Verdant Bond — {0} blooms under {1}'s touch.",
+                    "{1} sends the green to {0}. Hearth grows.",
+                    "Life calls to life. {0} thrives.",
+                    "{0}'s soil loosens. The harvest will be good." },
+        };
+        private static readonly string[][] _blueCastFlavour = {
+            new[] { "{0}'s insight earns favour. Clan influence grows.",
+                    "Blue Influence — {0}'s words shape the court.",
+                    "{0} earns {1} influence. The kingdom listens.",
+                    "The Scholar's word lands well. {0}'s clan rises." },
+            new[] { "Philosopher's Stone — gold flows from {0}'s wisdom.",
+                    "{0} turns thought into coin. The clan enriches.",
+                    "The Scholar converts insight to gold. {0}'s coffers fill.",
+                    "{0}'s cold logic yields wealth. The wheel turns." },
+            new[] { "{0}'s eye finds {1}'s weakness — morale falters.",
+                    "Arcane Sight — {1} feels watched. Resolve crumbles.",
+                    "{0} sees through {1}. Something in them gives way.",
+                    "The Scholar maps {1}'s fear. {0} acts on it." },
+        };
+        private static readonly string[][] _purpleCastFlavour = {
+            new[] { "Something significant leaves {0}. Their clan renown dims.",
+                    "Purple Isolation — {0}'s standing fades. {1} renown lost.",
+                    "The grey reaches {0}. They will not know what is gone.",
+                    "{1} renown taken from {0}. The room feels emptier." },
+            new[] { "{0} loses {1}'s trail. {2} party/parties scatter.",
+                    "Purple Confusion — {1} {2} lose sight of {0}.",
+                    "The grey dissolves {0}'s pursuers. {1} scatter.",
+                    "{0} vanishes from the map. {1} {2} left chasing nothing." },
+            new[] { "Seven days taken from {0}. Clan renown falls.",
+                    "The Waning — {0} ages seven days. Their clan dims.",
+                    "{1} reaches into {0}'s years. A week, quietly removed.",
+                    "The grey takes seven days from {0}. Renown −3." },
+        };
 
         private static void CastLordMapSpell(Hero lord, ColorSchool school)
         {
@@ -731,8 +878,7 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Invoke Red: wound soldiers in a nearby enemy party
-                            spellName = "Withering Strike";
+                            spellName = "Red Lightning";
                             var target = PickRandom(MobileParty.All.Where(
                                 p => p != lord.PartyBelongedTo && p.IsActive && p.MapFaction != null
                                      && p.MapFaction != lord.MapFaction && lord.MapFaction != null
@@ -750,25 +896,26 @@ namespace ColoursOfCalradia
                                         var e = troops[_rng.Next(troops.Count)];
                                         try { target.MemberRoster.AddToCounts(e.Character, 0, false, 1); } catch { }
                                     }
-                                    msg = $"{wounds} soldier{(wounds > 1 ? "s" : "")} in {target.Name} fall wounded.";
+                                    string s = wounds > 1 ? "s" : "";
+                                    string tmpl = _redCastFlavour[0][_rng.Next(_redCastFlavour[0].Length)];
+                                    msg = string.Format(tmpl, wounds, s, target.Name);
                                 }
                             }
                         }
                         else if (variant == 1)
                         {
-                            // Mirror player Affect Red: plunder a village
-                            spellName = "Pillager's Brand";
+                            spellName = "Burning Winds";
                             var target = PickRandom(Settlement.All.Where(
                                 s => s.IsVillage && s.Village != null && s.MapFaction != lord.MapFaction));
                             if (target?.Village != null)
                             {
-                                target.Village.Hearth = Math.Max(10f, target.Village.Hearth * 0.8f);
-                                msg = $"Fire and ruin — {target.Name} diminishes under {lord.Name}'s rage.";
+                                target.Village.Hearth = Math.Max(10f, target.Village.Hearth * 0.9f);
+                                string tmpl = _redCastFlavour[1][_rng.Next(_redCastFlavour[1].Length)];
+                                msg = string.Format(tmpl, target.Name, lord.Name);
                             }
                         }
                         else
                         {
-                            // Commune Red (Crimson Tithe): sacrifice own soldiers for morale
                             spellName = "Crimson Tithe";
                             if (lord.PartyBelongedTo != null)
                             {
@@ -778,8 +925,9 @@ namespace ColoursOfCalradia
                                 {
                                     var e = troops[_rng.Next(troops.Count)];
                                     try { lord.PartyBelongedTo.MemberRoster.AddToCounts(e.Character, -1); } catch { }
-                                    try { lord.PartyBelongedTo.RecentEventsMorale += 15f; } catch { }
-                                    msg = $"{lord.Name} burns one of their own soldiers into the red — their host finds new fury. Morale surges.";
+                                    try { lord.PartyBelongedTo.RecentEventsMorale -= 1f; } catch { }
+                                    string tmpl = _redCastFlavour[2][_rng.Next(_redCastFlavour[2].Length)];
+                                    msg = string.Format(tmpl, lord.Name);
                                 }
                             }
                         }
@@ -791,15 +939,17 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Affect Orange: morale boost
                             spellName = "Rallying Call";
                             if (lord.PartyBelongedTo != null)
-                            { lord.PartyBelongedTo.RecentEventsMorale += 10f; msg = $"Warmth moves through {lord.Name}'s ranks."; }
+                            {
+                                try { lord.PartyBelongedTo.RecentEventsMorale += 5f; } catch { }
+                                string tmpl = _orangeCastFlavour[0][_rng.Next(_orangeCastFlavour[0].Length)];
+                                msg = string.Format(tmpl, lord.Name);
+                            }
                         }
                         else if (variant == 1)
                         {
-                            // Mirror player Invoke Orange: XP to a random own soldier
-                            spellName = "Inspired Word";
+                            spellName = "Guidance";
                             if (lord.PartyBelongedTo != null)
                             {
                                 var troops = lord.PartyBelongedTo.MemberRoster.GetTroopRoster()
@@ -815,21 +965,22 @@ namespace ColoursOfCalradia
                                     }
                                     if (_lordXpMethod != null)
                                         try { _lordXpMethod.Invoke(lord.PartyBelongedTo.MemberRoster, new object[] { 200, element.Character }); } catch { }
-                                    msg = $"Inspiration stirs in {element.Character.Name} under {lord.Name}'s command.";
+                                    string tmpl = _orangeCastFlavour[1][_rng.Next(_orangeCastFlavour[1].Length)];
+                                    msg = string.Format(tmpl, lord.Name, element.Character.Name);
                                 }
                             }
                         }
                         else
                         {
-                            // Commune Orange (Good Word): improve relations with a random nearby lord
                             spellName = "Good Word";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h != lord && h.IsAlive && h.Clan != null
                                      && h.MapFaction == lord.MapFaction));
                             if (target != null)
                             {
-                                try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(lord, target, 3, false); } catch { }
-                                msg = $"A word of warmth from {lord.Name} reaches {target.Name}. Relations improve.";
+                                try { ChangeRelationAction.ApplyRelationChangeBetweenHeroes(lord, target, 2, false); } catch { }
+                                string tmpl = _orangeCastFlavour[2][_rng.Next(_orangeCastFlavour[2].Length)];
+                                msg = string.Format(tmpl, lord.Name, target.Name);
                             }
                         }
                         break;
@@ -840,8 +991,22 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Affect Yellow: conscript a prisoner from an enemy party
-                            spellName = "Press Gang";
+                            spellName = "Creeping Fear";
+                            var target = PickRandom(MobileParty.All.Where(
+                                p => p != lord.PartyBelongedTo && p.IsActive && p.MapFaction != null
+                                     && p.MapFaction != lord.MapFaction && lord.MapFaction != null
+                                     && lord.MapFaction.IsAtWarWith(p.MapFaction)));
+                            if (target != null)
+                            {
+                                float loss = 15f + _rng.Next(16); // 15–30
+                                try { target.RecentEventsMorale -= loss; } catch { }
+                                string tmpl = _yellowCastFlavour[0][_rng.Next(_yellowCastFlavour[0].Length)];
+                                msg = string.Format(tmpl, target.Name, loss.ToString("F0"), lord.Name);
+                            }
+                        }
+                        else if (variant == 1)
+                        {
+                            spellName = "Chains of Fear";
                             var target = PickRandom(MobileParty.All.Where(
                                 p => p != lord.PartyBelongedTo && p.IsActive
                                      && p.MapFaction != null && p.MapFaction != lord.MapFaction
@@ -860,27 +1025,13 @@ namespace ColoursOfCalradia
                                         lord.PartyBelongedTo.MemberRoster.AddToCounts(element.Character, count);
                                     }
                                     catch { }
-                                    msg = $"{count} {element.Character.Name}{(count > 1 ? "s" : "")} are coerced from {target.Name} into {lord.Name}'s service.";
+                                    string tmpl = _yellowCastFlavour[1][_rng.Next(_yellowCastFlavour[1].Length)];
+                                    msg = string.Format(tmpl, count, count > 1 ? "s" : "", target.Name, lord.Name);
                                 }
-                            }
-                        }
-                        else if (variant == 1)
-                        {
-                            // Mirror player Invoke Yellow: enemy party loses morale
-                            spellName = "Creeping Fear";
-                            var target = PickRandom(MobileParty.All.Where(
-                                p => p != lord.PartyBelongedTo && p.IsActive && p.MapFaction != null
-                                     && p.MapFaction != lord.MapFaction && lord.MapFaction != null
-                                     && lord.MapFaction.IsAtWarWith(p.MapFaction)));
-                            if (target != null)
-                            {
-                                try { target.RecentEventsMorale -= 15f; } catch { }
-                                msg = $"Fear settles over {target.Name}'s ranks — {lord.Name} breathes terror into the world.";
                             }
                         }
                         else
                         {
-                            // Commune Yellow (Sow Doubt): enemy town loses loyalty
                             spellName = "Sow Doubt";
                             var target = PickRandom(Settlement.All.Where(
                                 s => s.IsTown && s.Town != null && s.MapFaction != null
@@ -889,7 +1040,8 @@ namespace ColoursOfCalradia
                             if (target?.Town != null)
                             {
                                 try { target.Town.Loyalty = Math.Max(0f, target.Town.Loyalty - 10f); } catch { }
-                                msg = $"Dread seeps through {target.Name} — {lord.Name}'s shadow unnerves the populace.";
+                                string tmpl = _yellowCastFlavour[2][_rng.Next(_yellowCastFlavour[2].Length)];
+                                msg = string.Format(tmpl, target.Name, lord.Name);
                             }
                         }
                         break;
@@ -900,7 +1052,6 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Affect Green: heal wounded in own party
                             spellName = "Mending Touch";
                             if (lord.PartyBelongedTo != null)
                             {
@@ -910,30 +1061,34 @@ namespace ColoursOfCalradia
                                     int h = Math.Min(e.WoundedNumber, 3);
                                     if (h > 0) { lord.PartyBelongedTo.MemberRoster.AddToCounts(e.Character, 0, false, -h); healed += h; }
                                 }
-                                if (healed > 0) msg = $"{lord.Name} tends the wounds. {healed} soldiers recover.";
+                                if (healed > 0)
+                                {
+                                    string tmpl = _greenCastFlavour[0][_rng.Next(_greenCastFlavour[0].Length)];
+                                    msg = string.Format(tmpl, lord.Name, healed, healed > 1 ? "s" : "");
+                                }
                             }
                         }
                         else if (variant == 1)
                         {
-                            // Mirror player Invoke Green: add grain to own party
-                            spellName = "Green's Bounty";
+                            spellName = "Animal Friendship";
                             if (lord.PartyBelongedTo != null)
                             {
                                 ItemObject grain = MBObjectManager.Instance.GetObject<ItemObject>("grain");
                                 if (grain != null) lord.PartyBelongedTo.ItemRoster.AddToCounts(grain, 5);
-                                msg = $"Grain ripens in {lord.Name}'s stores.";
+                                string tmpl = _greenCastFlavour[1][_rng.Next(_greenCastFlavour[1].Length)];
+                                msg = string.Format(tmpl, lord.Name);
                             }
                         }
                         else
                         {
-                            // Commune Green (Verdant Bond): bless a friendly village
                             spellName = "Verdant Bond";
                             var target = PickRandom(Settlement.All.Where(
                                 s => s.IsVillage && s.Village != null && s.MapFaction == lord.MapFaction));
                             if (target?.Village != null)
                             {
-                                target.Village.Hearth += 15f;
-                                msg = $"The green breathes through {lord.Name} into {target.Name}. The village flourishes.";
+                                target.Village.Hearth += 20f;
+                                string tmpl = _greenCastFlavour[2][_rng.Next(_greenCastFlavour[2].Length)];
+                                msg = string.Format(tmpl, target.Name, lord.Name);
                             }
                         }
                         break;
@@ -944,29 +1099,29 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Invoke Blue: own clan gains influence
-                            spellName = "Scholar's Word";
+                            spellName = "Blue Influence";
                             if (lord.Clan != null)
                             {
-                                try { ChangeClanInfluenceAction.Apply(lord.Clan, 8f); } catch { }
-                                msg = $"{lord.Name}'s insight earns favour — their clan's influence grows.";
+                                try { ChangeClanInfluenceAction.Apply(lord.Clan, 4f); } catch { }
+                                string tmpl = _blueCastFlavour[0][_rng.Next(_blueCastFlavour[0].Length)];
+                                msg = string.Format(tmpl, lord.Name, 4);
                             }
                         }
                         else if (variant == 1)
                         {
-                            // Negative mirror: enemy clan loses influence
-                            spellName = "Scholar's Scheme";
-                            var target = PickRandom(Hero.AllAliveHeroes.Where(
-                                h => h.IsLord && h.MapFaction != lord.MapFaction && h.Clan != null && h.IsAlive));
-                            if (target?.Clan != null)
+                            spellName = "Philosopher's Stone";
+                            if (lord.Clan != null)
                             {
-                                try { ChangeClanInfluenceAction.Apply(target.Clan, -8f); } catch { }
-                                msg = $"{lord.Name}'s cold insight undermines {target.Name}'s standing.";
+                                // Lords get gold + influence boost instead of negative
+                                int gold = 500 + _rng.Next(501);
+                                try { lord.ChangeHeroGold(gold); } catch { }
+                                try { ChangeClanInfluenceAction.Apply(lord.Clan, 2f); } catch { }
+                                string tmpl = _blueCastFlavour[1][_rng.Next(_blueCastFlavour[1].Length)];
+                                msg = string.Format(tmpl, lord.Name);
                             }
                         }
                         else
                         {
-                            // Commune Blue (Arcane Sight): undermine an enemy party's morale
                             spellName = "Arcane Sight";
                             var target = PickRandom(MobileParty.All.Where(
                                 p => p != lord.PartyBelongedTo && p.IsActive && p.MapFaction != null
@@ -975,7 +1130,8 @@ namespace ColoursOfCalradia
                             if (target != null)
                             {
                                 try { target.RecentEventsMorale -= 10f; } catch { }
-                                msg = $"{lord.Name}'s Scholar's eye finds {target.Name}'s weakness — their soldiers feel watched and uncertain.";
+                                string tmpl = _blueCastFlavour[2][_rng.Next(_blueCastFlavour[2].Length)];
+                                msg = string.Format(tmpl, lord.Name, target.Name);
                             }
                         }
                         break;
@@ -986,22 +1142,20 @@ namespace ColoursOfCalradia
                         int variant = _rng.Next(3);
                         if (variant == 0)
                         {
-                            // Mirror player Invoke Purple: enemy lord loses renown + morale
-                            spellName = "Wither's Touch";
+                            spellName = "Purple Isolation";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
-                                     && h.Clan != null && h.IsAlive && h.PartyBelongedTo != null));
+                                     && h.Clan != null && h.IsAlive));
                             if (target != null)
                             {
-                                try { ChangeClanInfluenceAction.Apply(target.Clan, -5f); } catch { }
-                                try { target.PartyBelongedTo.RecentEventsMorale -= 10f; } catch { }
-                                msg = $"A withering touches {target.Name} — their influence wanes and their soldiers are unsettled.";
+                                try { target.Clan.AddRenown(-8f); } catch { }
+                                string tmpl = _purpleCastFlavour[0][_rng.Next(_purpleCastFlavour[0].Length)];
+                                msg = string.Format(tmpl, target.Name, 8);
                             }
                         }
                         else if (variant == 1)
                         {
-                            // Mirror player Affect Purple: scatter nearby enemy parties
-                            spellName = "Grey Veil";
+                            spellName = "Purple Confusion";
                             if (lord.PartyBelongedTo != null)
                             {
                                 Vec2 lordPos = lord.PartyBelongedTo.GetPosition2D;
@@ -1018,21 +1172,24 @@ namespace ColoursOfCalradia
                                     try { p.SetMoveGoToPoint(new CampaignVec2(dest, true), MobileParty.NavigationType.Default); scattered++; } catch { }
                                 }
                                 if (scattered > 0)
-                                    msg = $"{lord.Name} vanishes from their pursuers. {scattered} {(scattered == 1 ? "party" : "parties")} scatter.";
+                                {
+                                    string tmpl = _purpleCastFlavour[1][_rng.Next(_purpleCastFlavour[1].Length)];
+                                    msg = string.Format(tmpl, lord.Name, scattered, scattered == 1 ? "party" : "parties");
+                                }
                             }
                         }
                         else
                         {
-                            // Commune Purple (Grey Curse): age a random enemy lord 3 days, clan renown -2
-                            spellName = "Grey Curse";
+                            spellName = "The Waning";
                             var target = PickRandom(Hero.AllAliveHeroes.Where(
                                 h => h.IsLord && h.MapFaction != lord.MapFaction
                                      && h.Clan != null && h.IsAlive));
                             if (target != null)
                             {
-                                try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(3)); } catch { }
-                                try { target.Clan.AddRenown(-2f); } catch { }
-                                msg = $"The grey reaches from {lord.Name} into {target.Name}'s years. Three days taken, and their clan dims.";
+                                try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(7)); } catch { }
+                                try { target.Clan.AddRenown(-3f); } catch { }
+                                string tmpl = _purpleCastFlavour[2][_rng.Next(_purpleCastFlavour[2].Length)];
+                                msg = string.Format(tmpl, target.Name, lord.Name);
                             }
                         }
                         break;

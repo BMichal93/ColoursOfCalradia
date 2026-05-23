@@ -316,7 +316,10 @@ namespace ColoursOfCalradia
             }
 
             // Saturation gain + personality drift
-            SaturationSystem.GainSaturation();
+            if (inMission)
+                SaturationSystem.GainSaturation();
+            else
+                SaturationSystem.GainSaturationCampaign();
             ColourKnowledge.RecordCast(spell.School);
         }
 

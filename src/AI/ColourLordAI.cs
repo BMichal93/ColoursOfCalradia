@@ -48,11 +48,17 @@ namespace ColoursOfCalradia
         private static bool  _warmupDone   = false;
         private const  float WarmupDuration = 12f;
 
+        private static bool _battleEventTriggered = false;
+        private static readonly List<GameEntity> _battleEventLights = new List<GameEntity>();
+
         public static void ClearCooldowns()
         {
             _cooldowns.Clear();
             _warmupTimer = 0f;
             _warmupDone  = false;
+            _battleEventTriggered = false;
+            foreach (var e in _battleEventLights) try { e?.Remove(0); } catch { }
+            _battleEventLights.Clear();
         }
 
         public static void MissionTick(float dt)
@@ -91,6 +97,11 @@ namespace ColoursOfCalradia
                 _warmupTimer += TickInterval;
                 if (_warmupTimer < WarmupDuration) return;
                 _warmupDone = true;
+                if (!_battleEventTriggered)
+                {
+                    _battleEventTriggered = true;
+                    try { TryTriggerBattleEvent(); } catch { }
+                }
             }
 
             foreach (Agent agent in agents)
@@ -561,6 +572,141 @@ namespace ColoursOfCalradia
         {
             if (agent == null) return;
             try { agent.Health = Math.Max(1f, agent.Health - 2f); } catch { }
+        }
+
+        // ── Battle magical events ─────────────────────────────────────────────
+        // Roll once per battle when the warmup completes (~8% base chance).
+        // Season and the cultures present on the field bias school selection.
+        // Spawns a dim overhead ambient light and applies one immediate school effect.
+        private static void TryTriggerBattleEvent()
+        {
+            if (Mission.Current == null) return;
+            if (_rng.Next(100) >= 8) return;
+
+            CampaignTime.Seasons season = CampaignTime.Seasons.Spring;
+            try { season = CampaignTime.Now.GetSeasonOfYear; } catch { }
+
+            // Build weighted school selection (base 1 each, season bonus +2 for primary, +1 for secondary)
+            int[] weights = { 1, 1, 1, 1, 1, 1 }; // index = (int)ColorSchool
+            switch (season)
+            {
+                case CampaignTime.Seasons.Spring: weights[(int)ColorSchool.Green]  += 2; break;
+                case CampaignTime.Seasons.Summer: weights[(int)ColorSchool.Red]    += 2; weights[(int)ColorSchool.Yellow] += 1; break;
+                case CampaignTime.Seasons.Autumn: weights[(int)ColorSchool.Orange] += 2; weights[(int)ColorSchool.Red]   += 1; break;
+                case CampaignTime.Seasons.Winter: weights[(int)ColorSchool.Blue]   += 2; weights[(int)ColorSchool.Purple]+= 1; break;
+            }
+            int total = 0; foreach (int w in weights) total += w;
+            int roll = _rng.Next(total), cum = 0;
+            ColorSchool school = ColorSchool.Red;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                cum += weights[i];
+                if (roll < cum) { school = (ColorSchool)i; break; }
+            }
+
+            string eventName, eventDesc;
+            switch (school)
+            {
+                case ColorSchool.Red:    eventName = "Crimson Sky";     eventDesc = "The sky bleeds red. Bloodlust grips the field."; break;
+                case ColorSchool.Orange: eventName = "Gilded Hour";     eventDesc = "Warm gold fills the air. Courage swells."; break;
+                case ColorSchool.Yellow: eventName = "Sickly Haze";     eventDesc = "A wrong colour fills the air. Something hollows out."; break;
+                case ColorSchool.Green:  eventName = "Living Surge";    eventDesc = "The earth breathes. Wounds knit faster."; break;
+                case ColorSchool.Blue:   eventName = "Scholar's Veil";  eventDesc = "Still blue settles over the field. Movement grows laboured."; break;
+                case ColorSchool.Purple: eventName = "Grey Shroud";     eventDesc = "The grey descends. One soul is taken before it begins."; break;
+                default:                 eventName = "Colour Surge";    eventDesc = "Colour magic fills the air."; break;
+            }
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"✦ {eventName}: {eventDesc} ✦",
+                ColorSchoolData.GetMessageColor(school)));
+
+            // Spawn dim ambient overhead light
+            try
+            {
+                var scene = Mission.Current?.Scene;
+                if (scene != null)
+                {
+                    Agent anchor = Agent.Main ?? Mission.Current.Agents.FirstOrDefault(a => a.IsActive());
+                    Vec3 highPos = (anchor != null ? anchor.Position : new Vec3(0f, 0f, 0f)) + new Vec3(0f, 0f, 35f);
+                    var entity = GameEntity.CreateEmpty(scene, false, false, false);
+                    var frame  = new MatrixFrame(Mat3.Identity, highPos);
+                    entity.SetGlobalFrame(in frame, true);
+                    var light = Light.CreatePointLight(80f);
+                    light.Radius        = 80f;
+                    light.Intensity     = 200f;
+                    light.LightColor    = SchoolToEventColor(school);
+                    light.ShadowEnabled = false;
+                    entity.AddLight(light);
+                    _battleEventLights.Add(entity);
+                }
+            }
+            catch { }
+
+            // Immediate school effect — affects all sides equally
+            var agents = Mission.Current.Agents.ToList();
+            switch (school)
+            {
+                case ColorSchool.Red:
+                    foreach (Agent a in agents.Where(a => a.IsActive() && !a.IsMount))
+                    {
+                        if (SpellEffects.ProtectedByMirror(a)) continue;
+                        try { SpellEffects.DamageAgent(a, 8f); } catch { }
+                        SpellEffects.BeginAgentGlow(a, school, 2f);
+                    }
+                    break;
+                case ColorSchool.Orange:
+                    foreach (Agent a in agents.Where(a => a.IsActive() && !a.IsMount))
+                    {
+                        try { a.SetMorale(Math.Min(a.GetMorale() + 15f, 100f)); } catch { }
+                        SpellEffects.BeginAgentGlow(a, school, 2f);
+                    }
+                    break;
+                case ColorSchool.Yellow:
+                    foreach (Agent a in agents.Where(a => a.IsActive() && !a.IsMount))
+                    {
+                        try { a.SetMorale(Math.Max(0f, a.GetMorale() - 10f)); } catch { }
+                    }
+                    break;
+                case ColorSchool.Green:
+                    foreach (Agent a in agents.Where(a => a.IsActive() && !a.IsMount))
+                    {
+                        float h = Math.Min(12f, a.HealthLimit - a.Health);
+                        if (h > 0f) { try { a.Health += h; } catch { } }
+                        SpellEffects.BeginAgentGlow(a, school, 2f);
+                    }
+                    break;
+                case ColorSchool.Blue:
+                {
+                    Vec3 centre = Agent.Main != null ? Agent.Main.Position
+                                : (agents.FirstOrDefault(a => a.IsActive()) ?? agents.FirstOrDefault())?.Position
+                                  ?? new Vec3(0f, 0f, 0f);
+                    try { SpellEffects.SpawnBattleEventBlueWalls(centre); } catch { }
+                    break;
+                }
+                case ColorSchool.Purple:
+                    var purpleTargets = agents.Where(a => a.IsActive() && !a.IsMount && !a.IsHero).ToList();
+                    if (purpleTargets.Count > 0)
+                    {
+                        Agent victim = purpleTargets[_rng.Next(purpleTargets.Count)];
+                        SpellEffects.BeginAgentGlow(victim, school, 1f);
+                        try { SpellEffects.KillAgent(victim); } catch { }
+                    }
+                    break;
+            }
+        }
+
+        private static Vec3 SchoolToEventColor(ColorSchool school)
+        {
+            switch (school)
+            {
+                case ColorSchool.Red:    return new Vec3(1f,    0.1f, 0.05f);
+                case ColorSchool.Orange: return new Vec3(1f,    0.5f, 0.05f);
+                case ColorSchool.Yellow: return new Vec3(1f,    0.9f, 0.1f);
+                case ColorSchool.Green:  return new Vec3(0.1f,  0.7f, 0.1f);
+                case ColorSchool.Blue:   return new Vec3(0.1f,  0.3f, 1f);
+                case ColorSchool.Purple: return new Vec3(0.55f, 0.05f, 0.8f);
+                default:                 return new Vec3(1f,    1f,    1f);
+            }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

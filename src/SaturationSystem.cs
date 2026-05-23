@@ -1,14 +1,14 @@
 ﻿// =============================================================================
-// COLOURS OF CALRADIA â€” SaturationSystem.cs
+// COLOURS OF CALRADIA -- SaturationSystem.cs
 // Mount & Blade II: Bannerlord Mod  v1.2.0.0
 // =============================================================================
 // The mage absorbs light to split it into colour. Absorbing too much is dangerous.
 //
 // Player Saturation:
 //   Max = hero.Level + 10 (cap 30). Starts at 0.
-//   Each cast gains 0â€“3 saturation randomly.
+//   Each cast gains 0--3 saturation randomly.
 //   Resets to 0 when darkness falls (night time or dark location).
-//   Oversaturation (â‰Ą max): brief interruption, random trait shift, max â’1 permanently.
+//   Oversaturation (â‰Ą max): brief interruption, random trait shift, max â'1 permanently.
 //   When max reaches 0: player chooses to lose all colours or become a Blight.
 //
 // Blights and the Prism are fully immune to all oversaturation effects.
@@ -49,7 +49,7 @@ namespace ColoursOfCalradia
         public static int  PlayerSaturation    => _playerSaturation;
         public static int  PlayerMaxSaturation => _playerMaxSaturation;
 
-        // â”€â”€ Called on new game start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Called on new game start â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void ResetForNewGame()
         {
             _playerSaturation         = 0;
@@ -61,7 +61,7 @@ namespace ColoursOfCalradia
             _knockdownTimers.Clear();
         }
 
-        // â”€â”€ Called after each successful player cast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Called after each successful player cast â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void GainSaturation()
         {
             if (!ColourKnowledge.HasAnySchool) return;
@@ -80,7 +80,28 @@ namespace ColoursOfCalradia
                 TriggerOversaturation();
         }
 
-        // â”€â”€ Called on hourly tick â€” resets saturation when darkness falls â”€â”€â”€â”€â”€
+        // ── Called after each successful player cast on the campaign map ──────────────────────
+        // Campaign casting is far more draining — the mage draws on ambient light without battle's
+        // sharp focus. Cost: base×4, never less than 10.
+        public static void GainSaturationCampaign()
+        {
+            if (!ColourKnowledge.HasAnySchool) return;
+            if (_playerIsBlight || _playerIsPrism) return;
+            if (_playerMaxSaturation <= 0) return;
+
+            int baseGain = _rng.Next(0, 6); // 0–5
+            int gain = Math.Max(10, Math.Min(20, baseGain * 4)); // [10,10,10,12,16,20]
+            _playerSaturation = Math.Min(_playerSaturation + gain, _playerMaxSaturation);
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"Saturation: {_playerSaturation}/{_playerMaxSaturation} (+{gain})",
+                new Color(0.6f, 0.4f, 0.9f)));
+
+            if (_playerSaturation >= _playerMaxSaturation)
+                TriggerOversaturation();
+        }
+
+        // â"€â"€ Called on hourly tick -- resets saturation when darkness falls â"€â"€â"€â"€â"€
         public static void CheckNightReset()
         {
             if (SpellEffects.GetCampaignLightLevel() == SpellEffects.LightLevel.Dark)
@@ -100,7 +121,7 @@ namespace ColoursOfCalradia
             }
         }
 
-        // â”€â”€ Called when player levels up â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Called when player levels up â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void RecalcMax()
         {
             if (_playerIsBlight || _playerIsPrism) return;
@@ -111,7 +132,7 @@ namespace ColoursOfCalradia
                 new Color(0.6f, 0.4f, 0.9f)));
         }
 
-        // â”€â”€ Mission-tick: clears the temporary battle interruption after 3 s â”€â”€â”€
+        // â"€â"€ Mission-tick: clears the temporary battle interruption after 3 s â"€â"€â"€
         public static void TickKnockdown(float dt)
         {
             if (_knockdownTimers.Count == 0 || Mission.Current == null) return;
@@ -159,7 +180,7 @@ namespace ColoursOfCalradia
             _knockdownTimers.Clear();
         }
 
-        // â”€â”€ Deferred prompt flush (daily tick) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Deferred prompt flush (daily tick) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void FlushMaxDepletionPrompt()
         {
             if (!_maxDepletionPromptPending) return;
@@ -167,13 +188,13 @@ namespace ColoursOfCalradia
             ShowMaxDepletionPrompt();
         }
 
-        // â”€â”€ Oversaturation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Oversaturation â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         private static void TriggerOversaturation()
         {
             _playerMaxSaturation = Math.Max(0, _playerMaxSaturation - 1);
             _playerSaturation    = 0;
 
-            // Briefly interrupt the player in battle only â€” Agent.Main is null on campaign map
+            // Briefly interrupt the player in battle only -- Agent.Main is null on campaign map
             try
             {
                 if (Agent.Main?.IsActive() == true)
@@ -205,7 +226,7 @@ namespace ColoursOfCalradia
             catch { }
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"OVERSATURATED â€” Light tears through you.{traitMsg} Max saturation now {_playerMaxSaturation}.",
+                $"OVERSATURATED -- Light tears through you.{traitMsg} Max saturation now {_playerMaxSaturation}.",
                 new Color(0.9f, 0.5f, 1.0f)));
 
             if (_playerMaxSaturation <= 0)
@@ -217,8 +238,8 @@ namespace ColoursOfCalradia
             MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                 "The Light Consumes You",
                 "Your capacity to hold magic is exhausted by Oversaturation. Two paths remain.\n\n" +
-                "Surrender your colours â€” the magic fades entirely. Others will inherit them in time.\n\n" +
-                "Embrace the Blight â€” keep your colours, but Calradia will turn against you permanently. " +
+                "Surrender your colours -- the magic fades entirely. Others will inherit them in time.\n\n" +
+                "Embrace the Blight -- keep your colours, but Calradia will turn against you permanently. " +
                 "You become immune to further Oversaturation.",
                 new List<InquiryElement>
                 {
@@ -246,7 +267,7 @@ namespace ColoursOfCalradia
             _playerMaxSaturation = 0;
             ColourKnowledge.ClearAllSchools();
             InformationManager.DisplayMessage(new InformationMessage(
-                "Your colours are gone. The magic you carried returns to the world â€” others will inherit it in time.",
+                "Your colours are gone. The magic you carried returns to the world -- others will inherit it in time.",
                 new Color(0.7f, 0.7f, 0.7f)));
         }
 
@@ -284,7 +305,7 @@ namespace ColoursOfCalradia
                 new Color(0.5f, 0.0f, 0.8f)));
         }
 
-        // â”€â”€ Prism immunity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Prism immunity â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void SetPlayerPrism(bool isPrism)
         {
             _playerIsPrism = isPrism;
@@ -294,7 +315,7 @@ namespace ColoursOfCalradia
                     new Color(0.9f, 0.7f, 1.0f)));
         }
 
-        // â”€â”€ Save / Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â"€â"€ Save / Load â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         public static void Save(IDataStore store)
         {
             store.SyncData("COC_Saturation",            ref _playerSaturation);
