@@ -178,7 +178,8 @@ namespace ColoursOfCalradia
         // =================================================================
 
         // ── Red — Red Lightning ───────────────────────────────────────────
-        // Wound one random non-hero soldier in the nearest enemy party at war.
+        // Strike 2–4 soldiers in the nearest enemy party at war.
+        // Each has a 30% chance to die outright; otherwise wounded.
         // Prefers kingdom enemies over bandits/looters when the player is in a kingdom.
         private static void SpellInvokeRed()
         {
@@ -219,11 +220,34 @@ namespace ColoursOfCalradia
 
             var troops = target.MemberRoster.GetTroopRoster()
                 .Where(e => !e.Character.IsHero && e.Number > e.WoundedNumber).ToList();
-            if (troops.Count == 0) { Msg("Red Lightning — no healthy soldiers to wound.", ColorSchool.Red); return; }
+            if (troops.Count == 0) { Msg("Red Lightning — no healthy soldiers to strike.", ColorSchool.Red); return; }
 
-            var element = troops[_rng.Next(troops.Count)];
-            try { target.MemberRoster.AddToCounts(element.Character, 0, false, 1); } catch { return; }
-            Msg($"Red Lightning — one {element.Character.Name} in {target.Name} falls before the battle starts ({minDist:F1} km).", ColorSchool.Red);
+            int affected = 2 + _rng.Next(3); // 2–4
+            int killed = 0, wounded = 0;
+            for (int i = 0; i < affected; i++)
+            {
+                if (troops.Count == 0) break;
+                var element = troops[_rng.Next(troops.Count)];
+                try
+                {
+                    if (_rng.Next(100) < 30)
+                    {
+                        target.MemberRoster.AddToCounts(element.Character, -1);
+                        killed++;
+                    }
+                    else
+                    {
+                        target.MemberRoster.AddToCounts(element.Character, 0, false, 1);
+                        wounded++;
+                    }
+                }
+                catch { }
+            }
+
+            var parts = new System.Collections.Generic.List<string>();
+            if (killed  > 0) parts.Add($"{killed} killed");
+            if (wounded > 0) parts.Add($"{wounded} wounded");
+            Msg($"Red Lightning — {string.Join(", ", parts)} in {target.Name} ({minDist:F1} km).", ColorSchool.Red);
         }
 
         // ── Orange — Guidance ────────────────────────────────────────────

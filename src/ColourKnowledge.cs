@@ -285,6 +285,12 @@ namespace ColoursOfCalradia
 "  Weekly: 5% chance a random colour lord oversaturates — 79% lose colours (re-seeded in\n" +
 "  one week), 21% die and spawn a Blight of their colour. Blights no longer auto-respawn.\n" +
 "\n" +
+"MAGICAL EVENTS\n" +
+"  Battle: ~8% of battles trigger a colour phenomenon at start. A sky event (season-\n" +
+"  weighted) names the effect and affects all fighters on the field equally.\n" +
+"  Campaign: each week, a colour-ambient event may touch a random party, settlement,\n" +
+"  or lord anywhere in Calradia, independent of colour lords' own spellcasting.\n" +
+"\n" +
 "THE PRISM\n" +
 "  One lord carries all six colours. They cast constantly and their personality shifts\n" +
 "  each week. When slain, if you hold all six colours, you may inherit the mantle (30%\n" +

@@ -128,8 +128,8 @@ namespace ColoursOfCalradia
             // ── INVOKE (LU prefix) — campaign map only, advanced forms ───────────
             new SpellEntry { Name="Red Lightning",    Combo="LURR", School=ColorSchool.Red,
                 Context=SpellContext.Map,
-                ShortDesc="Wounds a random enemy soldier.",
-                Flavour="The red reaches across the distance and strikes without warning. One soldier in the nearest enemy host falls before a single order is given." },
+                ShortDesc="Strikes 2–4 soldiers in the nearest enemy party; each may wound or die.",
+                Flavour="The red reaches across the distance and strikes without warning. A handful of soldiers in the nearest enemy host fall before a single order is given." },
             new SpellEntry { Name="Guidance",         Combo="LULD", School=ColorSchool.Orange,
                 Context=SpellContext.Map,
                 ShortDesc="Grants XP to a random ally.",
