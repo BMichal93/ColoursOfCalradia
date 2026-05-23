@@ -312,7 +312,12 @@ namespace ColoursOfCalradia
                 {
                     Agent agent = Mission.Current?.Agents.FirstOrDefault(a => a.Index == kvp.Key);
                     if (agent?.IsActive() == true)
-                        agent.SetMaximumSpeedLimit(10f, false);
+                    {
+                        bool usingEquip = false;
+                        try { usingEquip = agent.IsUsingGameObject; } catch { }
+                        if (!usingEquip)
+                            agent.SetMaximumSpeedLimit(10f, false);
+                    }
                 }
                 catch { }
             }

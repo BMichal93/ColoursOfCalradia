@@ -167,6 +167,16 @@ namespace ColoursOfCalradia
             _hollowGazeTimer -= dt;
             if (_hollowGazeTimer > 0f) return;
             _hollowGazeTimer = HollowGazeInterval;
+            // Release if target mounts or begins operating siege equipment mid-gaze
+            bool gazeTargetBlocked = _hollowGazeTarget.MountAgent != null;
+            if (!gazeTargetBlocked) try { gazeTargetBlocked = _hollowGazeTarget.IsUsingGameObject; } catch { }
+            if (gazeTargetBlocked)
+            {
+                _hollowGazeTarget = null;
+                try { _hollowGazeLight?.Remove(0); } catch { }
+                _hollowGazeLight = null;
+                return;
+            }
             Vec3 pos = _hollowGazeTarget.Position;
             try { _hollowGazeTarget.TeleportToPosition(pos); } catch { }
             try { _hollowGazeTarget.SetMorale(0f); } catch { }
@@ -227,7 +237,12 @@ namespace ColoursOfCalradia
             try
             {
                 if (Player?.IsActive() == true)
-                    Player.SetMaximumSpeedLimit(10f, false);
+                {
+                    bool usingEquip = false;
+                    try { usingEquip = Player.IsUsingGameObject; } catch { }
+                    if (!usingEquip)
+                        Player.SetMaximumSpeedLimit(10f, false);
+                }
             }
             catch { }
             _hollowGazeTarget = null;
