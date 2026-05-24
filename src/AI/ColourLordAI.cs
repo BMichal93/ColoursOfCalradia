@@ -274,41 +274,9 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            // Orange — Calling (summon) if outnumbered, else Gilded Words (ally pull) (morale ≥ 45)
+            // Orange — Gilded Words (morale boost to nearby allies)
             if (colors.Contains(ColorSchool.Orange) && CanUseOrange(hero))
             {
-                int nearAllies  = AlliesOf(agent).Count(a => a.Position.Distance(agent.Position) <= 20f);
-                int nearEnemies = EnemiesOf(agent).Count(a => a.Position.Distance(agent.Position) <= 20f);
-                if (nearEnemies > nearAllies && !SpellEffects.IsSiegeActive() && Agent.Main?.IsActive() == true)
-                {
-                    CastWithGlow(agent, hero, ColorSchool.Orange, "Calling", () =>
-                    {
-                        CharacterObject recruit = SpellEffects.FindRecruit(agent);
-                        if (recruit == null || Mission.Current == null) return;
-                        int count = _rng.Next(2, 4);
-                        Vec3 back = -agent.LookDirection.NormalizedCopy(); back.z = 0f;
-                        if (back.Length < 0.01f) back = new Vec3(-1f, 0f, 0f); else back = back.NormalizedCopy();
-                        Vec3 perp = new Vec3(-back.y, back.x, 0f);
-                        for (int i = 0; i < count; i++)
-                        {
-                            try
-                            {
-                                float spread = (i - count / 2f) * 1.5f;
-                                Vec3 pos = agent.Position + back * 3f + perp * spread;
-                                pos.z = agent.Position.z;
-                                Vec2 facing = (-back).AsVec2;
-                                AgentBuildData abd = new AgentBuildData(recruit)
-                                    .Team(agent.Team).InitialPosition(in pos).InitialDirection(in facing);
-                                Agent spawned = Mission.Current.SpawnAgent(abd, false);
-                                if (spawned == null) continue;
-                                spawned.SetWatchState(Agent.WatchState.Alarmed);
-                                SpellEffects.BeginAgentGlow(spawned, ColorSchool.Orange, 2f);
-                            }
-                            catch { }
-                        }
-                    });
-                    return;
-                }
                 float orangePower = SpellEffects.SpellPower(ColorSchool.Orange, hero);
                 CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
                 {
@@ -513,6 +481,7 @@ namespace ColoursOfCalradia
             _cooldowns[hero.StringId] = BlightCastInterval;
             // Glow duration > cast interval → permanent visible aura
             SpellEffects.BeginAgentGlow(agent, school, BlightCastInterval * 1.5f);
+            SpellEffects.SpawnTempLight(agent.Position, school, 6f, 1.5f);
             SpellEffects.TryCastSound(agent.Position, school);
             SpellEffects.TryCastAnimation(agent);
             if (!connected) return;
@@ -801,6 +770,7 @@ namespace ColoursOfCalradia
             try { effect?.Invoke(); } catch { }
             SetCooldown(hero);
             SpellEffects.BeginAgentGlow(agent, school, 3.0f);
+            SpellEffects.SpawnTempLight(agent.Position, school, 6f, 1.5f);
             SpellEffects.TryCastSound(agent.Position, school);
             SpellEffects.TryCastAnimation(agent);
 

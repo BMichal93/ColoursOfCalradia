@@ -331,6 +331,13 @@ namespace ColoursOfCalradia
                 _pendingDeaths.Clear();
                 return;
             }
+            // Skip when player is dead: battle result is being sealed and our kills would
+            // decrement team counts that are already at or near zero, producing negative values.
+            if (Agent.Main == null || !Agent.Main.IsActive())
+            {
+                _pendingDeaths.Clear();
+                return;
+            }
             foreach (Agent a in _pendingDeaths)
                 if (a?.IsActive() == true) KillAgent(a);
             _pendingDeaths.Clear();
@@ -378,6 +385,10 @@ namespace ColoursOfCalradia
                 return;
             }
             catch { }
+            // Die() may have fired OnAgentRemoved (decrementing party counts) before throwing.
+            // If the agent is already inactive, calling MakeDead would fire OnAgentRemoved again
+            // and push party counts negative. Skip MakeDead when Die() already finished the kill.
+            if (!target.IsActive()) return;
             try { target.MakeDead(true, ActionIndexCache.Create("act_strike_walk_right_stance"), 0); }
             catch { }
         }

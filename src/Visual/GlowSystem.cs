@@ -32,22 +32,29 @@ namespace ColoursOfCalradia
         private static readonly List<(Agent agent, float remaining)> _glowTimers
             = new List<(Agent, float)>();
 
-        // Called every mission tick — only clears expired timers, never re-applies colour.
+        // Called every mission tick — clears expired timers and removes glows from dead agents.
         public static void TickGlows(float dt)
         {
             for (int i = _glowTimers.Count - 1; i >= 0; i--)
             {
+                var a = _glowTimers[i].agent;
+                // If the agent died mid-timer, clear immediately so corpses don't stay glowing.
+                if (a == null || !a.IsActive() || a.Health <= 0f)
+                {
+                    if (a != null)
+                        try { a.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
+                    _glowTimers.RemoveAt(i);
+                    continue;
+                }
                 float t = _glowTimers[i].remaining - dt;
                 if (t <= 0f)
                 {
-                    var a = _glowTimers[i].agent;
-                    if (a != null && a.IsActive() && a.Health > 0f)
-                        try { a.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
+                    try { a.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
                     _glowTimers.RemoveAt(i);
                 }
                 else
                 {
-                    _glowTimers[i] = (_glowTimers[i].agent, t);
+                    _glowTimers[i] = (a, t);
                 }
             }
         }

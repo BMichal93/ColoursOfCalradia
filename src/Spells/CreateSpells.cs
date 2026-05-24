@@ -284,7 +284,7 @@ namespace ColoursOfCalradia
                     TickInterval = 2f, TickTimer = 2f, Remaining = -1f,
                     Power = power
                 };
-                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, 7f);
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Purple, 2f);
