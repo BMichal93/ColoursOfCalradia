@@ -69,15 +69,6 @@ namespace ColoursOfCalradia
             }
         }
 
-        // Returns true if the given position is inside any active Orange retributive aura node.
-        public static bool IsInsideOrangeAura(Vec3 pos)
-        {
-            foreach (var e in _areaEffects)
-                if (e.Id == "create_orange" && e.Position.Distance(pos) <= e.Radius)
-                    return true;
-            return false;
-        }
-
         public static void RemoveAreaEffect(string id)
         {
             foreach (var e in _areaEffects.Where(e => e.Id == id).ToList())
@@ -199,12 +190,37 @@ namespace ColoursOfCalradia
                 // Apply the area effect this tick
                 switch (e.Id)
                 {
-                    case "create_orange": // Golden Recoil — glow agents inside; retribution handled in OnAgentHit
+                    case "self_red_barrier": // Scarlet Barrier — damage all agents inside the node
                     {
+                        float barrierDmg = 20f * e.Power;
+                        foreach (Agent a in Mission.Current.Agents)
+                        {
+                            if (!a.IsActive() || a.IsMount || a == Player) continue;
+                            if (a.Position.Distance(e.Position) > e.Radius) continue;
+                            try
+                            {
+                                DamageAgent(a, barrierDmg, ColorSchool.Red);
+                                BeginAgentGlow(a, ColorSchool.Red, 1f);
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
+                    case "create_orange": // Gilded Refuge — +100 morale and 2 HP/sec to all inside
+                    {
+                        float refugeHeal = 2f * e.TickInterval;
                         foreach (Agent a in Mission.Current.Agents)
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
-                            try { BeginAgentGlow(a, e.School, 2f); } catch { }
+                            try
+                            {
+                                try { a.SetMorale(Math.Min(a.GetMorale() + 100f, 100f)); } catch { }
+                                float h = Math.Min(refugeHeal, a.HealthLimit - a.Health);
+                                if (h > 0f) a.Health += h;
+                                BeginAgentGlow(a, e.School, 2f);
+                            }
+                            catch { }
                         }
                         break;
                     }
@@ -212,7 +228,7 @@ namespace ColoursOfCalradia
                     case "create_yellow": // Creeping Dread — damage agents in cloud
                     {
                         int dreadHit = 0;
-                        float dreadDmg = 30f * e.Power;
+                        float dreadDmg = 45f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -222,7 +238,7 @@ namespace ColoursOfCalradia
                             {
                                 if (a.Health <= dreadDmg)
                                 {
-                                    KillAgent(a);
+                                    QueueKill(a);
                                 }
                                 else
                                 {
@@ -241,7 +257,7 @@ namespace ColoursOfCalradia
 
                     case "create_green": // Emerald Font — heal all agents in area
                     {
-                        float fontHeal = 15f * e.Power;
+                        float fontHeal = 25f * e.Power;
                         foreach (Agent a in Mission.Current.Agents)
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
@@ -276,10 +292,26 @@ namespace ColoursOfCalradia
                         break;
                     }
 
+                    case "create_purple_mist": // Purple Mist — 25% instakill chance per tick
+                    {
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount && !a.IsHero && a != Player &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
+                                if (_rng.Next(4) == 0) QueueKill(a);
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
                     case "self_yellow": // Nausea Bloom — drifting toxic cloud
                     {
                         int bloomHit = 0;
-                        float bloomDmg = 22f * e.Power;
+                        float bloomDmg = 35f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())

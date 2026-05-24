@@ -367,9 +367,9 @@ namespace ColoursOfCalradia
                         {
                             var e = troops[_rng.Next(troops.Count)];
                             try { target.MemberRoster.AddToCounts(e.Character, 0, false, 1 + _rng.Next(3)); } catch { }
-                            InformationManager.DisplayMessage(new InformationMessage(
-                                $"✦ Crimson Sky: A surge of red tears through {target.Name}. Soldiers fall wounded. ✦",
-                                ColorSchoolData.GetMessageColor(school)));
+                            MBInformationManager.AddQuickInformation(
+                                new TextObject($"✦ Crimson Sky: A surge of red tears through {target.Name}. Soldiers fall wounded. ✦"),
+                                0, null, null, "");
                         }
                     }
                     break;
@@ -381,9 +381,9 @@ namespace ColoursOfCalradia
                         .Where(p => p.IsActive && (p.GetPosition2D - playerPos).Length < 30f)
                         .OrderBy(_ => _rng.Next()).FirstOrDefault() ?? MobileParty.MainParty;
                     try { target.RecentEventsMorale += 8f; } catch { }
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        $"✦ Gilded Hour: Warmth sweeps through {target.Name} without warning. Morale +8. ✦",
-                        ColorSchoolData.GetMessageColor(school)));
+                    MBInformationManager.AddQuickInformation(
+                        new TextObject($"✦ Gilded Hour: Warmth sweeps through {target.Name} without warning. Morale +8. ✦"),
+                        0, null, null, "");
                     break;
                 }
                 case ColorSchool.Yellow:
@@ -397,9 +397,9 @@ namespace ColoursOfCalradia
                     {
                         float before = target.Town.Loyalty;
                         try { target.Town.Loyalty = Math.Max(0f, before - 8f); } catch { }
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"✦ Sickly Haze: Dread drifts through {target.Name}. Loyalty falls. ✦",
-                            ColorSchoolData.GetMessageColor(school)));
+                        MBInformationManager.AddQuickInformation(
+                            new TextObject($"✦ Sickly Haze: Dread drifts through {target.Name}. Loyalty falls. ✦"),
+                            0, null, null, "");
                     }
                     break;
                 }
@@ -413,9 +413,9 @@ namespace ColoursOfCalradia
                     if (target?.Village != null)
                     {
                         target.Village.Hearth += 10f;
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"✦ Living Surge: The green breathes into {target.Name}. Hearth grows. ✦",
-                            ColorSchoolData.GetMessageColor(school)));
+                        MBInformationManager.AddQuickInformation(
+                            new TextObject($"✦ Living Surge: The green breathes into {target.Name}. Hearth grows. ✦"),
+                            0, null, null, "");
                     }
                     break;
                 }
@@ -430,9 +430,9 @@ namespace ColoursOfCalradia
                     if (target?.Clan?.Kingdom != null)
                     {
                         try { GainKingdomInfluenceAction.ApplyForDefault(target, 2); } catch { }
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"✦ Scholar's Veil: An insight arrives for {target.Name}. Influence +2. ✦",
-                            ColorSchoolData.GetMessageColor(school)));
+                        MBInformationManager.AddQuickInformation(
+                            new TextObject($"✦ Scholar's Veil: An insight arrives for {target.Name}. Influence +2. ✦"),
+                            0, null, null, "");
                     }
                     break;
                 }
@@ -451,9 +451,9 @@ namespace ColoursOfCalradia
                     if (target != null)
                     {
                         try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(3)); } catch { }
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            $"✦ Grey Shroud: Three days quietly taken from {target.Name}. ✦",
-                            ColorSchoolData.GetMessageColor(school)));
+                        MBInformationManager.AddQuickInformation(
+                            new TextObject($"✦ Grey Shroud: Three days quietly taken from {target.Name}. ✦"),
+                            0, null, null, "");
                     }
                     break;
                 }
@@ -549,46 +549,62 @@ namespace ColoursOfCalradia
         // ── Children inherit colours ─────────────────────────────────────────
         private void OnHeroCreated(Hero hero, bool bornNaturally)
         {
-            if (!bornNaturally || !ColourKnowledge.HasAnySchool) return;
+            if (!bornNaturally) return;
             try
             {
                 bool parentIsPlayer = hero.Mother == Hero.MainHero || hero.Father == Hero.MainHero;
-                if (!parentIsPlayer) return;
 
-                Hero otherParent = hero.Mother == Hero.MainHero ? hero.Father : hero.Mother;
-                bool otherHasColours = otherParent != null && ColourLordRegistry.IsColourLord(otherParent);
-                int threshold = otherHasColours ? 85 : 50;
-                if (MBRandom.RandomInt(100) >= threshold) return;
-
-                var parentSchools = ColourKnowledge.AllSchools.ToList();
-                int parentCount   = parentSchools.Count;
-
-                // Child gets parent count ± 1, clamped to [1, 6]
-                int delta      = MBRandom.RandomInt(3) - 1; // -1, 0, or +1
-                int childCount = Math.Max(1, Math.Min(6, parentCount + delta));
-
-                // Always share at least one colour with parent
-                var childSchools = new List<ColorSchool>();
-                childSchools.Add(parentSchools[MBRandom.RandomInt(parentSchools.Count)]);
-
-                // Fill remaining slots from schools the child doesn't yet have
-                var pool = ((ColorSchool[])Enum.GetValues(typeof(ColorSchool)))
-                    .Where(s => !childSchools.Contains(s)).ToList();
-                while (childSchools.Count < childCount && pool.Count > 0)
+                if (parentIsPlayer)
                 {
-                    int idx = MBRandom.RandomInt(pool.Count);
-                    childSchools.Add(pool[idx]);
-                    pool.RemoveAt(idx);
+                    if (!ColourKnowledge.HasAnySchool) return;
+                    Hero otherParent = hero.Mother == Hero.MainHero ? hero.Father : hero.Mother;
+                    bool otherHasColours = otherParent != null && ColourLordRegistry.IsColourLord(otherParent);
+                    bool playerHasMultiple = ColourKnowledge.AllSchools.Count() >= 2;
+                    bool guaranteed = otherHasColours || playerHasMultiple;
+                    if (!guaranteed && MBRandom.RandomInt(100) >= 50) return;
+
+                    var parentSchools = ColourKnowledge.AllSchools.ToList();
+                    int parentCount   = parentSchools.Count;
+                    int delta         = MBRandom.RandomInt(3) - 1;
+                    int childCount    = Math.Max(1, Math.Min(6, parentCount + delta));
+
+                    var childSchools = new List<ColorSchool>();
+                    childSchools.Add(parentSchools[MBRandom.RandomInt(parentSchools.Count)]);
+                    var pool = ((ColorSchool[])Enum.GetValues(typeof(ColorSchool)))
+                        .Where(s => !childSchools.Contains(s)).ToList();
+                    while (childSchools.Count < childCount && pool.Count > 0)
+                    {
+                        int idx = MBRandom.RandomInt(pool.Count);
+                        childSchools.Add(pool[idx]);
+                        pool.RemoveAt(idx);
+                    }
+
+                    ColourLordRegistry.GrantChildColours(hero, childSchools);
+                    ColourKnowledge.AddGiftedChild(hero.StringId);
+
+                    string schoolNames = string.Join(", ", childSchools.Select(s => ColorSchoolData.Info[s].Name));
+                    MBInformationManager.AddQuickInformation(
+                        new TextObject($"{hero.Name} was born carrying {childCount} colour{(childCount > 1 ? "s" : "")}: {schoolNames}."),
+                        0, hero.CharacterObject, null, "");
                 }
+                else
+                {
+                    // NPC child — inherit if both parents are colour lords (guaranteed) or one is (50%)
+                    bool motherIsLord = hero.Mother != null && ColourLordRegistry.IsColourLord(hero.Mother);
+                    bool fatherIsLord = hero.Father != null && ColourLordRegistry.IsColourLord(hero.Father);
+                    if (!motherIsLord && !fatherIsLord) return;
+                    bool bothAreLords = motherIsLord && fatherIsLord;
+                    if (!bothAreLords && MBRandom.RandomInt(100) >= 50) return;
 
-                ColourLordRegistry.GrantChildColours(hero, childSchools);
-                ColourKnowledge.AddGiftedChild(hero.StringId);
+                    var parentSchools = new List<ColorSchool>();
+                    if (motherIsLord) foreach (var s in ColourLordRegistry.GetColors(hero.Mother)) if (!parentSchools.Contains(s)) parentSchools.Add(s);
+                    if (fatherIsLord) foreach (var s in ColourLordRegistry.GetColors(hero.Father)) if (!parentSchools.Contains(s)) parentSchools.Add(s);
+                    if (parentSchools.Count == 0) return;
 
-                string schoolNames = string.Join(", ",
-                    childSchools.Select(s => ColorSchoolData.Info[s].Name));
-                InformationManager.DisplayMessage(new InformationMessage(
-                    $"{hero.Name} was born carrying {childCount} colour{(childCount > 1 ? "s" : "")}: {schoolNames}.",
-                    new Color(0.75f, 0.75f, 0.85f)));
+                    int childCount = Math.Min(bothAreLords ? 1 + MBRandom.RandomInt(2) : 1, parentSchools.Count);
+                    var childSchools = parentSchools.OrderBy(_ => _rng.Next()).Take(childCount).ToList();
+                    ColourLordRegistry.GrantChildColours(hero, childSchools);
+                }
             }
             catch { }
         }

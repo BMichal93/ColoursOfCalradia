@@ -5,7 +5,7 @@
 // The mage absorbs light to split it into colour. Absorbing too much is dangerous.
 //
 // Player Saturation:
-//   Max = hero.Level + 10 (cap 30). Starts at 0.
+//   Max = hero.Level + 10 (no cap). Starts at 0.
 //   Each cast gains 0--3 saturation randomly.
 //   Resets to 0 when darkness falls (night time or dark location).
 //   Oversaturation (â‰Ą max): brief interruption, random trait shift, max â'1 permanently.
@@ -40,6 +40,7 @@ namespace ColoursOfCalradia
 
         // Brief battle interruption timer
         private static readonly Dictionary<int, float> _knockdownTimers = new Dictionary<int, float>();
+        private static readonly Dictionary<int, Agent> _agentLookup     = new Dictionary<int, Agent>();
         private static readonly ActionIndexCache _knockdownAction = ActionIndexCache.Create("act_knock_down");
 
         private static readonly Random _rng = new Random();
@@ -53,7 +54,7 @@ namespace ColoursOfCalradia
         public static void ResetForNewGame()
         {
             _playerSaturation         = 0;
-            _playerMaxSaturation      = Math.Min(30, Math.Max(1, (Hero.MainHero?.Level ?? 1) + 10));
+            _playerMaxSaturation      = Math.Max(1, (Hero.MainHero?.Level ?? 1) + 10);
             _playerIsBlight           = false;
             _playerIsPrism            = false;
             _saturationResetThisNight = false;
@@ -125,8 +126,7 @@ namespace ColoursOfCalradia
         public static void RecalcMax()
         {
             if (_playerIsBlight || _playerIsPrism) return;
-            if (_playerMaxSaturation >= 30) return;
-            _playerMaxSaturation = Math.Min(30, _playerMaxSaturation + 1);
+            _playerMaxSaturation++;
             InformationManager.DisplayMessage(new InformationMessage(
                 $"Your capacity to hold light grows: Saturation max is now {_playerMaxSaturation}.",
                 new Color(0.6f, 0.4f, 0.9f)));
@@ -137,6 +137,10 @@ namespace ColoursOfCalradia
         {
             if (_knockdownTimers.Count == 0 || Mission.Current == null) return;
 
+            _agentLookup.Clear();
+            foreach (Agent a in Mission.Current.Agents)
+                _agentLookup[a.Index] = a;
+
             foreach (int agentIndex in _knockdownTimers.Keys.ToList())
             {
                 _knockdownTimers[agentIndex] -= dt;
@@ -145,7 +149,7 @@ namespace ColoursOfCalradia
                 _knockdownTimers.Remove(agentIndex);
                 try
                 {
-                    Agent agent = Mission.Current.Agents.FirstOrDefault(a => a.Index == agentIndex);
+                    if (!_agentLookup.TryGetValue(agentIndex, out Agent agent)) continue;
                     if (agent?.IsActive() == true && agent.MountAgent == null)
                     {
                         bool usingEquip = false;

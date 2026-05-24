@@ -236,8 +236,8 @@ namespace ColoursOfCalradia
 "\n" +
 "COMBO STRUCTURE  (first 2 keys = Form | last 2 keys = Colour)\n" +
 "  ↑↑  Blast   — cone attack forward\n" +
-"  →←  Self    — aura on caster\n" +
-"  ←→  Create  — area effect, toggleable\n" +
+"  →→  Self    — aura on caster\n" +
+"  ←←  Create  — area effect, toggleable\n" +
 "  ↑←  Affect  — campaign map, situational\n" +
 "  ←↑  Invoke  — campaign map, advanced\n" +
 "  ↑→  Commune — campaign map, ambient effects\n" +
@@ -254,7 +254,7 @@ namespace ColoursOfCalradia
 "  Purple — The Slow Unravelling: each Purple cast costs −1% fertility and +1 day of age.\n" +
 "\n" +
 "SATURATION\n" +
-"  Each cast gains 0–3 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (cap 30).\n" +
+"  Each cast gains 0–3 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (no upper cap).\n" +
 "  Resets to 0 when darkness falls (night or dark locations).\n" +
 "  Oversaturation: knocked down 3s, random trait shift, Max −1 (permanent).\n" +
 "  Leveling up restores 1 max Saturation per level, but never removes prior reductions.\n" +
@@ -292,9 +292,10 @@ namespace ColoursOfCalradia
 "  or lord anywhere in Calradia, independent of colour lords' own spellcasting.\n" +
 "\n" +
 "THE PRISM\n" +
-"  One lord carries all six colours. They cast constantly and their personality shifts\n" +
-"  each week. When slain, if you hold all six colours, you may inherit the mantle (30%\n" +
-"  chance). Otherwise a new Prism rises within a month.\n" +
+"  One lord carries all six colours. They cast constantly in battle and on the campaign\n" +
+"  map (20% independent daily chance + reaction to every other lord cast). Their\n" +
+"  personality shifts each week. When slain, if you hold all six colours, you may\n" +
+"  inherit the mantle (30% chance). Otherwise a new Prism rises within a month.\n" +
 "  As the Prism you are immune to Madness and Oversaturation.\n" +
 "  At character creation you may also choose 'I am a Prism' (easy mode) to start with\n" +
 "  all six colours and full immunity, with no attribute penalties.";

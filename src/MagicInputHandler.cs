@@ -40,7 +40,7 @@ namespace ColoursOfCalradia
 
         // Form prefixes that can be released early to trigger a random known spell of that form
         private static readonly HashSet<string> _formPrefixes =
-            new HashSet<string> { "UU", "RL", "LR", "UL", "LU", "UR" };
+            new HashSet<string> { "UU", "RR", "LL", "UL", "LU", "UR" };
 
         public static bool InputSuppressed { get; private set; }
 
@@ -236,7 +236,7 @@ namespace ColoursOfCalradia
                 InformationManager.DisplayMessage(new InformationMessage(
                     "Sorcery in the tournament — you are disqualified!",
                     Color.FromUint(0xFFFF4444)));
-                try { SpellEffects.KillAgent(Agent.Main); } catch { }
+                SpellEffects.QueueKill(Agent.Main);
                 return;
             }
 
@@ -352,8 +352,8 @@ namespace ColoursOfCalradia
             switch (prefix)
             {
                 case "UU": return "Blast";
-                case "RL": return "Self";
-                case "LR": return "Create";
+                case "RR": return "Self";
+                case "LL": return "Create";
                 case "UL": return "Affect";
                 case "LU": return "Invoke";
                 case "UR": return "Commune";

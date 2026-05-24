@@ -143,34 +143,42 @@ namespace ColoursOfCalradia
             }
         }
 
-        // ── Purple — Purple Confusion ─────────────────────────────────────
-        // Scatter nearby enemy parties (15 map-unit radius, 10-unit push).
-        // Cost: −1% fertility + 1 day aging.
+        // ── Purple — Pale Dirge ───────────────────────────────────────────
+        // The nearest enemy party loses 5 soldiers and 20 morale.
+        // Cost: −1% fertility + 1 day aging (handled by MagicInputHandler).
         private static void SpellAffectPurple()
         {
             if (Hero.MainHero == null || MobileParty.MainParty == null) return;
 
-            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
             IFaction playerFaction = Hero.MainHero.MapFaction;
-            int scattered = 0;
-            foreach (MobileParty p in MobileParty.All.ToList())
+            Vec2 playerPos = MobileParty.MainParty.GetPosition2D;
+
+            MobileParty target = null;
+            float minDist = float.MaxValue;
+            foreach (MobileParty p in MobileParty.All)
             {
                 if (p == MobileParty.MainParty || !p.IsActive) continue;
-                if (p.MapFaction == null) continue;
-                if (playerFaction != null && p.MapFaction == playerFaction) continue;
+                if (p.MapFaction == null || p.MapFaction == playerFaction) continue;
                 if (playerFaction != null && !playerFaction.IsAtWarWith(p.MapFaction)) continue;
-                if ((p.GetPosition2D - playerPos).Length > 15f) continue;
-
-                Vec2 away = p.GetPosition2D - playerPos;
-                if (away.Length < 0.01f) away = new Vec2(1f, 0f); else away = away.Normalized();
-                Vec2 dest = p.GetPosition2D + away * 10f;
-                try { p.SetMoveGoToPoint(new CampaignVec2(dest, true), MobileParty.NavigationType.Default); scattered++; } catch { }
+                float d = (p.GetPosition2D - playerPos).Length;
+                if (d < minDist) { minDist = d; target = p; }
             }
 
-            string effect = scattered > 0
-                ? $"{scattered} nearby {(scattered == 1 ? "enemy loses" : "enemies lose")} the thread of pursuit."
-                : "No enemies close enough to unsettle.";
-            Msg($"Purple Confusion — {effect}", ColorSchool.Purple);
+            if (target == null) { Msg("Pale Dirge — no enemy party at war found.", ColorSchool.Purple); return; }
+
+            const int SoldiersLost = 5;
+            const float MoraleLost = 20f;
+            int removed = 0;
+            var troops = target.MemberRoster.GetTroopRoster()
+                .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
+            for (int i = 0; i < SoldiersLost && troops.Count > 0; i++)
+            {
+                var elem = troops[_rng.Next(troops.Count)];
+                try { target.MemberRoster.AddToCounts(elem.Character, -1); removed++; } catch { }
+                if (elem.Number <= 1) troops.Remove(elem);
+            }
+            try { target.RecentEventsMorale -= MoraleLost; } catch { }
+            Msg($"Pale Dirge — {removed} soldiers fade from {target.Name}. Morale −{MoraleLost:F0}. ({minDist:F1} km)", ColorSchool.Purple);
         }
 
         // =================================================================
@@ -383,8 +391,8 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 4); } catch { return; }
-            Msg("Blue Influence — the Scholar's insight earns 4 influence.", ColorSchool.Blue);
+            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 5); } catch { return; }
+            Msg("Blue Influence — the Scholar's insight earns 5 influence.", ColorSchool.Blue);
         }
 
         // ── Purple — Purple Isolation ─────────────────────────────────────

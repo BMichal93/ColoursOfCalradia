@@ -23,8 +23,8 @@ ColoursOfCalradia/
 │   ├── Spells/                      spell implementations (partial SpellEffects)
 │   │   ├── SpellEffects.cs          core partial: fields, helpers, Execute switch, battle commands
 │   │   ├── BlastSpells.cs           UU-prefix spells (Crimson Torrent … Grey Harvest)
-│   │   ├── SelfSpells.cs            RL-prefix spells (Scarlet Ward … Grief's Veil)
-│   │   └── CreateSpells.cs          LR-prefix spells (Cinder Burst … Hollow Gaze)
+│   │   ├── SelfSpells.cs            RR-prefix spells (Scarlet Barrier … Grey Reaping)
+│   │   └── CreateSpells.cs          LL-prefix spells (Cinder Burst … Purple Mist)
 │   ├── Visual/                      visual + movement systems (partial SpellEffects)
 │   │   ├── AreaEffects.cs           AreaEffect nested class, tick/clear, spawn area light
 │   │   ├── GlowSystem.cs            per-school contour glow + cast sound
@@ -428,8 +428,8 @@ All 36 spells follow a strict **Form + Colour** combo structure:
 | Prefix | Keys | Form | Shape / Context |
 |--------|------|------|-----------------|
 | `UU` | W W | **Blast** | Cone in front of the caster (battle) |
-| `RL` | D A | **Self** | Aura or effect centred on the caster (battle) |
-| `LR` | A D | **Create** | Persistent area effect placed on the battlefield (battle) |
+| `RR` | D D | **Self** | Aura or effect centred on the caster (battle) |
+| `LL` | A A | **Create** | Persistent area effect placed on the battlefield (battle) |
 | `UL` | W A | **Affect** | Campaign map — situational, resource-based |
 | `LU` | A W | **Invoke** | Campaign map — advanced, targets heroes and rosters |
 | `UR` | W D | **Commune** | Campaign map — ambient, world-affecting |
@@ -455,34 +455,34 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UURR` | Red | 55 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UULD` | Orange | 18 damage to cone enemies (15 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UUDD` | Yellow | 20 damage to cone enemies (15 m); drains 45 morale from each. |
-| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 22 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UURU` | Blue | 18 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
+| **Crimson Torrent** | `UURR` | Red | 75 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
+| **Golden Tide** | `UULD` | Orange | 25 damage to cone enemies (15 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UUDD` | Yellow | 30 damage to cone enemies (15 m); drains 60 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 35 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UURU` | Blue | 28 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
 | **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (15 m); kill count scales with Vigor. |
 
-### Self Spells (RL prefix) — Caster-centred effects
+### Self Spells (RR prefix) — Caster-centred effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Ward** | `RLRR` | Red | Absorbs the next single physical blow — one strike, then the ward shatters. Expires after 12 s if nothing hits. |
-| **Warm Beacon** | `RLLD` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
-| **Nausea Bloom** | `RLDD` | Yellow | Persistent 30 s aura (radius 8 m) that deals 22 damage every 2 s to all nearby creatures. |
-| **Verdant Touch** | `RLLL` | Green | Heals the caster for 28 HP. |
-| **Cerulean Mirror** | `RLRU` | Blue | 18 s missile deflection — up to 4 volleys blocked; shatters after the 4th block or when time expires. Physical attacks still connect. |
-| **Grey Reaping** | `RLDU` | Purple | Drains morale from all nearby enemies; kills 1–2 random non-hero enemies within 15 m (scales with Purple attribute). |
+| **Scarlet Barrier** | `RRRR` | Red | Toggle: six crimson pillars erupt in a ring (radius 4 m) around the caster; any creature inside the ring takes 20 damage every second. Cast again to dismiss. |
+| **Warm Beacon** | `RRLD` | Orange | Pulls all allies within 18 m to a ring around the caster (smooth lerp). |
+| **Nausea Bloom** | `RRDD` | Yellow | Persistent 30 s aura (radius 8 m) that deals 35 damage every 2 s to all nearby creatures. |
+| **Verdant Touch** | `RRLL` | Green | Heals the caster for 40 HP. |
+| **Cerulean Burst** | `RRRU` | Blue | Instant AoE (15 m radius): deals 28 damage to all nearby enemies, drains 35 morale each, halts their formations, and dismounts riders. |
+| **Grey Reaping** | `RRDU` | Purple | Drains morale from all nearby enemies; kills 1–2 random non-hero enemies within 15 m (scales with Purple attribute). |
 
-### Create Spells (LR prefix) — Persistent battlefield effects
+### Create Spells (LL prefix) — Persistent battlefield effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Cinder Burst** | `LRRR` | Red | Instant 50 damage to all creatures within 10 m. |
-| **Golden Recoil** | `LRLD` | Orange | Toggle: zone of retribution — any creature that strikes while inside returns 25% of the blow upon themselves. Cast again to dismiss. |
-| **Creeping Dread** | `LRDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 30 damage every 2 s to creatures they pass through. Cast again to dismiss. |
-| **Emerald Font** | `LRLL` | Green | Toggle: two healing pools that restore 15 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
-| **Sapphire Bastion** | `LRRU` | Blue | Toggle: four pillars of force in a line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
-| **Hollow Gaze** | `LRDU` | Purple | Toggle: pins one random nearby non-hero enemy into a catatonic state — they stand still and do nothing. Cast again to release them. |
+| **Cinder Burst** | `LLRR` | Red | Instant 70 damage to all creatures within 10 m. |
+| **Gilded Refuge** | `LLLD` | Orange | Toggle: 3×3 grid of nine inspiring zones (radius 7 m each) across the field — all creatures inside receive +100 morale and 2 HP healing every 2 s. Cast again to dismiss. |
+| **Creeping Dread** | `LLDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 45 damage every 2 s to creatures they pass through. Cast again to dismiss. |
+| **Emerald Font** | `LLLL` | Green | Toggle: three healing pools in a triangle that restore 25 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
+| **Sapphire Bastion** | `LLRU` | Blue | Toggle: six pillars of force in a wide line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
+| **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); any non-hero creature inside has a 25% chance to die instantly every 2 s. Cast again to dismiss. |
 
 ### Notes on Create Spells
 
@@ -499,8 +499,7 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 The mod operates at the game-logic layer only and cannot access the engine's animation or particle systems. As a result:
 
 - **No cast animations** — casting a spell produces no hand, body, or weapon animation on the player or NPCs.
-- **No hit-block animations** — Scarlet Ward absorbing a blow, or Cerulean Mirror deflecting a spell, has no dedicated animation.
-- **No area-effect visuals** — Creeping Dread, Nausea Bloom, and other area effects have no visible cloud or ground texture. Only the agents inside the area glow in the school's colour.
+- **No area-effect visuals** — Creeping Dread, Nausea Bloom, Purple Mist, and other area effects have no visible cloud or ground texture. Only the agents inside the area glow in the school's colour.
 - **No projectile effects** — Blast spells fire instantly; there is no visible projectile.
 
 All visual feedback is limited to **agent glow outlines** (colour pulses on affected characters) and **message log text**.
@@ -570,6 +569,8 @@ When a mage lord dies, their colours are extinguished. After **7 days**, the col
 
 One lord in the entire world always carries **all six colour schools** — this is The Prism. They are selected randomly at campaign start from any living non-player lord. The Prism casts in battle at **3× the normal frequency** and their personality shifts randomly every week regardless of cast count. They are feared and distrusted by all other colour lords.
 
+On the campaign map, The Prism has a **20 % independent daily chance** to cast (in addition to reacting whenever another lord casts). Their cooldown after a map cast is 4–6 days.
+
 When The Prism dies, if you carry all six colours and are not already the Prism, there is a **30 % chance** the mantle seeks you next. A prompt appears the following day — you may accept or refuse. If you refuse (or the chance doesn't trigger), a new Prism rises within **one month**.
 
 **Becoming the Prism grants immunity to Madness and Oversaturation.** Your personality will not fracture weekly, and your Saturation cap cannot be depleted.
@@ -616,7 +617,7 @@ NPC lords apply their school limitations: Blue lords cannot cast while wielding 
 
 ### Campaign Map Spells
 
-Each mage lord has a **5 % daily chance** to cast a campaign-map spell. At most **1 lord map-cast fires per day** across the entire world. Each lord has a cooldown of **12–16 days** after casting.
+Each mage lord has a **5 % daily chance** to cast a campaign-map spell. At most **1 lord map-cast fires per day** across the entire world. Each lord has a cooldown of **12–16 days** after casting. The Prism additionally has a **20 % independent daily chance** to cast (cooldown 4–6 days), and also reacts when any other lord casts.
 
 | School | Effect A (33 %) | Effect B (33 %) | Effect C (33 %) |
 |--------|-----------------|-----------------|-----------------|
@@ -670,16 +671,19 @@ Each named unit has a **3 % daily chance** to trigger a minor campaign map effec
 
 ### Children
 
-Children of the main hero born during the campaign have a chance to inherit magical colours depending on how many parents carry them:
+Children of the main hero inherit colours based on how much magical potential surrounds their birth:
 
-- **One parent** (player only): **50 % chance** of inheriting.
-- **Both parents** (player + NPC spouse who is a colour lord): **85 % chance** of inheriting.
+- **Guaranteed** when the player has **2 or more colours**, or when both parents carry colours (player + colour lord spouse).
+- **50 % chance** otherwise (player has only 1 colour, other parent is not a colour lord).
 
-When they do:
+When a child inherits:
 
-- They always inherit at least one of the parent's schools.
-- Their total number of schools equals the parent's count ±1, clamped to 1–6.
-- Any remaining slots are filled from the pool of colours the parent does not already hold.
+- They always share at least one school with the player.
+- Their total number of schools equals the player's count ±1, clamped to 1–6.
+- Any remaining slots are filled from the pool of colours the player does not already hold.
+- A notification appears at birth naming the schools they carry.
+
+Children of **two NPC colour lords** (not involving the player) also have a chance to inherit. Guaranteed when both parents are colour lords; 50 % if only one is. These children gain 1–2 schools drawn from their parents' combined school pool with no player notification.
 
 ### Companions
 
@@ -718,7 +722,7 @@ Each Affect spell is tied to a specific situation or resource. Saturation cost i
 | **Press Gang** | `ULDD` | Yellow | Conscript one random prisoner from your prison roster into the ranks — they join unwillingly. Morale −2. |
 | **Mending Touch** | `ULLL` | Green | 50% chance to heal one wounded soldier. Cannot be cast inside a settlement. |
 | **Philosopher's Stone** | `ULRU` | Blue | Gold flows: +50×power. Time ebbs — you become 1 day younger (minimum age 22). |
-| **Grey Veil** | `ULDU` | Purple | Scatter nearby enemy parties (15 map-unit radius); enemies lose your trail. Cost: −1% fertility + 1 day aging. |
+| **Pale Dirge** | `ULDU` | Purple | The nearest enemy party at war loses up to 5 soldiers and 20 morale. |
 
 ### Invoke Spells (LU prefix) — advanced campaign effects
 
@@ -730,7 +734,7 @@ Invoke spells target heroes, rosters, and rival lords directly.
 | **Inspired Word** | `LULD` | Orange | Grant one random soldier in your party 150×power experience. |
 | **Creeping Fear** | `LUDD` | Yellow | The nearest enemy party at war loses 2 morale. |
 | **Green's Bounty** | `LULL` | Green | 80% grain / 10% sheep / 10% cow ripens at your touch. Cannot be cast inside a settlement. |
-| **Scholar's Word** | `LURU` | Blue | Your insight earns 1 influence. Kingdom membership required. |
+| **Blue Influence** | `LURU` | Blue | Gain 5 influence. Kingdom membership required. |
 | **Wither's Touch** | `LUDU` | Purple | A random enemy lord's clan loses 2 renown. Cost: −1% fertility + 1 day aging. |
 
 ### Commune Spells (UR prefix) — ambient, world-affecting
@@ -748,7 +752,7 @@ Commune spells reach beyond your immediate position to reshape the world around 
 
 ### Notes
 
-- **Purple** campaign spells (Grey Veil, Wither's Touch, Grey Curse) all apply The Slow Unravelling: −1% fertility + 1 day aging per cast.
+- **Purple** campaign spells that tap The Waning Art (Wither's Touch, Grey Curse) apply The Slow Unravelling: −1% fertility + 1 day aging per cast. Pale Dirge does not carry this cost.
 - **Green** Mending Touch and Green's Bounty cannot be cast inside a settlement (Nature's Calling).
 - **Blue** Philosopher's Stone respects a minimum age of 22 — no further rejuvenation below that threshold.
 - **Orange** Rallying Call and Inspired Word work anywhere with no additional resource cost.
@@ -758,7 +762,7 @@ Commune spells reach beyond your immediate position to reshape the world around 
 
 ## Saturation
 
-Every cast generates **0–5 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap scales with your level: **max = hero level + 10** (hard cap 30).
+Every cast generates **0–5 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap grows with your level: **max = hero level + 10** (no upper limit — the more experienced you are, the more light you can hold).
 
 | Condition | Effect |
 |-----------|--------|

@@ -59,6 +59,8 @@ namespace ColoursOfCalradia
         // Per-mission: agentIndex → unitId
         private static readonly Dictionary<int, string> _missionAgents
             = new Dictionary<int, string>();
+        private static readonly Dictionary<int, Agent> _agentIndexMap
+            = new Dictionary<int, Agent>();
         private static readonly HashSet<string> _diedThisMission
             = new HashSet<string>();
         private static readonly Dictionary<string, float> _cooldowns
@@ -346,13 +348,17 @@ namespace ColoursOfCalradia
                 if (_cooldowns[key] <= 0f) _cooldowns.Remove(key);
             }
 
+            _agentIndexMap.Clear();
+            foreach (Agent a in Mission.Current.Agents)
+                _agentIndexMap[a.Index] = a;
+
             foreach (var kvp in _missionAgents.ToList())
             {
                 if (_cooldowns.ContainsKey(kvp.Value)) continue;
                 if (!_units.TryGetValue(kvp.Value, out ColourUnitEntry unit)) continue;
 
-                Agent agent = Mission.Current.Agents.FirstOrDefault(a => a.Index == kvp.Key);
-                if (agent == null || !agent.IsActive()) continue;
+                if (!_agentIndexMap.TryGetValue(kvp.Key, out Agent agent)) continue;
+                if (!agent.IsActive()) continue;
 
                 CastUnitSpell(agent, unit);
             }
@@ -421,7 +427,7 @@ namespace ColoursOfCalradia
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 8f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.35f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            SpellEffects.DamageAgent(a, 40f);
+                            SpellEffects.DamageAgent(a, 55f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             cast = true;
                         }
@@ -457,7 +463,7 @@ namespace ColoursOfCalradia
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             try
                             {
-                                SpellEffects.DamageAgent(a, 10f);
+                                SpellEffects.DamageAgent(a, 15f);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                                 cast = true;
                             }
@@ -470,7 +476,7 @@ namespace ColoursOfCalradia
                             .Where(a => a.Position.Distance(agent.Position) <= 6f).ToList())
                         {
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            SpellEffects.DamageAgent(a, 40f);
+                            SpellEffects.DamageAgent(a, 55f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                             cast = true;
                         }
@@ -544,6 +550,7 @@ namespace ColoursOfCalradia
             }
             _diedThisMission.Clear();
             _missionAgents.Clear();
+            _agentIndexMap.Clear();
             _missionInitialized = false;
             _cooldowns.Clear();
             _aiAccum    = 0f;

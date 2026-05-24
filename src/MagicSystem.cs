@@ -75,10 +75,10 @@ namespace ColoursOfCalradia
             SpellEffects.TickAnimClears(dt);
             SpellEffects.TickMoves(dt);
             SpellEffects.TickAreaEffects(dt);
-            SpellEffects.TickHollowGaze(dt);
             SpellEffects.TickHaltedAgents(dt);
             SpellEffects.TickRandomUnitMagic(dt);
             SaturationSystem.TickKnockdown(dt);
+            SpellEffects.FlushPendingDeaths();
         }
 
         private void TryRegisterOrderHook()
@@ -128,44 +128,13 @@ namespace ColoursOfCalradia
                 _orderHookRegistered = false;
             }
             SpellEffects.ClearAnimTimers();
+            SpellEffects.ClearPendingDeaths();
             SaturationSystem.ClearKnockdowns();
         }
 
         public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent,
             in MissionWeapon affectorWeapon, in Blow blow, in AttackCollisionData attackCollisionData)
         {
-            // Scarlet Ward: first physical blow against the player shatters the ward and undoes the damage
-            bool wardHandled = false;
-            if (affectedAgent == Agent.Main && affectorAgent != Agent.Main
-                && affectorAgent != null && SpellEffects.ScarletWardActive)
-            {
-                SpellEffects.AbsorbScarletWard(blow.InflictedDamage);
-                wardHandled = true;
-            }
-
-            // Cerulean Mirror: deflects missiles (arrows, bolts, javelins, thrown weapons); melee connects normally.
-            // Skip if Scarlet Ward already absorbed this hit to prevent double restoration.
-            if (!wardHandled && affectedAgent == Agent.Main && affectorAgent != Agent.Main
-                && affectorAgent != null && SpellEffects.CeruleanMirrorActive)
-            {
-                var wc = affectorWeapon.CurrentUsageItem?.WeaponClass ?? WeaponClass.Undefined;
-                bool isMissile = wc == WeaponClass.Arrow         || wc == WeaponClass.Bolt     ||
-                                 wc == WeaponClass.Javelin       || wc == WeaponClass.ThrowingAxe ||
-                                 wc == WeaponClass.ThrowingKnife || wc == WeaponClass.Stone;
-                if (isMissile)
-                    SpellEffects.AbsorbCeruleanMissile(blow.InflictedDamage);
-            }
-
-            // Golden Recoil: enemies who deal damage while inside the orange aura take 25% back.
-            // Allies and the player are exempt. Direct health assignment — Die() inside OnAgentHit is unsafe.
-            if (blow.InflictedDamage > 0 && affectorAgent != null && affectorAgent != Agent.Main
-                && affectorAgent.IsActive()
-                && affectorAgent.Team != Agent.Main?.Team
-                && SpellEffects.IsInsideOrangeAura(affectorAgent.Position))
-            {
-                int recoil = Math.Max(1, blow.InflictedDamage / 4);
-                try { affectorAgent.Health = Math.Max(1f, affectorAgent.Health - recoil); } catch { }
-            }
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent,

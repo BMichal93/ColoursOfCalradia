@@ -47,7 +47,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 50f * power);
+                    DamageAgent(a, 70f * power);
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                     count++;
                 }
@@ -59,30 +59,51 @@ namespace ColoursOfCalradia
                           : "The burst finds nothing nearby.", ColorSchool.Red);
         }
 
-        // Golden Recoil — retributive aura; any agent who deals damage inside takes the same damage back
+        // Gilded Refuge — large inspiring zone: flat +100 morale and 2 HP/sec passive healing; toggle
         private static void SpellCreateOrange()
         {
             if (Player == null) return;
-            if (HasAreaEffect("create_orange"))
+            const string Id = "create_orange";
+            if (HasAreaEffect(Id))
             {
-                RemoveAreaEffect("create_orange");
-                Msg("The Golden Recoil fades. The aura of retribution dissolves.", ColorSchool.Orange);
+                RemoveAreaEffect(Id);
+                Msg("The Gilded Refuge fades. The warmth departs.", ColorSchool.Orange);
                 return;
             }
-            const float NodeRadius = 10f;
-            Vec3 centre = Player.Position + Player.LookDirection.NormalizedCopy() * 5f;
-            centre.z = Player.Position.z;
-            var node = new AreaEffect
-            {
-                Id = "create_orange", School = ColorSchool.Orange,
-                Position = centre, Radius = NodeRadius,
-                TickInterval = 2f, TickTimer = 2f, Remaining = -1f
+            float power = SpellPower(ColorSchool.Orange);
+            const float NodeRadius  = 7f;
+            const float NodeSpacing = 7f;
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * NodeSpacing - fwd * NodeSpacing,
+                centre                       - fwd * NodeSpacing,
+                centre + right * NodeSpacing - fwd * NodeSpacing,
+                centre - right * NodeSpacing,
+                centre,
+                centre + right * NodeSpacing,
+                centre - right * NodeSpacing + fwd * NodeSpacing,
+                centre                       + fwd * NodeSpacing,
+                centre + right * NodeSpacing + fwd * NodeSpacing,
             };
-            node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
-            _areaEffects.Add(node);
+            foreach (Vec3 pos in nodePos)
+            {
+                var node = new AreaEffect
+                {
+                    Id = Id, School = ColorSchool.Orange,
+                    Position = pos, Radius = NodeRadius,
+                    TickInterval = 2f, TickTimer = 2f, Remaining = -1f,
+                    Power = power
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
-            Msg("Golden Recoil — a zone of retribution takes shape. Any who strike while standing within it will feel the blow return. Cast again to dismiss.", ColorSchool.Orange);
+            Msg("Gilded Refuge — a vast warmth settles across the field. Those inside hold the line with iron resolve and close wounds faster. Cast again to dismiss.", ColorSchool.Orange);
         }
 
         // Creeping Dread — moving clouds of revulsion that damage agents they pass through
@@ -224,30 +245,51 @@ namespace ColoursOfCalradia
             Msg("Sapphire Bastion rises — six pillars of force seal a wide line. Cast again to dismiss.", ColorSchool.Blue);
         }
 
-        // Hollow Gaze — one random nearby enemy becomes catatonic; casting again cancels the effect
+        // Purple Mist — 3×3 grid of death nodes; any agent inside has 25% instakill chance per tick; toggle
         private static void SpellCreatePurple()
         {
-            if (Player == null || Mission.Current == null) return;
-            if (_hollowGazeTarget != null)
+            if (Player == null) return;
+            const string Id = "create_purple_mist";
+            if (HasAreaEffect(Id))
             {
-                string name = _hollowGazeTarget.IsActive() ? _hollowGazeTarget.Name : "them";
-                _hollowGazeTarget = null;
-                try { _hollowGazeLight?.Remove(0); } catch { }
-                _hollowGazeLight = null;
-                Msg($"The Hollow Gaze releases. {name} stirs back into themselves.", ColorSchool.Purple);
+                RemoveAreaEffect(Id);
+                Msg("The Purple Mist disperses. The grey withdraws.", ColorSchool.Purple);
                 return;
             }
-            const float Radius = 15f;
-            var candidates = Enemies()
-                .Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(Player.Position) <= Radius)
-                .ToList();
-            if (candidates.Count == 0) { Msg("No one nearby to hollow out.", ColorSchool.Purple); return; }
-            _hollowGazeTarget = candidates[_rng.Next(candidates.Count)];
-            _hollowGazeTimer  = 0f;
-            BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, 3f);
-            try { _hollowGazeLight?.Remove(0); } catch { }
-            _hollowGazeLight = SpawnAreaLight(_hollowGazeTarget.Position, ColorSchool.Purple, 6f);
-            Msg($"Hollow Gaze — {_hollowGazeTarget.Name} empties out. They stand and wait for nothing.", ColorSchool.Purple);
+            float power = SpellPower(ColorSchool.Purple);
+            const float NodeRadius  = 4f;
+            const float NodeSpacing = 5f;
+            Vec3 fwd   = Player.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
+            Vec3 centre = Player.Position;
+            Vec3[] nodePos = {
+                centre - right * NodeSpacing - fwd * NodeSpacing,
+                centre                       - fwd * NodeSpacing,
+                centre + right * NodeSpacing - fwd * NodeSpacing,
+                centre - right * NodeSpacing,
+                centre,
+                centre + right * NodeSpacing,
+                centre - right * NodeSpacing + fwd * NodeSpacing,
+                centre                       + fwd * NodeSpacing,
+                centre + right * NodeSpacing + fwd * NodeSpacing,
+            };
+            foreach (Vec3 pos in nodePos)
+            {
+                var node = new AreaEffect
+                {
+                    Id = Id, School = ColorSchool.Purple,
+                    Position = pos, Radius = NodeRadius,
+                    TickInterval = 2f, TickTimer = 2f, Remaining = -1f,
+                    Power = power
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
+            }
+            BeginAgentGlow(Player, ColorSchool.Purple, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
+            Msg("Purple Mist — nine dim wisps settle across the ground. Those who step through them may simply stop. Cast again to dismiss.", ColorSchool.Purple);
         }
 
         // Spawns random Sapphire Bastion repulsion nodes for battle events (not player-cast)

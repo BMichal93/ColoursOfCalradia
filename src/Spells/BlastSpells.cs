@@ -45,7 +45,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 55f * power, ColorSchool.Red);
+                    DamageAgent(a, 75f * power, ColorSchool.Red);
                     if (a.IsActive() && a.Health > 0f)
                     {
                         Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
@@ -74,7 +74,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 18f * power, ColorSchool.Orange);
+                    DamageAgent(a, 25f * power, ColorSchool.Orange);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -101,9 +101,9 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 20f * power, ColorSchool.Yellow);
+                    DamageAgent(a, 30f * power, ColorSchool.Yellow);
                     if (!a.IsActive()) continue;
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 45f * power)); } catch { }
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 60f * power)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                     SpawnTempLight(a.Position, ColorSchool.Yellow, 6f, 1.5f);
                 }
@@ -126,7 +126,7 @@ namespace ColoursOfCalradia
                 if (a.Team != Player.Team) continue; // enemies excluded
                 try
                 {
-                    float h = Math.Min(22f * power, a.HealthLimit - a.Health);
+                    float h = Math.Min(35f * power, a.HealthLimit - a.Health);
                     if (h > 0f)
                     {
                         a.Health += h;
@@ -155,7 +155,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 18f * power, ColorSchool.Blue);
+                    DamageAgent(a, 28f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     bool usingEquip = false;
@@ -201,7 +201,7 @@ namespace ColoursOfCalradia
             {
                 BeginAgentGlow(inCone[i], ColorSchool.Purple, 1.5f);
                 SpawnTempLight(inCone[i].Position, ColorSchool.Purple, 6f, 1.5f);
-                KillAgent(inCone[i]);
+                QueueKill(inCone[i]);
             }
             if (killCount == 1)
                 Msg($"Grey Harvest — {inCone[0].Name} fades. The purple was always going to take them.", ColorSchool.Purple);

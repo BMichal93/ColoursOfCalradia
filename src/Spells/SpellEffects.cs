@@ -152,49 +152,8 @@ namespace ColoursOfCalradia
             return false;
         }
 
-        // ── Duration self-effects ────────────────────────────────────────────
-        // Invulnerability states for Self Red (Scarlet Ward) and Self Blue (Cerulean Mirror)
-        private static bool  _scarletWardActive   = false;
-        public  static bool  ScarletWardActive    => _scarletWardActive;
-        private static bool  _ceruleanMirrorActive = false;
-        public  static bool  CeruleanMirrorActive => _ceruleanMirrorActive;
-        private static int   _ceruleanMirrorBlocks = 0;
-        private static Agent      _hollowGazeTarget = null;
-        private static float      _hollowGazeTimer  = 0f;
-        private const  float      HollowGazeInterval = 0.3f;
-        private static GameEntity _hollowGazeLight  = null;
-
-        // Returns true when the agent is the player and Cerulean Mirror is blocking magic
-        public static bool ProtectedByMirror(Agent a) => a == Player && _ceruleanMirrorActive;
-
-        public static void TickHollowGaze(float dt)
-        {
-            if (_hollowGazeTarget == null) return;
-            if (!_hollowGazeTarget.IsActive())
-            {
-                _hollowGazeTarget = null;
-                try { _hollowGazeLight?.Remove(0); } catch { }
-                _hollowGazeLight = null;
-                return;
-            }
-            _hollowGazeTimer -= dt;
-            if (_hollowGazeTimer > 0f) return;
-            _hollowGazeTimer = HollowGazeInterval;
-            // Release if target mounts or begins operating siege equipment mid-gaze
-            bool gazeTargetBlocked = _hollowGazeTarget.MountAgent != null;
-            if (!gazeTargetBlocked) try { gazeTargetBlocked = _hollowGazeTarget.IsUsingGameObject; } catch { }
-            if (gazeTargetBlocked)
-            {
-                _hollowGazeTarget = null;
-                try { _hollowGazeLight?.Remove(0); } catch { }
-                _hollowGazeLight = null;
-                return;
-            }
-            Vec3 pos = _hollowGazeTarget.Position;
-            try { _hollowGazeTarget.TeleportToPosition(pos); } catch { }
-            try { _hollowGazeTarget.SetMorale(0f); } catch { }
-            BeginAgentGlow(_hollowGazeTarget, ColorSchool.Purple, HollowGazeInterval * 4);
-        }
+        // Returns false — Cerulean Mirror replaced by Cerulean Burst (instant AoE, no deflection)
+        public static bool ProtectedByMirror(Agent a) => false;
 
         public static void TickHaltedAgents(float dt)
         {
@@ -245,22 +204,7 @@ namespace ColoursOfCalradia
 
         public static void ClearSelfEffects()
         {
-            if (_scarletWardActive)    { _scarletWardActive = false; }
-            if (_ceruleanMirrorActive) { _ceruleanMirrorActive = false; _ceruleanMirrorBlocks = 0; }
-            try
-            {
-                if (Player?.IsActive() == true)
-                {
-                    bool usingEquip = false;
-                    try { usingEquip = Player.IsUsingGameObject; } catch { }
-                    if (!usingEquip)
-                        Player.SetMaximumSpeedLimit(10f, false);
-                }
-            }
-            catch { }
-            _hollowGazeTarget = null;
-            try { _hollowGazeLight?.Remove(0); } catch { }
-            _hollowGazeLight  = null;
+            RemoveAreaEffect("self_red_barrier");
             _haltedAgents.Clear();
         }
 
@@ -354,6 +298,32 @@ namespace ColoursOfCalradia
         // ── Helpers ──────────────────────────────────────────────────────────
         private static Agent Player => Agent.Main;
 
+        // ── Deferred death queue ──────────────────────────────────────────────
+        // Die() called from within OnMissionTick callbacks causes native engine crashes
+        // in large sieges when many agents are killed simultaneously (engine reads weapon/
+        // animation state that is mid-update). Queue kills and flush at end of each tick.
+        private static readonly List<Agent> _pendingDeaths = new List<Agent>();
+
+        public static void QueueKill(Agent target)
+        {
+            if (target == null || target.IsHero) return;
+            bool usingEquip = false;
+            try { usingEquip = target.IsUsingGameObject; } catch { }
+            if (usingEquip) { try { target.Health = 1f; } catch { } return; }
+            if (target.IsActive() && !_pendingDeaths.Contains(target))
+                _pendingDeaths.Add(target);
+        }
+
+        public static void FlushPendingDeaths()
+        {
+            if (_pendingDeaths.Count == 0) return;
+            foreach (Agent a in _pendingDeaths)
+                if (a?.IsActive() == true) KillAgent(a);
+            _pendingDeaths.Clear();
+        }
+
+        public static void ClearPendingDeaths() => _pendingDeaths.Clear();
+
         private static IEnumerable<Agent> Enemies()
         {
             if (Mission.Current == null || Player == null) yield break;
@@ -377,13 +347,9 @@ namespace ColoursOfCalradia
             if (target == null || !target.IsActive()) return;
             if (target.IsHero)
             {
-                // Heroes go unconscious via normal battle logic — never call Die() on them.
-                // Just wound them; the battle system handles incapacitation when health hits 0.
                 try { target.Health = Math.Max(1f, target.Health - 2f); } catch { }
                 return;
             }
-            // Die() on siege-equipment operators corrupts native engine state.
-            // Reduce to near-death instead; they'll be cleaned up when they leave the equipment.
             bool usingEquip = false;
             try { usingEquip = target.IsUsingGameObject; } catch { }
             if (usingEquip)
@@ -405,17 +371,12 @@ namespace ColoursOfCalradia
         public static void DamageAgent(Agent target, float damage, ColorSchool? damageSchool = null)
         {
             if (target == null || !target.IsActive()) return;
-            // Blights are immune to spells of their own colour school
             if (damageSchool.HasValue && BlightSystem.IsBlight(target)
                 && BlightSystem.GetBlightSchool(target) == damageSchool.Value) return;
-            // Use direct health assignment to avoid RegisterBlow's hit pipeline:
-            // RegisterBlow with AttackCollisionData=default causes native crashes because
-            // the engine reads weapon/body-part data from fields we leave at zero (OwnerId=-1,
-            // AffectorWeaponSlot=0, VictimBodyPart=0), leading to invalid native lookups.
             float newHealth = target.Health - damage;
             if (newHealth <= 0f)
             {
-                if (!target.IsHero) KillAgent(target);
+                if (!target.IsHero) QueueKill(target); // deferred — safe during mission tick
                 else try { target.Health = 1f; } catch { }
             }
             else
@@ -440,7 +401,7 @@ namespace ColoursOfCalradia
         }
 
         // ── Execute switch ───────────────────────────────────────────────────
-        // Combos: first 2 chars = form (UU=Blast, RL=Self, LR=Create, UL=Affect, LU=Invoke, UR=Commune),
+        // Combos: first 2 chars = form (UU=Blast, RR=Self, LL=Create, UL=Affect, LU=Invoke, UR=Commune),
         //         last 2 chars = colour (RR=Red, LD=Orange, DD=Yellow, LL=Green, RU=Blue, DU=Purple)
         public static bool Execute(string combo)
         {
@@ -453,20 +414,20 @@ namespace ColoursOfCalradia
                 case "UULL": SpellBlastGreen();  break;
                 case "UURU": SpellBlastBlue();   break;
                 case "UUDU": SpellBlastPurple(); break;
-                // SELF (RL)
-                case "RLRR": SpellSelfRed();     break;
-                case "RLLD": SpellSelfOrange();  break;
-                case "RLDD": SpellSelfYellow();  break;
-                case "RLLL": SpellSelfGreen();   break;
-                case "RLRU": SpellSelfBlue();    break;
-                case "RLDU": SpellSelfPurple();  break;
-                // CREATE (LR)
-                case "LRRR": SpellCreateRed();    break;
-                case "LRLD": SpellCreateOrange(); break;
-                case "LRDD": SpellCreateYellow(); break;
-                case "LRLL": SpellCreateGreen();  break;
-                case "LRRU": SpellCreateBlue();   break;
-                case "LRDU": SpellCreatePurple(); break;
+                // SELF (RR)
+                case "RRRR": SpellSelfRed();     break;
+                case "RRLD": SpellSelfOrange();  break;
+                case "RRDD": SpellSelfYellow();  break;
+                case "RRLL": SpellSelfGreen();   break;
+                case "RRRU": SpellSelfBlue();    break;
+                case "RRDU": SpellSelfPurple();  break;
+                // CREATE (LL)
+                case "LLRR": SpellCreateRed();    break;
+                case "LLLD": SpellCreateOrange(); break;
+                case "LLDD": SpellCreateYellow(); break;
+                case "LLLL": SpellCreateGreen();  break;
+                case "LLRU": SpellCreateBlue();   break;
+                case "LLDU": SpellCreatePurple(); break;
                 // AFFECT (UL)
                 case "ULRR": SpellAffectRed();    break;
                 case "ULLD": SpellAffectOrange(); break;

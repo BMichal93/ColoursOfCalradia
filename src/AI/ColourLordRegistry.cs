@@ -721,6 +721,20 @@ namespace ColoursOfCalradia
 
         public static void DailyMapCast()
         {
+            // Prism independent cast — 20% chance per day regardless of other lords
+            if (_prismLordId != null && (!_campaignCooldowns.TryGetValue(_prismLordId, out int prismCd) || prismCd <= 0))
+            {
+                if (_rng.Next(100) < 20)
+                {
+                    Hero prism = GetPrismLord();
+                    if (prism != null && _lordColors.TryGetValue(_prismLordId, out var pcols) && pcols.Count > 0)
+                    {
+                        _campaignCooldowns[_prismLordId] = 4 + _rng.Next(3);
+                        CastLordMapSpell(prism, pcols[_rng.Next(pcols.Count)]);
+                    }
+                }
+            }
+
             int castsToday = 0;
             foreach (var kvp in _lordColors.ToList())
             {

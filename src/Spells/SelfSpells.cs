@@ -30,58 +30,35 @@ namespace ColoursOfCalradia
         // SELF SPELLS — glowing aura around the caster
         // =================================================================
 
-        // Scarlet Ward — absorbs the next single blow; expires after 12 s if nothing hits
+        // Scarlet Barrier — 6-node ring wall; anyone inside takes 20 dmg/tick; toggle
         private static void SpellSelfRed()
         {
             if (Player == null || !Player.IsActive()) return;
-            if (_scarletWardActive) { Msg("Scarlet Ward is already active.", ColorSchool.Red); return; }
-            const float Duration = 12f;
-            _scarletWardActive = true;
-            BeginAgentGlow(Player, ColorSchool.Red, Duration);
-            SpawnTempLight(Player.Position, ColorSchool.Red, 6f, 4f);
-            ActiveEffectManager.Add(new ActiveEffect
+            const string Id = "self_red_barrier";
+            if (HasAreaEffect(Id))
             {
-                Name = "_scarlet_ward", Duration = Duration, IsMissionEffect = true,
-                OnExpire = () =>
+                RemoveAreaEffect(Id);
+                Msg("Scarlet Barrier dismissed.", ColorSchool.Red);
+                return;
+            }
+            float power = SpellPower(ColorSchool.Red);
+            Vec3  centre = Player.Position;
+            const float Ring = 4f;
+            for (int i = 0; i < 6; i++)
+            {
+                double angle = Math.PI * 2.0 / 6 * i;
+                Vec3 pos = centre + new Vec3((float)Math.Cos(angle) * Ring, (float)Math.Sin(angle) * Ring, 0f);
+                ToggleAreaEffect(Id, new AreaEffect
                 {
-                    if (_scarletWardActive)
-                    {
-                        _scarletWardActive = false;
-                        Msg("The Scarlet Ward dissipates.", ColorSchool.Red);
-                    }
-                }
-            });
-            Msg("Scarlet Ward — the next blow will find iron, not flesh. Lasts 12 seconds.", ColorSchool.Red);
-        }
-
-        // Called from OnAgentHit — restores the damage from the triggering blow
-        public static void AbsorbScarletWard(int absorbed)
-        {
-            if (!_scarletWardActive) return;
-            _scarletWardActive = false;
-            if (Player?.IsActive() == true && absorbed > 0)
-                try { Player.Health = Math.Min(Player.HealthLimit, Math.Max(1f, Player.Health) + absorbed); } catch { }
-            Msg($"Scarlet Ward shatters — iron turned the blow ({absorbed} absorbed).", ColorSchool.Red);
-        }
-
-        // Called from OnAgentHit — deflects one missile; shatters after 3 blocks
-        public static void AbsorbCeruleanMissile(int absorbed)
-        {
-            if (!_ceruleanMirrorActive || Player == null || !Player.IsActive()) return;
-            if (absorbed > 0)
-                try { Player.Health = Math.Min(Player.HealthLimit, Player.Health + absorbed); } catch { }
-            _ceruleanMirrorBlocks--;
-            if (_ceruleanMirrorBlocks <= 0)
-            {
-                _ceruleanMirrorActive = false;
-                _ceruleanMirrorBlocks = 0;
-                BeginAgentGlow(Player, ColorSchool.Blue, 1f);
-                Msg("The Cerulean Mirror shatters — four volleys turned.", ColorSchool.Blue);
+                    Id = Id, School = ColorSchool.Red,
+                    Position = pos, Radius = 1.5f,
+                    TickInterval = 1f, TickTimer = 1f, Remaining = -1f,
+                    Power = power
+                });
             }
-            else
-            {
-                BeginAgentGlow(Player, ColorSchool.Blue, 0.5f);
-            }
+            BeginAgentGlow(Player, ColorSchool.Red, 3f);
+            SpawnTempLight(centre, ColorSchool.Red, 8f, 2f);
+            Msg("Scarlet Barrier — a ring of crimson pillars erupts around you. Any who step inside burn. Cast again to dismiss.", ColorSchool.Red);
         }
 
         // Warm Beacon — teleport all nearby allies to your side
@@ -144,37 +121,56 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Green);
-            float heal = Math.Min(28f * power, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 28f * power, Player.HealthLimit);
+            float heal = Math.Min(40f * power, Player.HealthLimit - Player.Health);
+            Player.Health = Math.Min(Player.Health + 40f * power, Player.HealthLimit);
             BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
             SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Mirror — 18-second magic immunity + up to 4 missile blocks, then shatters
+        // Cerulean Burst — instant AoE (15m): damages, halts, and drains morale of all enemies
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
-            if (_ceruleanMirrorActive) { Msg("Cerulean Mirror is already active.", ColorSchool.Blue); return; }
-            const float Duration = 18f;
-            _ceruleanMirrorActive = true;
-            _ceruleanMirrorBlocks = 4;
-            BeginAgentGlow(Player, ColorSchool.Blue, Duration);
-            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 4f);
-            ActiveEffectManager.Add(new ActiveEffect
+            float power = SpellPower(ColorSchool.Blue);
+            float haltDuration = 2f + power * 1.5f;
+            const float Radius = 15f;
+            var enemies = Mission.Current?.Agents
+                .Where(a => a.IsActive() && !a.IsMount && a != Player
+                         && a.Team != Player.Team
+                         && a.Position.Distance(Player.Position) <= Radius)
+                .ToList();
+            if (enemies == null || enemies.Count == 0) { Msg("No enemies within burst range.", ColorSchool.Blue); return; }
+            var formations = new HashSet<Formation>();
+            foreach (Agent a in enemies)
             {
-                Name = "_cerulean_mirror", Duration = Duration, IsMissionEffect = true,
-                OnExpire = () =>
+                try
                 {
-                    if (_ceruleanMirrorActive)
+                    DamageAgent(a, 28f * power, ColorSchool.Blue);
+                    if (!a.IsActive()) continue;
+                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
+                    bool usingEquip = false;
+                    try { usingEquip = a.IsUsingGameObject; } catch { }
+                    if (a.MountAgent == null && !usingEquip)
                     {
-                        _ceruleanMirrorActive = false;
-                        _ceruleanMirrorBlocks = 0;
-                        Msg("The Cerulean Mirror dims. Volleys find you again.", ColorSchool.Blue);
+                        try { a.SetMaximumSpeedLimit(0f, false); } catch { }
+                        _haltedAgents[a.Index] = (haltDuration, a.Position);
                     }
+                    BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                    SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 3f);
+                    if (a.Formation != null) formations.Add(a.Formation);
                 }
-            });
-            Msg("Cerulean Mirror — missiles deflected for 18 seconds or 4 volleys. Steel still finds flesh.", ColorSchool.Blue);
+                catch { }
+            }
+            if (!IsSiegeActive())
+                foreach (Formation f in formations)
+                {
+                    try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                    try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
+                }
+            BeginAgentGlow(Player, ColorSchool.Blue, 2f);
+            SpawnTempLight(Player.Position, ColorSchool.Blue, 8f, 2f);
+            Msg($"Cerulean Burst — blue force detonates outward, halting {enemies.Count} {(enemies.Count == 1 ? "enemy" : "enemies")} for {haltDuration:F1}s.", ColorSchool.Blue);
         }
 
         // Grey Reaping — snuffs 1–2 nearby souls; those who remain lose all nerve
@@ -206,7 +202,7 @@ namespace ColoursOfCalradia
                 {
                     BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
                     SpawnTempLight(target.Position, ColorSchool.Purple, 6f, 1.5f);
-                    KillAgent(target);
+                    QueueKill(target);
                     kills++;
                 }
                 catch { }
