@@ -176,9 +176,15 @@ namespace ColoursOfCalradia
             _expiredHaltKeys.Clear();
             foreach (int idx in _haltKeySnap)
             {
-                var (remaining, frozenPos) = _haltedAgents[idx];
+                var (remaining, frozenPos, srcAgent) = _haltedAgents[idx];
                 remaining -= dt;
                 if (!_haltAgentMap.TryGetValue(idx, out Agent a))
+                {
+                    _expiredHaltKeys.Add(idx);
+                    continue;
+                }
+                // Reinforcements reuse dead agents' indices — skip if the live agent is not the original.
+                if (a != srcAgent)
                 {
                     _expiredHaltKeys.Add(idx);
                     continue;
@@ -194,7 +200,7 @@ namespace ColoursOfCalradia
                 }
                 else
                 {
-                    _haltedAgents[idx] = (remaining, frozenPos);
+                    _haltedAgents[idx] = (remaining, frozenPos, srcAgent);
                     try { a.SetMaximumSpeedLimit(0f, false); } catch { }
                     if (doTeleport && a.MountAgent == null) try { a.TeleportToPosition(frozenPos); } catch { }
                 }
@@ -589,14 +595,14 @@ namespace ColoursOfCalradia
                 if (t <= 0f)
                 {
                     var a = _animClearTimers[i].agent;
-                    if (a != null && a.IsActive())
+                    if (a != null && a.IsActive() && a.Health > 0f)
                     {
                         bool mounted = false;
                         try { mounted = a.MountAgent != null; } catch { }
                         bool usingEquip2 = false;
                         try { usingEquip2 = a.IsUsingGameObject; } catch { }
                         if (!mounted && !usingEquip2)
-                            try { a.SetActionChannel(1, _castAnimClearCache, true, 0UL); } catch { }
+                            try { a.SetActionChannel(0, _castAnimClearCache, true, 0UL); } catch { }
                     }
                     _animClearTimers.RemoveAt(i);
                 }
@@ -609,12 +615,14 @@ namespace ColoursOfCalradia
 
         public static void TryCastAnimation(Agent agent)
         {
-            if (agent == null || !agent.IsActive()) return;
+            if (agent == null || !agent.IsActive() || agent.Health <= 0f) return;
             try { if (agent.MountAgent != null) return; } catch { }
             try { if (agent.IsUsingGameObject) return; } catch { }
             try
             {
-                agent.SetActionChannel(1, _castAnimCache, false, 0UL);
+                // Channel 0 immediate: briefly overrides the combat animation so the cast is visible.
+                // act_none clears it 0.8 s later and the combat AI resumes normally.
+                agent.SetActionChannel(0, _castAnimCache, true, 0UL);
                 int idx = _animClearTimers.FindIndex(x => x.agent == agent);
                 if (idx >= 0) _animClearTimers.RemoveAt(idx);
                 _animClearTimers.Add((agent, 0.8f));

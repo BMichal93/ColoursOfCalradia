@@ -66,6 +66,14 @@ namespace ColoursOfCalradia
 
         public override void OnMissionTick(float dt)
         {
+            // All downstream ticks make native calls (TeleportToPosition, SetActionChannel,
+            // SetContourColor, GameEntity.SetGlobalFrame, etc.). These crash silently when
+            // called on agents/entities whose native backing is being torn down during the
+            // transition frames between battle-end and OnEndMission. Skip everything except
+            // input during those frames.
+            var mission = Mission.Current;
+            if (mission == null || mission.CurrentState != Mission.State.Continuing) return;
+
             TryRegisterOrderHook();
             MagicInputHandler.Tick(inMission: true);
             ActiveEffectManager.MissionTick(dt);
@@ -127,8 +135,16 @@ namespace ColoursOfCalradia
                 catch { }
                 _orderHookRegistered = false;
             }
+            // Clear all mission state. The scene is still alive here so GameEntity/agent
+            // calls are safe. Without this, stale GameEntity references from area effect
+            // lights survive into the next battle where they are freed memory → crash.
             SpellEffects.ClearAnimTimers();
             SpellEffects.ClearPendingDeaths();
+            SpellEffects.ClearAreaEffects();
+            SpellEffects.ClearGlows();
+            SpellEffects.ClearMoves();
+            ColourLordAI.ClearCooldowns();
+            ColourUnitRegistry.OnMissionEnded();
             SaturationSystem.ClearKnockdowns();
         }
 

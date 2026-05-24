@@ -103,7 +103,7 @@ namespace ColoursOfCalradia
                 // Fallback: remove from formation and set a long halt so they stop fighting
                 try { if (target.Formation != null) target.Formation = null; } catch { }
                 try { target.SetMaximumSpeedLimit(0f, false); } catch { }
-                _haltedAgents[target.Index] = (30f, target.Position);
+                _haltedAgents[target.Index] = (30f, target.Position, target);
             }
 
             try { target.SetWatchState(Agent.WatchState.Alarmed); } catch { }
@@ -179,7 +179,7 @@ namespace ColoursOfCalradia
                     if (a.MountAgent == null && !usingEquip)
                     {
                         try { a.SetMaximumSpeedLimit(0f, false); } catch { }
-                        _haltedAgents[a.Index] = (haltDuration, a.Position);
+                        _haltedAgents[a.Index] = (haltDuration, a.Position, a);
                     }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 3f);

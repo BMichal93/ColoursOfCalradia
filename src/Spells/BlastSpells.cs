@@ -163,7 +163,7 @@ namespace ColoursOfCalradia
                     if (a.MountAgent == null && !usingEquip)
                     {
                         try { a.SetMaximumSpeedLimit(0f, false); } catch { }
-                        _haltedAgents[a.Index] = (haltDuration, a.Position);
+                        _haltedAgents[a.Index] = (haltDuration, a.Position, a);
                     }
                     BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                     SpawnTempLight(a.Position, ColorSchool.Blue, 6f, 3f);

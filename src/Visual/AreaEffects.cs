@@ -43,9 +43,12 @@ namespace ColoursOfCalradia
             public GameEntity LightEntity; // coloured point light marking the effect area
         }
         private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
-        // AgentIndex → (seconds remaining, position frozen at cast time) for Azure Arrest halt
-        private static readonly Dictionary<int, (float Remaining, Vec3 FrozenPos)> _haltedAgents
-            = new Dictionary<int, (float, Vec3)>();
+        // AgentIndex → (remaining, frozen position, original agent reference).
+        // The Agent reference guards against reinforcements reusing a dead agent's index —
+        // without it, a newly spawned agent with the same index would be teleported to the
+        // freeze position of the original, which crashes the engine in large battles.
+        private static readonly Dictionary<int, (float Remaining, Vec3 FrozenPos, Agent Source)> _haltedAgents
+            = new Dictionary<int, (float, Vec3, Agent)>();
         private static float _haltTeleportTimer = 0f;
         private const  float HaltTeleportInterval = 0.25f;
         private static readonly Dictionary<int, Agent> _haltAgentMap  = new Dictionary<int, Agent>();
@@ -342,8 +345,8 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    Agent agent = Mission.Current?.Agents.FirstOrDefault(a => a.Index == kvp.Key);
-                    if (agent?.IsActive() == true)
+                    Agent agent = kvp.Value.Source;
+                    if (agent?.IsActive() == true && agent.Health > 0f)
                     {
                         bool usingEquip = false;
                         try { usingEquip = agent.IsUsingGameObject; } catch { }

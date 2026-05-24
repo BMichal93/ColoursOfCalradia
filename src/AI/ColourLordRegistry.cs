@@ -1232,8 +1232,9 @@ namespace ColoursOfCalradia
 
             if (msg == null || spellName == null) return;
 
+            string prismTag = IsPrismLord(lord) ? " [PRISM]" : "";
             InformationManager.DisplayMessage(new InformationMessage(
-                $"✦ {lord.Name} channels {spellName} ({ColorSchoolData.Info[school].Name}). {msg} ✦",
+                $"✦ {lord.Name}{prismTag} channels {spellName} ({ColorSchoolData.Info[school].Name}). {msg} ✦",
                 ColorSchoolData.GetMessageColor(school)));
         }
 

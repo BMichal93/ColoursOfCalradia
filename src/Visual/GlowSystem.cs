@@ -41,7 +41,7 @@ namespace ColoursOfCalradia
                 if (t <= 0f)
                 {
                     var a = _glowTimers[i].agent;
-                    if (a != null && a.IsActive())
+                    if (a != null && a.IsActive() && a.Health > 0f)
                         try { a.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
                     _glowTimers.RemoveAt(i);
                 }
@@ -55,7 +55,7 @@ namespace ColoursOfCalradia
         public static void ClearGlows()
         {
             foreach (var (agent, _) in _glowTimers)
-                if (agent != null && agent.IsActive())
+                if (agent != null && agent.IsActive() && agent.Health > 0f)
                     try { agent.AgentVisuals?.GetEntity()?.SetContourColor(null, false); } catch { }
             _glowTimers.Clear();
         }
