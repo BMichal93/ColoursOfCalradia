@@ -630,7 +630,13 @@ namespace ColoursOfCalradia
             }
         }
 
-        public static void ClearAnimTimers() => _animClearTimers.Clear();
+        public static void ClearAnimTimers()
+        {
+            foreach (var (agent, _) in _animClearTimers)
+                if (agent != null && agent.IsActive() && agent.Health > 0f)
+                    try { agent.SetActionChannel(0, _castAnimClearCache, true, 0UL); } catch { }
+            _animClearTimers.Clear();
+        }
 
         public static void TryCastAnimation(Agent agent)
         {
