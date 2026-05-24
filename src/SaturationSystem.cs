@@ -138,8 +138,12 @@ namespace ColoursOfCalradia
             if (_knockdownTimers.Count == 0 || Mission.Current == null) return;
 
             _agentLookup.Clear();
-            foreach (Agent a in Mission.Current.Agents)
-                _agentLookup[a.Index] = a;
+            try
+            {
+                foreach (Agent a in Mission.Current.Agents)
+                    _agentLookup[a.Index] = a;
+            }
+            catch { return; }
 
             foreach (int agentIndex in _knockdownTimers.Keys.ToList())
             {

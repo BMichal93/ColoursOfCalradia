@@ -349,8 +349,12 @@ namespace ColoursOfCalradia
             }
 
             _agentIndexMap.Clear();
-            foreach (Agent a in Mission.Current.Agents)
-                _agentIndexMap[a.Index] = a;
+            try
+            {
+                foreach (Agent a in Mission.Current.Agents)
+                    _agentIndexMap[a.Index] = a;
+            }
+            catch { return; }
 
             foreach (var kvp in _missionAgents.ToList())
             {
