@@ -122,7 +122,7 @@ namespace ColoursOfCalradia
                 Flavour="Six pillars of solid blue force seal the line. The wall does not argue, does not tire, does not yield. Cast again to dismiss." },
             new SpellEntry { Name="Purple Mist",      Combo="LLDU", School=ColorSchool.Purple,
                 Context=SpellContext.Mission,
-                ShortDesc="3×3 death mist, 25% instakill/tick, toggle.",
+                ShortDesc="3×3 death mist, 10% instakill/tick, toggle.",
                 Flavour="Nine dim wisps of purple settle across the ground like cooling ash. Those who step through them may simply stop — no announcement, no ceremony. The grey does not discriminate. Cast again to dismiss." },
 
             // ── INVOKE (LU prefix) — campaign map only, advanced forms ───────────

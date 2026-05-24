@@ -245,7 +245,7 @@ namespace ColoursOfCalradia
             Msg("Sapphire Bastion rises — six pillars of force seal a wide line. Cast again to dismiss.", ColorSchool.Blue);
         }
 
-        // Purple Mist — 3×3 grid of death nodes; any agent inside has 25% instakill chance per tick; toggle
+        // Purple Mist — 3×3 grid of death nodes; any agent inside has 10% instakill chance per tick; toggle
         private static void SpellCreatePurple()
         {
             if (Player == null) return;

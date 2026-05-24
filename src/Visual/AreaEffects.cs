@@ -292,7 +292,7 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "create_purple_mist": // Purple Mist — 25% instakill chance per tick
+                    case "create_purple_mist": // Purple Mist — 10% instakill chance per tick
                     {
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && !a.IsHero && a != Player &&
@@ -301,7 +301,7 @@ namespace ColoursOfCalradia
                             try
                             {
                                 BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                                if (_rng.Next(4) == 0) QueueKill(a);
+                                if (_rng.Next(10) == 0) QueueKill(a);
                             }
                             catch { }
                         }

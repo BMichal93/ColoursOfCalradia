@@ -484,7 +484,7 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 | **Creeping Dread** | `LLDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 45 damage every 2 s to creatures they pass through. Cast again to dismiss. |
 | **Emerald Font** | `LLLL` | Green | Toggle: three healing pools in a triangle that restore 25 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
 | **Sapphire Bastion** | `LLRU` | Blue | Toggle: six pillars of force in a wide line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
-| **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); any non-hero creature inside has a 25% chance to die instantly every 2 s. Cast again to dismiss. |
+| **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); any non-hero creature inside has a 10% chance to die instantly every 2 s. Cast again to dismiss. |
 
 ### Notes on Create Spells
 
