@@ -315,6 +315,73 @@ namespace ColoursOfCalradia
             }
         }
 
+        // ── NPC area-effect spawners ──────────────────────────────────────────
+        // Called from ColourLordAI for timed (30s) area effects — same tick logic
+        // as player create spells, but auto-expire instead of requiring dismissal.
+
+        public static void SpawnNpcHealZone(Vec3 centre, ColorSchool school, float power)
+        {
+            Vec3 fwd = new Vec3(1f, 0f, 0f);
+            for (int i = 0; i < 2; i++)
+            {
+                double a = Math.PI * i;
+                Vec3 pos = centre + new Vec3((float)Math.Cos(a) * 3.5f, (float)Math.Sin(a) * 3.5f, 0f);
+                var node = new AreaEffect
+                {
+                    Id = "npc_green_font", School = school,
+                    Position = pos, Radius = 6f,
+                    TickInterval = 2f, TickTimer = 2f, Remaining = 30f,
+                    Power = power
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, school, 6f);
+                _areaEffects.Add(node);
+            }
+        }
+
+        public static void SpawnNpcBlueWall(Vec3 centre, Vec3 fwd)
+        {
+            if (fwd.Length < 0.01f) fwd = new Vec3(1f, 0f, 0f);
+            else fwd = fwd.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f).NormalizedCopy();
+            Vec3[] pts = {
+                centre + fwd * 5f - right * 4f,
+                centre + fwd * 5f,
+                centre + fwd * 5f + right * 4f,
+            };
+            foreach (Vec3 pos in pts)
+            {
+                var node = new AreaEffect
+                {
+                    Id = "npc_blue_wall", School = ColorSchool.Blue,
+                    Position = pos, Radius = 3f,
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 30f
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, ColorSchool.Blue, 5f);
+                _areaEffects.Add(node);
+            }
+        }
+
+        public static void SpawnNpcYellowCloud(Vec3 centre, float power)
+        {
+            float baseAngle = (float)(_rng.NextDouble() * Math.PI * 2);
+            Vec3 vel = new Vec3((float)Math.Cos(baseAngle) * 2f, (float)Math.Sin(baseAngle) * 2f, 0f);
+            for (int i = 0; i < 3; i++)
+            {
+                double a = Math.PI * 2 / 3 * i;
+                Vec3 pos = centre + new Vec3((float)Math.Cos(a) * 4f, (float)Math.Sin(a) * 4f, 0f);
+                var node = new AreaEffect
+                {
+                    Id = "npc_yellow_cloud", School = ColorSchool.Yellow,
+                    Position = pos, Radius = 7f,
+                    Velocity = vel, DirTimer = 2f + (float)(_rng.NextDouble() * 3f),
+                    TickInterval = 2f, TickTimer = 2f, Remaining = 30f,
+                    Power = power
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, ColorSchool.Yellow, 7f);
+                _areaEffects.Add(node);
+            }
+        }
+
         // Recruit helpers (used by Calling and NPC AI)
         public static CharacterObject FindRecruit(Agent agent)
         {

@@ -488,6 +488,7 @@ namespace ColoursOfCalradia
             if (!cast) return;
 
             SpellEffects.BeginAgentGlow(agent, school, 3f);
+            SpellEffects.SpawnTempLight(agent.Position, school, 6f, 1.5f);
             SpellEffects.TryCastSound(agent.Position, school);
 
             InformationManager.DisplayMessage(new InformationMessage(

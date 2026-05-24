@@ -148,7 +148,7 @@ namespace ColoursOfCalradia
                 }
 
                 // Yellow clouds drift randomly from their spawn position
-                if (e.Id == "create_yellow" || e.Id == "self_yellow")
+                if (e.Id == "create_yellow" || e.Id == "self_yellow" || e.Id == "npc_yellow_cloud")
                 {
                     e.DirTimer -= dt;
                     if (e.DirTimer <= 0f)
@@ -168,6 +168,7 @@ namespace ColoursOfCalradia
                         }
                         else
                         {
+                            // self_yellow and npc_yellow_cloud: each node drifts independently
                             e.Velocity = newVel;
                             e.DirTimer = newTimer;
                         }
@@ -175,8 +176,8 @@ namespace ColoursOfCalradia
                     e.Position += e.Velocity * dt;
                 }
 
-                // Only moving Yellow clouds need their light repositioned every frame
-                if (e.LightEntity != null && (e.Id == "create_yellow" || e.Id == "self_yellow"))
+                // Moving clouds need their light repositioned every frame
+                if (e.LightEntity != null && (e.Id == "create_yellow" || e.Id == "self_yellow" || e.Id == "npc_yellow_cloud"))
                 {
                     try
                     {
@@ -331,6 +332,65 @@ namespace ColoursOfCalradia
                         }
                         if (bloomHit > 0)
                             Msg($"Nausea Bloom: {bloomHit} caught in the cloud. (−{bloomDmg:F0} HP)", ColorSchool.Yellow);
+                        break;
+                    }
+
+                    case "npc_green_font": // NPC Emerald Font — heal all agents in area
+                    {
+                        float fontHeal = 25f * e.Power;
+                        foreach (Agent a in Mission.Current.Agents)
+                        {
+                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
+                            try
+                            {
+                                float h = Math.Min(fontHeal, a.HealthLimit - a.Health);
+                                if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
+                    case "npc_blue_wall": // NPC Sapphire Wall — push agents outward
+                    {
+                        foreach (Agent a in Mission.Current.Agents)
+                        {
+                            if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
+                            if (a.Position.Distance(e.Position) > e.Radius) continue;
+                            try
+                            {
+                                Vec3 dir = (a.Position - e.Position);
+                                if (dir.Length < 0.01f) dir = new Vec3(1f, 0f, 0f);
+                                else dir = dir.NormalizedCopy();
+                                Vec3 dest = e.Position + dir * (e.Radius + 1f);
+                                dest.z = a.Position.z;
+                                QueueMove(a, dest, 0.3f);
+                                BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
+                    case "npc_yellow_cloud": // NPC Creeping Dread — drifting damage cloud
+                    {
+                        float cloudDmg = 45f * e.Power;
+                        foreach (Agent a in Mission.Current.Agents
+                            .Where(a => a.IsActive() && !a.IsMount &&
+                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
+                        {
+                            try
+                            {
+                                if (a.Health <= cloudDmg) QueueKill(a);
+                                else
+                                {
+                                    a.Health -= cloudDmg;
+                                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 10f)); } catch { }
+                                }
+                                BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
                         break;
                     }
                 }

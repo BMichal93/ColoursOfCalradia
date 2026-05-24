@@ -88,6 +88,7 @@ namespace ColoursOfCalradia
             try
             {
                 BeginAgentGlow(caster, school, 3.0f);
+                SpawnTempLight(caster.Position, school, 6f, 1.5f);
                 TryCastSound(caster.Position, school);
                 TryCastAnimation(caster);
             }
