@@ -277,7 +277,17 @@ namespace ColoursOfCalradia
                     {
                         string combo = chosen[0].Identifier?.ToString();
                         if (!string.IsNullOrEmpty(combo))
-                            _deferredInquiry = () => SpellEffects.Execute(combo);
+                            _deferredInquiry = () =>
+                            {
+                                bool success;
+                                try { success = SpellEffects.Execute(combo); } catch { success = true; }
+                                if (success)
+                                {
+                                    SaturationSystem.GainSaturationCampaign();
+                                    var spell = SpellDatabase.Find(combo);
+                                    if (spell != null) RecordCast(spell.School);
+                                }
+                            };
                     }
                 },
                 null, "", false

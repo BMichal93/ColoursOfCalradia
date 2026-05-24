@@ -537,8 +537,10 @@ namespace ColoursOfCalradia
 
             var lines = colourLords.Select(e =>
             {
-                string colours = string.Join(", ", e.Colors.Select(c => ColorSchoolData.Info[c].Name));
-                return $"  {e.Hero.Name}  [{colours}]  —  {e.Dist:F1} km";
+                string colours  = string.Join(", ", e.Colors.Select(c => ColorSchoolData.Info[c].Name));
+                string clan     = e.Hero.Clan?.Name?.ToString() ?? "—";
+                string faction  = e.Hero.MapFaction?.Name?.ToString() ?? "—";
+                return $"  {e.Hero.Name}  |  {clan} / {faction}  |  [{colours}]  —  {e.Dist:F1} km";
             });
 
             InformationManager.ShowInquiry(new InquiryData(
