@@ -490,7 +490,7 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 - **Toggled effects** are cancelled by casting the same spell again.
 - **Area glows**: Affected agents pulse in the school's colour on each effect tick (approximately every 2 s for most effects, every 0.5 s for Sapphire Bastion). Glow is not applied every frame to avoid performance cost.
-- **Smooth movement**: Push and pull effects (Crimson Torrent, Warm Beacon, Sapphire Bastion) move agents using a smoothstep lerp over 0.4 s rather than instant teleportation.
+- **Smooth movement**: Push effects (Crimson Torrent, Sapphire Bastion) move agents using a smoothstep lerp over 0.4 s rather than instant teleportation.
 
 ---
 
@@ -611,7 +611,7 @@ NPC mage lords cast in battle using a priority-driven AI:
 4. **Cone attack** — Crimson Torrent (Red) or Azure Arrest (Blue) if enemies are in the forward arc.
 5. **Ally healing** — Verdant Surge (Green) if allies in the forward arc are wounded.
 6. **Morale drain** — Tide of Dread (Yellow).
-7. **Reinforcement** — Calling (Orange) if outnumbered; Warm Beacon as fallback.
+7. **Reinforcement** — Calling (Orange) if outnumbered; Gilded Words as fallback.
 
 All NPC battle spells require light — the same three-tier rule as the player applies. In dim conditions NPCs have a 33 % chance of their cast failing silently. Lords and companions do not cast for the first **12 seconds** of combat (planning phase). After that, NPC lords have a **40-second base cooldown** between spells, modified by their Calculating trait — Impulsive lords cast 25 % more often (30 s); Calculating lords cast 50 % less often (60 s). The Prism uses a **4-second base cooldown**. Blights cast every **2 seconds** and are exempt from the planning-phase delay.
 
@@ -764,7 +764,7 @@ Commune spells reach beyond your immediate position to reshape the world around 
 
 ## Saturation
 
-Every cast generates **0–5 Saturation** at random. Saturation represents how much absorbed light your body holds at once. The cap grows with your level: **max = hero level + 10** (no upper limit — the more experienced you are, the more light you can hold).
+Every cast generates **0–4 Saturation** at random (battle spells). Campaign map spells cost 10–20 Saturation — drawing on ambient light without the focus of battle is far more draining. Saturation represents how much absorbed light your body holds at once. The cap grows with your level: **max = hero level + 10** (no upper limit — the more experienced you are, the more light you can hold).
 
 | Condition | Effect |
 |-----------|--------|

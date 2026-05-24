@@ -48,13 +48,15 @@ namespace ColoursOfCalradia
             {
                 double angle = Math.PI * 2.0 / 6 * i;
                 Vec3 pos = centre + new Vec3((float)Math.Cos(angle) * Ring, (float)Math.Sin(angle) * Ring, 0f);
-                ToggleAreaEffect(Id, new AreaEffect
+                var node = new AreaEffect
                 {
                     Id = Id, School = ColorSchool.Red,
                     Position = pos, Radius = 1.5f,
                     TickInterval = 1f, TickTimer = 1f, Remaining = -1f,
                     Power = power
-                });
+                };
+                node.LightEntity = SpawnAreaLight(node.Position, node.School, node.Radius);
+                _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Red, 3f);
             SpawnTempLight(centre, ColorSchool.Red, 8f, 2f);

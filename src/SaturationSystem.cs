@@ -6,7 +6,7 @@
 //
 // Player Saturation:
 //   Max = hero.Level + 10 (no cap). Starts at 0.
-//   Each cast gains 0--3 saturation randomly.
+//   Each cast gains 0--4 saturation randomly.
 //   Resets to 0 when darkness falls (night time or dark location).
 //   Oversaturation (â‰Ą max): brief interruption, random trait shift, max â'1 permanently.
 //   When max reaches 0: player chooses to lose all colours or become a Blight.
@@ -69,7 +69,7 @@ namespace ColoursOfCalradia
             if (_playerIsBlight || _playerIsPrism) return;
             if (_playerMaxSaturation <= 0) return;
 
-            int gain = _rng.Next(0, 6); // 0–5
+            int gain = _rng.Next(0, 5); // 0–4
             _playerSaturation = Math.Min(_playerSaturation + gain, _playerMaxSaturation);
 
             string gainStr = gain > 0 ? $" (+{gain})" : "";

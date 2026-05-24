@@ -323,7 +323,7 @@ namespace ColoursOfCalradia
 "  Purple — The Slow Unravelling: each Purple cast costs −1% fertility and +1 day of age.\n" +
 "\n" +
 "SATURATION\n" +
-"  Each cast gains 0–3 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (no upper cap).\n" +
+"  Each cast gains 0–4 Saturation. Max = hero level + 10, minus any permanent oversaturation reductions (no upper cap).\n" +
 "  Resets to 0 when darkness falls (night or dark locations).\n" +
 "  Oversaturation: knocked down 3s, random trait shift, Max −1 (permanent).\n" +
 "  Leveling up restores 1 max Saturation per level, but never removes prior reductions.\n" +
