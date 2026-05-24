@@ -319,9 +319,9 @@ namespace ColoursOfCalradia
         // Called from ColourLordAI for timed (30s) area effects — same tick logic
         // as player create spells, but auto-expire instead of requiring dismissal.
 
-        public static void SpawnNpcHealZone(Vec3 centre, ColorSchool school, float power)
+        public static void SpawnNpcHealZone(Vec3 centre, ColorSchool school, float power, Team casterTeam = null)
         {
-            Vec3 fwd = new Vec3(1f, 0f, 0f);
+            if (Mission.Current == null) return;
             for (int i = 0; i < 2; i++)
             {
                 double a = Math.PI * i;
@@ -331,18 +331,21 @@ namespace ColoursOfCalradia
                     Id = "npc_green_font", School = school,
                     Position = pos, Radius = 6f,
                     TickInterval = 2f, TickTimer = 2f, Remaining = 30f,
-                    Power = power
+                    Power = power, CasterTeam = casterTeam
                 };
                 node.LightEntity = SpawnAreaLight(node.Position, school, 6f);
                 _areaEffects.Add(node);
             }
         }
 
-        public static void SpawnNpcBlueWall(Vec3 centre, Vec3 fwd)
+        public static void SpawnNpcBlueWall(Vec3 centre, Vec3 fwd, Team casterTeam = null)
         {
+            if (Mission.Current == null) return;
             if (fwd.Length < 0.01f) fwd = new Vec3(1f, 0f, 0f);
             else fwd = fwd.NormalizedCopy();
-            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f).NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            if (right.Length < 0.01f) right = new Vec3(1f, 0f, 0f);
+            else right = right.NormalizedCopy();
             Vec3[] pts = {
                 centre + fwd * 5f - right * 4f,
                 centre + fwd * 5f,
@@ -354,15 +357,17 @@ namespace ColoursOfCalradia
                 {
                     Id = "npc_blue_wall", School = ColorSchool.Blue,
                     Position = pos, Radius = 3f,
-                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 30f
+                    TickInterval = 0.5f, TickTimer = 0.5f, Remaining = 30f,
+                    CasterTeam = casterTeam
                 };
                 node.LightEntity = SpawnAreaLight(node.Position, ColorSchool.Blue, 5f);
                 _areaEffects.Add(node);
             }
         }
 
-        public static void SpawnNpcYellowCloud(Vec3 centre, float power)
+        public static void SpawnNpcYellowCloud(Vec3 centre, float power, Team casterTeam = null)
         {
+            if (Mission.Current == null) return;
             float baseAngle = (float)(_rng.NextDouble() * Math.PI * 2);
             Vec3 vel = new Vec3((float)Math.Cos(baseAngle) * 2f, (float)Math.Sin(baseAngle) * 2f, 0f);
             for (int i = 0; i < 3; i++)
@@ -375,7 +380,7 @@ namespace ColoursOfCalradia
                     Position = pos, Radius = 7f,
                     Velocity = vel, DirTimer = 2f + (float)(_rng.NextDouble() * 3f),
                     TickInterval = 2f, TickTimer = 2f, Remaining = 30f,
-                    Power = power
+                    Power = power, CasterTeam = casterTeam
                 };
                 node.LightEntity = SpawnAreaLight(node.Position, ColorSchool.Yellow, 7f);
                 _areaEffects.Add(node);

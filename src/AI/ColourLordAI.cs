@@ -236,7 +236,7 @@ namespace ColoursOfCalradia
                     int roll = _rng.Next(4);
                     if (roll == 0)
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Sapphire Wall", () =>
-                            SpellEffects.SpawnNpcBlueWall(agent.Position, agent.LookDirection.NormalizedCopy()));
+                            SpellEffects.SpawnNpcBlueWall(agent.Position, agent.LookDirection.NormalizedCopy(), agent.Team));
                     else if (roll == 1)
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Cerulean Burst", () =>
                         {
@@ -280,7 +280,7 @@ namespace ColoursOfCalradia
                     float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
                     if (_rng.Next(5) < 2)
                         CastWithGlow(agent, hero, ColorSchool.Green, "Emerald Font", () =>
-                            SpellEffects.SpawnNpcHealZone(agent.Position, ColorSchool.Green, gp));
+                            SpellEffects.SpawnNpcHealZone(agent.Position, ColorSchool.Green, gp, agent.Team));
                     else
                         CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
                         {
@@ -303,7 +303,7 @@ namespace ColoursOfCalradia
                 float yp = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
                 if (_rng.Next(5) < 2)
                     CastWithGlow(agent, hero, ColorSchool.Yellow, "Creeping Dread", () =>
-                        SpellEffects.SpawnNpcYellowCloud(agent.Position, yp));
+                        SpellEffects.SpawnNpcYellowCloud(agent.Position, yp, agent.Team));
                 else
                     CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
                     {
@@ -428,7 +428,7 @@ namespace ColoursOfCalradia
                     float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
                     if (_rng.Next(2) == 0)
                         CastWithGlow(agent, hero, ColorSchool.Green, "Emerald Font", () =>
-                            SpellEffects.SpawnNpcHealZone(agent.Position, ColorSchool.Green, gp));
+                            SpellEffects.SpawnNpcHealZone(agent.Position, ColorSchool.Green, gp, agent.Team));
                     else
                         CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
                         {
@@ -449,7 +449,7 @@ namespace ColoursOfCalradia
                     int roll = _rng.Next(3);
                     if (roll == 0)
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Sapphire Wall", () =>
-                            SpellEffects.SpawnNpcBlueWall(agent.Position, agent.LookDirection.NormalizedCopy()));
+                            SpellEffects.SpawnNpcBlueWall(agent.Position, agent.LookDirection.NormalizedCopy(), agent.Team));
                     else if (roll == 1)
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Cerulean Burst", () =>
                         {
@@ -475,7 +475,7 @@ namespace ColoursOfCalradia
                     float yp = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
                     if (_rng.Next(2) == 0)
                         CastWithGlow(agent, hero, ColorSchool.Yellow, "Creeping Dread", () =>
-                            SpellEffects.SpawnNpcYellowCloud(agent.Position, yp));
+                            SpellEffects.SpawnNpcYellowCloud(agent.Position, yp, agent.Team));
                     else
                         CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
                         {
@@ -893,6 +893,7 @@ namespace ColoursOfCalradia
             return EnemiesOf(agent).Count(a =>
             {
                 Vec3 to = a.Position - agent.Position;
+                if (to.Length < 0.01f) return false;
                 return to.Length < radius && Vec3.DotProduct(fwd, to.NormalizedCopy()) > dot;
             });
         }

@@ -338,9 +338,17 @@ namespace ColoursOfCalradia
                 _pendingDeaths.Clear();
                 return;
             }
-            foreach (Agent a in _pendingDeaths)
-                if (a?.IsActive() == true) KillAgent(a);
+            // Snapshot so we can clear immediately and avoid iteration-over-modified-list risk.
+            var snapshot = _pendingDeaths.ToList();
             _pendingDeaths.Clear();
+            foreach (Agent a in snapshot)
+            {
+                // Re-check after every kill: a Die() call can fire OnAgentRemoved which may
+                // change battle state (e.g. last enemy killed), making subsequent Die() unsafe.
+                if (mission.CurrentState != Mission.State.Continuing) return;
+                if (Agent.Main == null || !Agent.Main.IsActive()) return;
+                if (a?.IsActive() == true) KillAgent(a);
+            }
         }
 
         public static void ClearPendingDeaths() => _pendingDeaths.Clear();

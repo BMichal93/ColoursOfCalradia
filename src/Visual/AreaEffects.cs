@@ -41,6 +41,7 @@ namespace ColoursOfCalradia
             public float  DirTimer;     // Create Yellow direction-change timer
             public float  Power = 1f;   // spell-power multiplier captured at cast time
             public GameEntity LightEntity; // coloured point light marking the effect area
+            public Team   CasterTeam;  // null = affect all teams; NPC effects set this to filter to enemies only
         }
         private static readonly List<AreaEffect> _areaEffects = new List<AreaEffect>();
         // AgentIndex → (remaining, frozen position, original agent reference).
@@ -335,12 +336,14 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "npc_green_font": // NPC Emerald Font — heal all agents in area
+                    case "npc_green_font": // NPC Emerald Font — heal caster-side allies in area
                     {
                         float fontHeal = 25f * e.Power;
                         foreach (Agent a in Mission.Current.Agents)
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
+                            // Only heal the caster's own team (if team is known)
+                            if (e.CasterTeam != null && a.Team != e.CasterTeam) continue;
                             try
                             {
                                 float h = Math.Min(fontHeal, a.HealthLimit - a.Health);
@@ -351,12 +354,14 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "npc_blue_wall": // NPC Sapphire Wall — push agents outward
+                    case "npc_blue_wall": // NPC Sapphire Wall — push enemy agents outward
                     {
                         foreach (Agent a in Mission.Current.Agents)
                         {
                             if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
                             if (a.Position.Distance(e.Position) > e.Radius) continue;
+                            // Only push enemies of the caster (if team is known)
+                            if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
                             try
                             {
                                 Vec3 dir = (a.Position - e.Position);
@@ -372,13 +377,15 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "npc_yellow_cloud": // NPC Creeping Dread — drifting damage cloud
+                    case "npc_yellow_cloud": // NPC Creeping Dread — drifting damage cloud vs enemies only
                     {
                         float cloudDmg = 45f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
+                            // Never damage the caster's own team — prevents killing player troops
+                            if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
                             try
                             {
                                 if (a.Health <= cloudDmg) QueueKill(a);
