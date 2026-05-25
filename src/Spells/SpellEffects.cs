@@ -454,15 +454,21 @@ namespace ColoursOfCalradia
         private static Blow BuildBlow(Agent target, DamageTypes type, float magnitude)
         {
             Blow blow = new Blow();
-            blow.OwnerId         = -1; // no owner — prevents weapon/riding XP being awarded to the player
-            blow.DamageType      = type;
-            blow.BaseMagnitude   = magnitude;
-            blow.InflictedDamage = (int)magnitude;
-            blow.GlobalPosition  = target.Position;
-            blow.Direction       = new Vec3(0f, 0f, 1f);
-            blow.WeaponRecord    = new BlowWeaponRecord();
+            // OwnerId must be a valid agent index. -1 causes native null-deref at +0x18
+            // inside CheckMissionEnded when it resolves the killer for battle result accounting.
+            blow.OwnerId          = Agent.Main?.Index ?? 0;
+            blow.DamageType       = type;
+            blow.BaseMagnitude    = magnitude;
+            blow.InflictedDamage  = (int)magnitude;
+            blow.GlobalPosition   = target.Position;
+            blow.Direction        = new Vec3(0f, 0f, 1f);
+            blow.WeaponRecord     = new BlowWeaponRecord();
             blow.DamageCalculated = true;
-            blow.NoIgnore        = true;
+            blow.NoIgnore         = true;
+            blow.StrikeType       = StrikeType.Invalid;
+            blow.VictimBodyPart   = BoneBodyPartType.Chest;
+            blow.AttackType       = AgentAttackType.Standard;
+            blow.BlowFlag         = BlowFlags.NoSound;
             return blow;
         }
 
