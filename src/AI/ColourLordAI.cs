@@ -36,7 +36,7 @@ namespace ColoursOfCalradia
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval       = 30f;
+        private const float CastInterval       = 20f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
         private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
@@ -144,7 +144,14 @@ namespace ColoursOfCalradia
 
             float hpPct = agent.Health / Math.Max(agent.HealthLimit, 1f);
 
-            // Self-heal with Green (Verdant Touch) when badly hurt
+            // Pre-compute spatial context once to avoid repeated Agent list scans
+            var enemies      = EnemiesOf(agent);
+            var allies       = AlliesOf(agent);
+            int closeEnemies = enemies.Count(a => a.Position.Distance(agent.Position) < 8f);
+            int nearEnemies  = enemies.Count(a => a.Position.Distance(agent.Position) < 20f);
+            int nearAllies   = allies.Count(a => a.Position.Distance(agent.Position) < 10f);
+
+            // 1. Self-heal with Green when badly hurt
             if (hpPct < 0.35f && colors.Contains(ColorSchool.Green))
             {
                 float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
@@ -153,11 +160,67 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            // 8% random wild cast
+            // 2. Allied hero critically low — act before wildcast
+            if (colors.Contains(ColorSchool.Green) || colors.Contains(ColorSchool.Orange))
+            {
+                Agent critHero = allies.FirstOrDefault(a =>
+                    a.IsHero && a.Position.Distance(agent.Position) <= 15f &&
+                    a.Health / Math.Max(a.HealthLimit, 1f) < 0.2f);
+                if (critHero != null)
+                {
+                    if (colors.Contains(ColorSchool.Green))
+                    {
+                        float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
+                        CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
+                        {
+                            float h = Math.Min(25f * gp, critHero.HealthLimit - critHero.Health);
+                            if (h > 0f) { critHero.Health += h; SpellEffects.BeginAgentGlow(critHero, ColorSchool.Green, 1.5f); }
+                        });
+                        return;
+                    }
+                    if (colors.Contains(ColorSchool.Orange))
+                    {
+                        float op = SpellEffects.SpellPower(ColorSchool.Orange, hero);
+                        CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
+                        {
+                            foreach (Agent a in allies.Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
+                            { try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { } SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f); }
+                        });
+                        return;
+                    }
+                }
+            }
+
+            // 3. Wildcast
             if (_rng.Next(100) < 8) { TryCastRandom(agent, hero, colors); return; }
 
-            // ── Swarmed (3+ enemies within 8m) ───────────────────────────────
-            int closeEnemies = CountEnemiesNear(agent, 8f);
+            // 4. Desperately outnumbered — isolated with 6+ enemies close by
+            if (closeEnemies >= 6 && nearAllies <= 1)
+            {
+                if (colors.Contains(ColorSchool.Purple))
+                {
+                    float pp = SpellEffects.SpellPower(ColorSchool.Purple, hero);
+                    CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Tide", () =>
+                    {
+                        foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
+                        { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 51f * pp); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); }
+                    });
+                    return;
+                }
+                if (colors.Contains(ColorSchool.Red))
+                {
+                    float rp = SpellEffects.SpellPower(ColorSchool.Red, hero);
+                    CastWithGlow(agent, hero, ColorSchool.Red, "Cinder Burst", () =>
+                    {
+                        foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
+                        { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 50f * rp); SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f); }
+                        SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
+                    });
+                    return;
+                }
+            }
+
+            // 5. Swarmed (3+ enemies within 8m)
             if (closeEnemies >= 3)
             {
                 if (colors.Contains(ColorSchool.Purple))
@@ -166,19 +229,15 @@ namespace ColoursOfCalradia
                     if (_rng.Next(2) == 0)
                         CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Tide", () =>
                         {
-                            foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
-                            {
-                                if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 51f * pp);
-                                SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                            }
+                            foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
+                            { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 51f * pp); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); }
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Reaping", () =>
                         {
-                            foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                            foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
                                 try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); } catch { }
-                            var kc = EnemiesOf(agent).Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
+                            var kc = enemies.Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
                             if (kc.Count > 0) { var t = kc[_rng.Next(kc.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 2f); SpellEffects.QueueKill(t); }
                         });
                     return;
@@ -190,7 +249,7 @@ namespace ColoursOfCalradia
                         CastWithGlow(agent, hero, ColorSchool.Red, "Crimson Torrent", () =>
                         {
                             Vec3 fwd = agent.LookDirection.NormalizedCopy();
-                            foreach (Agent a in EnemiesOf(agent).ToList())
+                            foreach (Agent a in enemies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -202,12 +261,8 @@ namespace ColoursOfCalradia
                     else
                         CastWithGlow(agent, hero, ColorSchool.Red, "Cinder Burst", () =>
                         {
-                            foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
-                            {
-                                if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 50f * rp);
-                                SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
-                            }
+                            foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
+                            { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 50f * rp); SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f); }
                             SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
                         });
                     ApplyRedA1(agent); ApplyRedA2(agent);
@@ -215,7 +270,7 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // ── Cone enemies (2+ within 15m) ─────────────────────────────────
+            // 6. Cone enemies (1+ in forward arc)
             int coneEnemies = CountEnemiesInCone(agent, 7f, 0.84f);
             if (coneEnemies >= 1)
             {
@@ -225,7 +280,7 @@ namespace ColoursOfCalradia
                     CastWithGlow(agent, hero, ColorSchool.Red, "Crimson Torrent", () =>
                     {
                         Vec3 fwd = agent.LookDirection.NormalizedCopy();
-                        foreach (Agent a in EnemiesOf(agent).ToList())
+                        foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -247,7 +302,7 @@ namespace ColoursOfCalradia
                     else if (roll == 1)
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Cerulean Burst", () =>
                         {
-                            foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 10f).ToList())
+                            foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 10f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
                                 SpellEffects.DamageAgent(a, 13f * bp);
@@ -261,7 +316,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 fwd = agent.LookDirection.NormalizedCopy();
                             var formations = new System.Collections.Generic.HashSet<Formation>();
-                            foreach (Agent a in EnemiesOf(agent).ToList())
+                            foreach (Agent a in enemies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -277,11 +332,56 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // ── Hurt allies nearby ────────────────────────────────────────────
+            // 7. Enemy hero in range (within 15m) — respond to high-value target
+            Agent enemyHeroNear = enemies.FirstOrDefault(a => a.IsHero && a.Position.Distance(agent.Position) <= 15f);
+            if (enemyHeroNear != null)
+            {
+                if (colors.Contains(ColorSchool.Purple))
+                {
+                    float pp = SpellEffects.SpellPower(ColorSchool.Purple, hero);
+                    CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Reaping", () =>
+                    {
+                        foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                            try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); } catch { }
+                        var kc = enemies.Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
+                        if (kc.Count > 0) { var t = kc[_rng.Next(kc.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 2f); SpellEffects.QueueKill(t); }
+                    });
+                    return;
+                }
+                if (colors.Contains(ColorSchool.Blue) && CanUseBlue(agent))
+                {
+                    CastWithGlow(agent, hero, ColorSchool.Blue, "Azure Arrest", () =>
+                    {
+                        var formations = new System.Collections.Generic.HashSet<Formation>();
+                        foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 15f).ToList())
+                        {
+                            try { a.SetMorale(0f); } catch { }
+                            SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                            if (a.Formation != null) formations.Add(a.Formation);
+                        }
+                        if (!SpellEffects.IsSiegeActive())
+                            foreach (Formation f in formations)
+                                try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                    });
+                    return;
+                }
+                if (colors.Contains(ColorSchool.Yellow) && CanUseYellow(agent))
+                {
+                    float yp = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
+                    CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
+                    {
+                        foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
+                            try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f * yp)); SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); } catch { }
+                    });
+                    return;
+                }
+            }
+
+            // 8. Hurt allies nearby
             if (colors.Contains(ColorSchool.Green))
             {
-                bool allyHurt = AlliesOf(agent).Any(a => a.Health < a.HealthLimit * 0.6f &&
-                                                    a.Position.Distance(agent.Position) <= 15f);
+                bool allyHurt = allies.Any(a => a.Health < a.HealthLimit * 0.6f &&
+                                                a.Position.Distance(agent.Position) <= 15f);
                 if (allyHurt)
                 {
                     float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
@@ -292,7 +392,7 @@ namespace ColoursOfCalradia
                         CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Surge", () =>
                         {
                             Vec3 fwd = agent.LookDirection.NormalizedCopy();
-                            foreach (Agent a in AlliesOf(agent).ToList())
+                            foreach (Agent a in allies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -304,7 +404,30 @@ namespace ColoursOfCalradia
                 }
             }
 
-            // ── Yellow — morale suppression (no horseback) ────────────────────
+            // 9. Ally formation routing — emergency Orange rally, bypasses morale prereq
+            if (colors.Contains(ColorSchool.Orange))
+            {
+                bool allyRouting = allies.Any(a =>
+                {
+                    if (a.Position.Distance(agent.Position) > 20f) return false;
+                    try { return a.GetMorale() < 20f; } catch { return false; }
+                });
+                if (allyRouting)
+                {
+                    float op = SpellEffects.SpellPower(ColorSchool.Orange, hero);
+                    CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
+                    {
+                        foreach (Agent a in allies.Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
+                        { try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { } SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f); }
+                    });
+                    return;
+                }
+            }
+
+            // 10. No enemies within 20m — hold offensive spells
+            if (nearEnemies == 0) return;
+
+            // 11. Yellow — morale suppression (no horseback)
             if (colors.Contains(ColorSchool.Yellow) && CanUseYellow(agent))
             {
                 float yp = SpellEffects.SpellPower(ColorSchool.Yellow, hero);
@@ -315,7 +438,7 @@ namespace ColoursOfCalradia
                     CastWithGlow(agent, hero, ColorSchool.Yellow, "Tide of Dread", () =>
                     {
                         Vec3 fwd = agent.LookDirection.NormalizedCopy();
-                        foreach (Agent a in EnemiesOf(agent).ToList())
+                        foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -326,7 +449,7 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            // ── Orange — inspire / punish (party morale ≥ 45) ────────────────
+            // 12. Orange — inspire / punish (party morale ≥ 45)
             if (colors.Contains(ColorSchool.Orange) && CanUseOrange(hero))
             {
                 float op = SpellEffects.SpellPower(ColorSchool.Orange, hero);
@@ -335,7 +458,7 @@ namespace ColoursOfCalradia
                     {
                         Vec3 fwd = agent.LookDirection.NormalizedCopy();
                         var formations = new System.Collections.Generic.HashSet<Formation>();
-                        foreach (Agent a in EnemiesOf(agent).ToList())
+                        foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
@@ -352,11 +475,8 @@ namespace ColoursOfCalradia
                 else
                     CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
                     {
-                        foreach (Agent a in AlliesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
-                        {
-                            try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { }
-                            SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
-                        }
+                        foreach (Agent a in allies.Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
+                        { try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { } SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f); }
                     });
             }
         }
@@ -946,7 +1066,7 @@ namespace ColoursOfCalradia
                                           string spellName, Action effect)
         {
             try { effect?.Invoke(); } catch { }
-            SetCooldown(hero);
+            SetCooldown(agent, hero);
             SpellEffects.BeginAgentGlow(agent, school, 3.0f);
             SpellEffects.SpawnTempLight(agent.Position, school, 6f, 1.5f);
             SpellEffects.TryCastSound(agent.Position, school);
@@ -990,20 +1110,35 @@ namespace ColoursOfCalradia
             }
         }
 
-        private static float GetCooldownForHero(Hero hero)
+        private static float GetCooldownForHero(Agent agent, Hero hero)
         {
-            float baseInterval = ColourLordRegistry.IsPrismLord(hero) ? PrismCastInterval : CastInterval;
+            if (ColourLordRegistry.IsPrismLord(hero)) return PrismCastInterval;
+
+            float traitMult   = 1f;
+            float minCooldown = 11f;
             try
             {
                 int calc = hero.GetTraitLevel(DefaultTraits.Calculating);
-                if (calc < 0) return baseInterval * 0.75f; // Impulsive — casts more often
-                if (calc > 0) return baseInterval * 1.5f;  // Calculating — casts less often
+                if (calc < 0) { traitMult = 0.75f; minCooldown =  8f; } // Impulsive
+                if (calc > 0) { traitMult = 1.50f; minCooldown = 15f; } // Calculating
             }
             catch { }
-            return baseInterval;
+
+            // Proximity pressure: more enemies nearby → shorter cooldown, fewer → longer
+            float proximityMult = 1f;
+            try
+            {
+                int nearby = CountEnemiesNear(agent, 12f);
+                if      (nearby >= 6) proximityMult = 0.55f;
+                else if (nearby >= 3) proximityMult = 0.75f;
+                else if (nearby == 0) proximityMult = 1.40f;
+            }
+            catch { }
+
+            return Math.Max(minCooldown, CastInterval * traitMult * proximityMult);
         }
 
-        private static void SetCooldown(Hero hero) =>
-            _cooldowns[hero.StringId] = GetCooldownForHero(hero);
+        private static void SetCooldown(Agent agent, Hero hero) =>
+            _cooldowns[hero.StringId] = GetCooldownForHero(agent, hero);
     }
 }
