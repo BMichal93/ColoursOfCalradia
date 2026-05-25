@@ -391,8 +391,8 @@ namespace ColoursOfCalradia
                 return;
             }
 
-            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 5); } catch { return; }
-            Msg("Blue Influence — the Scholar's insight earns 5 influence.", ColorSchool.Blue);
+            try { GainKingdomInfluenceAction.ApplyForDefault(Hero.MainHero, 15); } catch { return; }
+            Msg("Blue Influence — the Scholar's insight earns 15 influence.", ColorSchool.Blue);
         }
 
         // ── Purple — Purple Isolation ─────────────────────────────────────

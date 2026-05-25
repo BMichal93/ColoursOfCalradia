@@ -39,7 +39,7 @@ namespace ColoursOfCalradia
         {
             if (Player == null || Mission.Current == null) return;
             float power = SpellPower(ColorSchool.Red);
-            const float Radius = 10f;
+            const float Radius = 8f;
             int count = 0;
             foreach (Agent a in Mission.Current.Agents
                 .Where(a => a.IsActive() && !a.IsMount && a != Player &&
@@ -47,7 +47,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 64f * power);
+                    DamageAgent(a, 50f * power);
                     BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                     count++;
                 }
@@ -55,7 +55,7 @@ namespace ColoursOfCalradia
             }
             BeginAgentGlow(Player, ColorSchool.Red, 1.5f);
             SpawnTempLight(Player.Position, ColorSchool.Red, Radius, 3f);
-            Msg(count > 0 ? $"Cinder Burst destroys {count} {(count == 1 ? "creature" : "creatures")} within {Radius}m."
+            Msg(count > 0 ? $"Cinder Burst scorches {count} {(count == 1 ? "creature" : "creatures")} within {Radius}m."
                           : "The burst finds nothing nearby.", ColorSchool.Red);
         }
 

@@ -457,12 +457,12 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UURR` | Red | 64 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UULD` | Orange | 21 damage to cone enemies (15 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UUDD` | Yellow | 25 damage to cone enemies (15 m); drains 60 morale from each. |
-| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 30 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UURU` | Blue | 25 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
-| **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (15 m); kill count scales with Vigor. |
+| **Crimson Torrent** | `UURR` | Red | 64 damage to all enemies in a forward cone (7 m, ≈33° arc); pushes them back 6 m. |
+| **Golden Tide** | `UULD` | Orange | 21 damage to cone enemies (7 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UUDD` | Yellow | 25 damage to cone enemies (7 m); drains 60 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (7 m) for up to 50 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UURU` | Blue | 13 damage to cone enemies (7 m); drains 35 morale; halts all enemy formations; dismounts riders. |
+| **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (7 m); kill count scales with Vigor. |
 
 ### Self Spells (RR prefix) — Caster-centred effects
 
@@ -470,21 +470,21 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 |-------|-------|--------|--------|
 | **Scarlet Barrier** | `RRRR` | Red | Toggle: six crimson pillars erupt in a ring (radius 4 m) around the caster; any creature inside the ring takes 38 damage every second. Cast again to dismiss. |
 | **Gilded Words** | `RRLD` | Orange | Converts one random nearby unmounted non-hero enemy (15 m) to fight for you. |
-| **Nausea Bloom** | `RRDD` | Yellow | Persistent aura (radius 8 m) that deals 7 damage every 2 s to all nearby creatures. Cast again to dismiss. |
+| **Nausea Bloom** | `RRDD` | Yellow | Persistent aura (radius 8 m) that deals 4 damage every 2 s to all nearby creatures. Cast again to dismiss. |
 | **Verdant Touch** | `RRLL` | Green | Heals the caster for 34 HP. |
-| **Cerulean Burst** | `RRRU` | Blue | Instant AoE (15 m radius): deals 25 damage to all nearby enemies, drains 35 morale each, halts their formations, and dismounts riders. |
+| **Cerulean Burst** | `RRRU` | Blue | Instant AoE (10 m radius): deals 10 damage to all nearby enemies, drains 35 morale each, halts their formations, and dismounts riders. |
 | **Grey Reaping** | `RRDU` | Purple | Drains morale from all nearby enemies; kills 1–2 random non-hero enemies within 15 m (scales with Purple attribute). |
 
 ### Create Spells (LL prefix) — Persistent battlefield effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Cinder Burst** | `LLRR` | Red | Instant 64 damage to all creatures within 10 m. |
-| **Gilded Refuge** | `LLLD` | Orange | Toggle: 3×3 grid of nine inspiring zones (radius 7 m each) across the field — all creatures inside receive +100 morale and ~1.7 HP healing every 2 s. Cast again to dismiss. |
+| **Cinder Burst** | `LLRR` | Red | Instant 50 damage to all creatures within 8 m. |
+| **Gilded Refuge** | `LLLD` | Orange | Toggle: 3×3 grid of nine inspiring zones (radius 7 m each) across the field — all creatures inside receive +100 morale and ~0.5 HP healing every 2 s. Cast again to dismiss. |
 | **Creeping Dread** | `LLDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 38 damage every 2 s to creatures they pass through. Cast again to dismiss. |
 | **Emerald Font** | `LLLL` | Green | Toggle: three healing pools in a triangle that restore 21 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
 | **Sapphire Bastion** | `LLRU` | Blue | Toggle: six pillars of force in a wide line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
-| **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); any non-hero creature inside has a 10% chance to die instantly every 2 s. Cast again to dismiss. |
+| **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); non-hero creatures inside take 8 damage every 2 s and have a 5% chance to die instantly. Cast again to dismiss. |
 
 ### Notes on Create Spells
 
@@ -736,7 +736,7 @@ Invoke spells target heroes, rosters, and rival lords directly.
 | **Inspired Word** | `LULD` | Orange | Grant one random soldier in your party 150×power experience. |
 | **Creeping Fear** | `LUDD` | Yellow | The nearest enemy party at war loses 2 morale. |
 | **Green's Bounty** | `LULL` | Green | 80% grain / 10% sheep / 10% cow ripens at your touch. Cannot be cast inside a settlement. |
-| **Blue Influence** | `LURU` | Blue | Gain 5 influence. Kingdom membership required. |
+| **Blue Influence** | `LURU` | Blue | Gain 15 influence. Kingdom membership required. |
 | **Wither's Touch** | `LUDU` | Purple | A random enemy lord's clan loses 2 renown. Cost: −1% fertility + 1 day aging. |
 
 ### Commune Spells (UR prefix) — ambient, world-affecting

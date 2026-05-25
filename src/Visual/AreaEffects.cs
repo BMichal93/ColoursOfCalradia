@@ -232,7 +232,7 @@ namespace ColoursOfCalradia
 
                     case "create_orange": // Gilded Refuge — +100 morale and 2 HP/sec to all inside
                     {
-                        float refugeHeal = 2f * e.TickInterval;
+                        float refugeHeal = 0.5f * e.TickInterval;
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
@@ -316,7 +316,7 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "create_purple_mist": // Purple Mist — 10% instakill chance per tick
+                    case "create_purple_mist": // Purple Mist — 8 HP drain/tick + 5% instakill chance
                     {
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && !a.IsHero && a != Player &&
@@ -325,7 +325,8 @@ namespace ColoursOfCalradia
                             try
                             {
                                 BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                                if (_rng.Next(10) == 0) QueueKill(a);
+                                DamageAgent(a, 8f * e.Power, ColorSchool.Purple);
+                                if (a.IsActive() && _rng.Next(20) == 0) QueueKill(a);
                             }
                             catch { }
                         }
@@ -335,7 +336,7 @@ namespace ColoursOfCalradia
                     case "self_yellow": // Nausea Bloom — drifting toxic cloud
                     {
                         int bloomHit = 0;
-                        float bloomDmg = 7f * e.Power;
+                        float bloomDmg = 4f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())

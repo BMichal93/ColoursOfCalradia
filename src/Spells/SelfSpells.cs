@@ -149,13 +149,13 @@ namespace ColoursOfCalradia
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
         }
 
-        // Cerulean Burst — instant AoE (15m): damages, halts, and drains morale of all enemies
+        // Cerulean Burst — instant AoE (10m): damages, halts, and drains morale of all enemies
         private static void SpellSelfBlue()
         {
             if (Player == null || !Player.IsActive()) return;
             float power = SpellPower(ColorSchool.Blue);
             float haltDuration = 2f + power * 1.5f;
-            const float Radius = 15f;
+            const float Radius = 10f;
             var enemies = Mission.Current?.Agents
                 .Where(a => a.IsActive() && !a.IsMount && a != Player
                          && a.Team != Player.Team
@@ -167,7 +167,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 25f * power, ColorSchool.Blue);
+                    DamageAgent(a, 10f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     bool usingEquip = false;
@@ -191,7 +191,7 @@ namespace ColoursOfCalradia
                 }
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
             SpawnTempLight(Player.Position, ColorSchool.Blue, 8f, 2f);
-            Msg($"Cerulean Burst — blue force detonates outward, halting {enemies.Count} {(enemies.Count == 1 ? "enemy" : "enemies")} for {haltDuration:F1}s.", ColorSchool.Blue);
+            Msg($"Cerulean Burst — a blue shockwave halts {enemies.Count} {(enemies.Count == 1 ? "enemy" : "enemies")} for {haltDuration:F1}s.", ColorSchool.Blue);
         }
 
         // Grey Reaping — snuffs 1–2 nearby souls; those who remain lose all nerve
