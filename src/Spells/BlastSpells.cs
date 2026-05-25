@@ -74,7 +74,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 28f * power, ColorSchool.Orange);
+                    DamageAgent(a, 45f * power, ColorSchool.Orange);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -155,7 +155,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 28f * power, ColorSchool.Blue);
+                    DamageAgent(a, 35f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     bool usingEquip = false;
