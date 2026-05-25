@@ -36,7 +36,7 @@ namespace ColoursOfCalradia
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval       = 23f;
+        private const float CastInterval       = 20f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
         private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
