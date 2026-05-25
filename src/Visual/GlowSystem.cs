@@ -82,6 +82,20 @@ namespace ColoursOfCalradia
             catch { }
         }
 
+        public static void BeginAgentGlowWhite(Agent agent, float duration)
+        {
+            if (agent == null || !agent.IsActive()) return;
+            try
+            {
+                agent.AgentVisuals?.GetEntity()
+                    ?.SetContourColor(0xFFFFFFFF, true);
+                int idx = _glowTimers.FindIndex(x => x.agent == agent);
+                if (idx >= 0) _glowTimers.RemoveAt(idx);
+                _glowTimers.Add((agent, duration));
+            }
+            catch { }
+        }
+
         public static void CastGlow(Agent caster, ColorSchool school)
         {
             if (caster == null) return;

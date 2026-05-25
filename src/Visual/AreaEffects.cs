@@ -96,7 +96,7 @@ namespace ColoursOfCalradia
             _areaEffects.Add(node);
         }
 
-        private static GameEntity SpawnAreaLight(Vec3 position, ColorSchool school, float radius)
+        private static GameEntity SpawnAreaLightRaw(Vec3 position, Vec3 rgb, float radius)
         {
             try
             {
@@ -109,12 +109,28 @@ namespace ColoursOfCalradia
                 var light = Light.CreatePointLight(lightRadius);
                 light.Radius        = lightRadius;
                 light.Intensity     = 3000f;
-                light.LightColor    = SchoolToLightColor(school);
+                light.LightColor    = rgb;
                 light.ShadowEnabled = false;
                 entity.AddLight(light);
                 return entity;
             }
             catch { return null; }
+        }
+
+        private static GameEntity SpawnAreaLight(Vec3 position, ColorSchool school, float radius)
+            => SpawnAreaLightRaw(position, SchoolToLightColor(school), radius);
+
+        internal static void SpawnTempLightWhite(Vec3 position, float radius, float duration)
+        {
+            var node = new AreaEffect
+            {
+                Id = "temp_light", School = ColorSchool.Red,
+                Position = position, Radius = radius,
+                TickInterval = duration, TickTimer = duration,
+                Remaining = duration
+            };
+            node.LightEntity = SpawnAreaLightRaw(position, new Vec3(1f, 1f, 1f), radius);
+            _areaEffects.Add(node);
         }
 
         private static Vec3 SchoolToLightColor(ColorSchool school)
@@ -278,12 +294,12 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "create_blue": // Sapphire Bastion — push enemy agents outside radius every tick
+                    case "create_blue": // Sapphire Bastion — push all agents outside radius every tick
                     {
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
-                            if (a.Team == Player?.Team) continue; // don't push own side
+                            if (a == Player) continue; // never push the caster off their own wall
                             if (a.Position.Distance(e.Position) > e.Radius) continue;
                             try
                             {

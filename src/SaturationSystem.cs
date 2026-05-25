@@ -215,6 +215,8 @@ namespace ColoursOfCalradia
                 if (Agent.Main?.IsActive() == true)
                 {
                     ApplyKnockdown(Agent.Main, 3f);
+                    SpellEffects.BeginAgentGlowWhite(Agent.Main, 2f);
+                    SpellEffects.SpawnTempLightWhite(Agent.Main.Position, 6f, 1.5f);
                 }
             }
             catch { }
