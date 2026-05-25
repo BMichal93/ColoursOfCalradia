@@ -36,7 +36,7 @@ namespace ColoursOfCalradia
     // =========================================================================
     public static class ColourLordAI
     {
-        private const float CastInterval       = 40f;
+        private const float CastInterval       = 30f;
         private const float PrismCastInterval  = 4f;
         private const float BlightCastInterval = 2f;
         private static readonly Dictionary<string, float> _cooldowns = new Dictionary<string, float>();
@@ -48,7 +48,8 @@ namespace ColoursOfCalradia
         private static bool  _warmupDone   = false;
         private const  float WarmupDuration = 12f;
 
-        private static bool _battleEventTriggered = false;
+        private static float _battleEventTimer = -1f; // counts up; fires at BattleEventInterval
+        private const  float BattleEventInterval = 90f;
         private static readonly List<GameEntity> _battleEventLights = new List<GameEntity>();
 
         public static void ClearCooldowns()
@@ -56,7 +57,7 @@ namespace ColoursOfCalradia
             _cooldowns.Clear();
             _warmupTimer = 0f;
             _warmupDone  = false;
-            _battleEventTriggered = false;
+            _battleEventTimer = -1f;
             foreach (var e in _battleEventLights) try { e?.Remove(0); } catch { }
             _battleEventLights.Clear();
         }
@@ -99,11 +100,15 @@ namespace ColoursOfCalradia
                 _warmupTimer += TickInterval;
                 if (_warmupTimer < WarmupDuration) return;
                 _warmupDone = true;
-                if (!_battleEventTriggered)
-                {
-                    _battleEventTriggered = true;
-                    try { TryTriggerBattleEvent(); } catch { }
-                }
+                _battleEventTimer = BattleEventInterval; // fire first check immediately
+            }
+
+            // Recurring battle colour events — roll every BattleEventInterval seconds.
+            _battleEventTimer += TickInterval;
+            if (_battleEventTimer >= BattleEventInterval)
+            {
+                _battleEventTimer = 0f;
+                try { TryTriggerBattleEvent(); } catch { }
             }
 
             foreach (Agent agent in agents)
@@ -801,7 +806,7 @@ namespace ColoursOfCalradia
                 eventDesc,
                 ColorSchoolData.GetMessageColor(school)));
 
-            // Spawn dim ambient overhead light
+            // Ambient overhead light — persists for the event duration
             try
             {
                 var scene = Mission.Current?.Scene;
@@ -814,12 +819,21 @@ namespace ColoursOfCalradia
                     entity.SetGlobalFrame(in frame, true);
                     var light = Light.CreatePointLight(80f);
                     light.Radius        = 80f;
-                    light.Intensity     = 200f;
+                    light.Intensity     = 1000f;
                     light.LightColor    = SchoolToEventColor(school);
                     light.ShadowEnabled = false;
                     entity.AddLight(light);
                     _battleEventLights.Add(entity);
                 }
+            }
+            catch { }
+
+            // Screen-filter flash — bright close-range tint at the player's position for 5 seconds
+            try
+            {
+                Agent flashAnchor = Agent.Main ?? Mission.Current.Agents.FirstOrDefault(a => a.IsActive());
+                if (flashAnchor != null)
+                    SpellEffects.SpawnTempLight(flashAnchor.Position, school, 12f, 5f);
             }
             catch { }
 
@@ -945,13 +959,13 @@ namespace ColoursOfCalradia
                 ColorSchoolData.GetMessageColor(school)));
 
             // Oversaturation risk (non-Blight, non-Prism lords only).
-            // 4% lethal: health → 1, near-certain death against any standing enemy.
-            // 5% knockdown: 3-second stagger.
-            // 9% total — rate-preserving reduction from 11% at 50s cooldown to 40s.
+            // 3% lethal: health → 1, near-certain death against any standing enemy.
+            // 4% knockdown: 3-second stagger.
+            // 7% total — rate-preserving: 9% at 40s = 0.225%/s → 0.225 × 30s = 6.75% ≈ 7%.
             if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero))
             {
                 int overRoll = _rng.Next(100);
-                if (overRoll < 4)
+                if (overRoll < 3)
                 {
                     try
                     {
@@ -965,7 +979,7 @@ namespace ColoursOfCalradia
                     }
                     catch { }
                 }
-                else if (overRoll < 9)
+                else if (overRoll < 7)
                 {
                     try
                     {
