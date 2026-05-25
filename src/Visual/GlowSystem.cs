@@ -101,7 +101,7 @@ namespace ColoursOfCalradia
             if (caster == null) return;
             try
             {
-                BeginAgentGlow(caster, school, 3.0f);
+                BeginAgentGlow(caster, school, 5.0f);
                 SpawnTempLight(caster.Position, school, 6f, 1.5f);
                 TryCastSound(caster.Position, school);
                 TryCastAnimation(caster);

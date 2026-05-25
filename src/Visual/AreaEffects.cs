@@ -215,7 +215,7 @@ namespace ColoursOfCalradia
                 {
                     case "self_red_barrier": // Scarlet Barrier — damage all agents inside the node
                     {
-                        float barrierDmg = 45f * e.Power;
+                        float barrierDmg = 38f * e.Power;
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a == Player) continue;
@@ -251,7 +251,7 @@ namespace ColoursOfCalradia
                     case "create_yellow": // Creeping Dread — damage agents in cloud
                     {
                         int dreadHit = 0;
-                        float dreadDmg = 20f * e.Power;
+                        float dreadDmg = 17f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -280,7 +280,7 @@ namespace ColoursOfCalradia
 
                     case "create_green": // Emerald Font — heal all agents in area
                     {
-                        float fontHeal = 25f * e.Power;
+                        float fontHeal = 21f * e.Power;
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
@@ -335,7 +335,7 @@ namespace ColoursOfCalradia
                     case "self_yellow": // Nausea Bloom — drifting toxic cloud
                     {
                         int bloomHit = 0;
-                        float bloomDmg = 8f * e.Power;
+                        float bloomDmg = 7f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount && a != Player &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
@@ -357,7 +357,7 @@ namespace ColoursOfCalradia
 
                     case "npc_green_font": // NPC Emerald Font — heal caster-side allies in area
                     {
-                        float fontHeal = 25f * e.Power;
+                        float fontHeal = 21f * e.Power;
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
@@ -398,7 +398,7 @@ namespace ColoursOfCalradia
 
                     case "npc_yellow_cloud": // NPC Creeping Dread — drifting damage cloud vs enemies only
                     {
-                        float cloudDmg = 45f * e.Power;
+                        float cloudDmg = 38f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())

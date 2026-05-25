@@ -80,6 +80,7 @@ namespace ColoursOfCalradia
             ColourLordAI.MissionTick(dt);
             ColourUnitRegistry.MissionTick(dt);
             SpellEffects.TickGlows(dt);
+            SpellEffects.TickColourCooldown(dt);
             SpellEffects.TickAnimClears(dt);
             SpellEffects.TickMoves(dt);
             SpellEffects.TickAreaEffects(dt);
@@ -142,6 +143,7 @@ namespace ColoursOfCalradia
             try { SpellEffects.ClearPendingDeaths();  } catch { }
             try { SpellEffects.ClearAreaEffects();    } catch { }
             try { SpellEffects.ClearGlows();          } catch { }
+            try { SpellEffects.ClearColourCooldown(); } catch { }
             try { SpellEffects.ClearMoves();          } catch { }
             try { ColourLordAI.ClearCooldowns();      } catch { }
             try { ColourUnitRegistry.OnMissionEnded(); } catch { }

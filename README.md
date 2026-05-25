@@ -457,32 +457,32 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UURR` | Red | 75 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
-| **Golden Tide** | `UULD` | Orange | 25 damage to cone enemies (15 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UUDD` | Yellow | 30 damage to cone enemies (15 m); drains 60 morale from each. |
-| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 35 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UURU` | Blue | 28 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
+| **Crimson Torrent** | `UURR` | Red | 64 damage to all enemies in a forward cone (15 m); pushes them back 6 m (smooth lerp over 0.4 s). |
+| **Golden Tide** | `UULD` | Orange | 21 damage to cone enemies (15 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UUDD` | Yellow | 25 damage to cone enemies (15 m); drains 60 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (15 m) for up to 30 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UURU` | Blue | 25 damage to cone enemies (15 m); drains 35 morale; halts all enemy formations; dismounts riders. |
 | **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (15 m); kill count scales with Vigor. |
 
 ### Self Spells (RR prefix) — Caster-centred effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Scarlet Barrier** | `RRRR` | Red | Toggle: six crimson pillars erupt in a ring (radius 4 m) around the caster; any creature inside the ring takes 20 damage every second. Cast again to dismiss. |
+| **Scarlet Barrier** | `RRRR` | Red | Toggle: six crimson pillars erupt in a ring (radius 4 m) around the caster; any creature inside the ring takes 38 damage every second. Cast again to dismiss. |
 | **Gilded Words** | `RRLD` | Orange | Converts one random nearby unmounted non-hero enemy (15 m) to fight for you. |
-| **Nausea Bloom** | `RRDD` | Yellow | Persistent 30 s aura (radius 8 m) that deals 35 damage every 2 s to all nearby creatures. |
-| **Verdant Touch** | `RRLL` | Green | Heals the caster for 40 HP. |
-| **Cerulean Burst** | `RRRU` | Blue | Instant AoE (15 m radius): deals 28 damage to all nearby enemies, drains 35 morale each, halts their formations, and dismounts riders. |
+| **Nausea Bloom** | `RRDD` | Yellow | Persistent aura (radius 8 m) that deals 7 damage every 2 s to all nearby creatures. Cast again to dismiss. |
+| **Verdant Touch** | `RRLL` | Green | Heals the caster for 34 HP. |
+| **Cerulean Burst** | `RRRU` | Blue | Instant AoE (15 m radius): deals 25 damage to all nearby enemies, drains 35 morale each, halts their formations, and dismounts riders. |
 | **Grey Reaping** | `RRDU` | Purple | Drains morale from all nearby enemies; kills 1–2 random non-hero enemies within 15 m (scales with Purple attribute). |
 
 ### Create Spells (LL prefix) — Persistent battlefield effects
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Cinder Burst** | `LLRR` | Red | Instant 70 damage to all creatures within 10 m. |
-| **Gilded Refuge** | `LLLD` | Orange | Toggle: 3×3 grid of nine inspiring zones (radius 7 m each) across the field — all creatures inside receive +100 morale and 2 HP healing every 2 s. Cast again to dismiss. |
-| **Creeping Dread** | `LLDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 45 damage every 2 s to creatures they pass through. Cast again to dismiss. |
-| **Emerald Font** | `LLLL` | Green | Toggle: three healing pools in a triangle that restore 25 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
+| **Cinder Burst** | `LLRR` | Red | Instant 64 damage to all creatures within 10 m. |
+| **Gilded Refuge** | `LLLD` | Orange | Toggle: 3×3 grid of nine inspiring zones (radius 7 m each) across the field — all creatures inside receive +100 morale and ~1.7 HP healing every 2 s. Cast again to dismiss. |
+| **Creeping Dread** | `LLDD` | Yellow | Toggle: nine wandering clouds (3×3 grid, radius 7 m each) that roam the field, dealing 38 damage every 2 s to creatures they pass through. Cast again to dismiss. |
+| **Emerald Font** | `LLLL` | Green | Toggle: three healing pools in a triangle that restore 21 HP every 2 s to all within — friend and foe alike. Cast again to dismiss. |
 | **Sapphire Bastion** | `LLRU` | Blue | Toggle: six pillars of force in a wide line perpendicular to your facing, pushing creatures outward every 0.5 s. Cast again to dismiss. |
 | **Purple Mist** | `LLDU` | Purple | Toggle: 3×3 grid of nine dim nodes (radius 4 m each); any non-hero creature inside has a 10% chance to die instantly every 2 s. Cast again to dismiss. |
 
@@ -764,7 +764,7 @@ Commune spells reach beyond your immediate position to reshape the world around 
 
 ## Saturation
 
-Every cast generates **0–4 Saturation** at random (battle spells). Campaign map spells cost 10–20 Saturation — drawing on ambient light without the focus of battle is far more draining. Saturation represents how much absorbed light your body holds at once. The cap grows with your level: **max = hero level + 10** (no upper limit — the more experienced you are, the more light you can hold).
+Every cast generates **0–7 Saturation** at random (battle spells). Campaign map spells cost 10–20 Saturation — drawing on ambient light without the focus of battle is far more draining. Saturation represents how much absorbed light your body holds at once. The cap grows with your level: **max = hero level + 10** (no upper limit — the more experienced you are, the more light you can hold).
 
 | Condition | Effect |
 |-----------|--------|

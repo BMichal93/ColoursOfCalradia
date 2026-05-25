@@ -149,7 +149,7 @@ namespace ColoursOfCalradia
             {
                 float gp = SpellEffects.SpellPower(ColorSchool.Green, hero);
                 CastWithGlow(agent, hero, ColorSchool.Green, "Verdant Touch", () =>
-                    agent.Health = Math.Min(agent.Health + 30f * gp, agent.HealthLimit));
+                    agent.Health = Math.Min(agent.Health + 25f * gp, agent.HealthLimit));
                 return;
             }
 
@@ -169,7 +169,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 60f * pp);
+                                SpellEffects.DamageAgent(a, 51f * pp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                             }
                         });
@@ -195,7 +195,7 @@ namespace ColoursOfCalradia
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 55f * rp);
+                                SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
                         });
@@ -205,7 +205,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 10f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 70f * rp);
+                                SpellEffects.DamageAgent(a, 60f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
                             SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
@@ -230,7 +230,7 @@ namespace ColoursOfCalradia
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            SpellEffects.DamageAgent(a, 55f * rp);
+                            SpellEffects.DamageAgent(a, 47f * rp);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
                     });
@@ -250,7 +250,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 12f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 28f * bp);
+                                SpellEffects.DamageAgent(a, 24f * bp);
                                 if (a.IsActive()) try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             }
@@ -296,7 +296,7 @@ namespace ColoursOfCalradia
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
-                                float h = Math.Min(22f * gp, a.HealthLimit - a.Health);
+                                float h = Math.Min(19f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
                         });
@@ -339,7 +339,7 @@ namespace ColoursOfCalradia
                         {
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
-                            SpellEffects.DamageAgent(a, 25f * op);
+                            SpellEffects.DamageAgent(a, 21f * op);
                             if (!a.IsActive()) continue;
                             try { a.SetMorale(100f); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -379,7 +379,7 @@ namespace ColoursOfCalradia
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 55f * rp);
+                                SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
                         });
@@ -389,7 +389,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 10f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 70f * rp);
+                                SpellEffects.DamageAgent(a, 60f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
                             SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
@@ -409,7 +409,7 @@ namespace ColoursOfCalradia
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
-                                SpellEffects.DamageAgent(a, 25f * op);
+                                SpellEffects.DamageAgent(a, 21f * op);
                                 if (!a.IsActive()) continue;
                                 try { a.SetMorale(100f); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -444,7 +444,7 @@ namespace ColoursOfCalradia
                             {
                                 Vec3 to = a.Position - agent.Position;
                                 if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
-                                float h = Math.Min(22f * gp, a.HealthLimit - a.Health);
+                                float h = Math.Min(19f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
                         });
@@ -463,7 +463,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 12f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 28f * bp);
+                                SpellEffects.DamageAgent(a, 24f * bp);
                                 if (a.IsActive()) try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             }
@@ -521,7 +521,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                             {
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
-                                SpellEffects.DamageAgent(a, 60f * pp);
+                                SpellEffects.DamageAgent(a, 51f * pp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                             }
                         });
@@ -554,7 +554,7 @@ namespace ColoursOfCalradia
                         Vec3 to = a.Position - agent.Position;
                         if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                         if (SpellEffects.ProtectedByMirror(a)) continue;
-                        SpellEffects.DamageAgent(a, 55f * power, school);
+                        SpellEffects.DamageAgent(a, 47f * power, school);
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
                         hit = true;
                     }
@@ -594,7 +594,7 @@ namespace ColoursOfCalradia
                     {
                         Vec3 to = a.Position - agent.Position;
                         if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
-                        float h = Math.Min(22f * power, a.HealthLimit - a.Health);
+                        float h = Math.Min(19f * power, a.HealthLimit - a.Health);
                         if (h <= 0f) continue;
                         a.Health += h;
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
@@ -611,7 +611,7 @@ namespace ColoursOfCalradia
                         Vec3 to = a.Position - agent.Position;
                         if (to.Length > 15f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.6f) continue;
                         if (SpellEffects.ProtectedByMirror(a)) continue;
-                        SpellEffects.DamageAgent(a, 18f * power, school);
+                        SpellEffects.DamageAgent(a, 15f * power, school);
                         try { a.SetMorale(0f); } catch { }
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
                         hit = true;
@@ -625,7 +625,7 @@ namespace ColoursOfCalradia
                         .Where(a => a.Position.Distance(agent.Position) <= 10f && !a.IsHero).ToList())
                     {
                         if (SpellEffects.ProtectedByMirror(a)) continue;
-                        SpellEffects.DamageAgent(a, 60f * power, school);
+                        SpellEffects.DamageAgent(a, 51f * power, school);
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
                         hit = true;
                     }
@@ -640,8 +640,7 @@ namespace ColoursOfCalradia
                                                 string spellName, bool connected)
         {
             _cooldowns[hero.StringId] = BlightCastInterval;
-            // Glow duration > cast interval → permanent visible aura
-            SpellEffects.BeginAgentGlow(agent, school, BlightCastInterval * 1.5f);
+            SpellEffects.BeginAgentGlow(agent, school, 5f);
             SpellEffects.SpawnTempLight(agent.Position, school, 6f, 1.5f);
             SpellEffects.TryCastSound(agent.Position, school);
             SpellEffects.TryCastAnimation(agent);
@@ -845,7 +844,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in agents.Where(a => a.IsActive() && !a.IsMount))
                     {
                         if (SpellEffects.ProtectedByMirror(a)) continue;
-                        try { SpellEffects.DamageAgent(a, 8f); } catch { }
+                        try { SpellEffects.DamageAgent(a, 7f); } catch { }
                         SpellEffects.BeginAgentGlow(a, school, 2f);
                     }
                     break;

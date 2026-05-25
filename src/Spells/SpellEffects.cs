@@ -30,6 +30,11 @@ namespace ColoursOfCalradia
     {
         private static readonly Random _rng = new Random();
 
+        // ── Colour-switch cooldown (player only) ─────────────────────────────
+        private const float ColourSwitchCooldown = 5f;
+        private static ColorSchool? _lastCastSchool;
+        private static float _colourCooldownTimer = 0f;
+
 
         internal enum LightLevel { Bright, Dim, Dark }
 
@@ -314,7 +319,7 @@ namespace ColoursOfCalradia
                             .Where(a => a.IsActive() && !a.IsMount && a.Team == unit.Team &&
                                         a.Position.Distance(unit.Position) <= 5f).ToList())
                         {
-                            near.Health = Math.Min(near.HealthLimit, near.Health + 15f);
+                            near.Health = Math.Min(near.HealthLimit, near.Health + 13f);
                             BeginAgentGlow(near, school, 1.5f);
                         }
                     }
@@ -477,6 +482,19 @@ namespace ColoursOfCalradia
         //         last 2 chars = colour (RR=Red, LD=Orange, DD=Yellow, LL=Green, RU=Blue, DU=Purple)
         public static bool Execute(string combo)
         {
+            if (Mission.Current != null && combo.Length == 4 && !SaturationSystem.IsPlayerPrism)
+            {
+                ColorSchool? incoming = SchoolFromCombo(combo);
+                if (incoming.HasValue && _colourCooldownTimer > 0f &&
+                    _lastCastSchool.HasValue && incoming.Value != _lastCastSchool.Value)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"The previous colour has not yet dispersed ({_colourCooldownTimer:F1}s remaining).",
+                        Color.FromUint(0xFFFFAAFF)));
+                    return false;
+                }
+            }
+
             switch (combo)
             {
                 // BLAST (UU)
@@ -523,7 +541,46 @@ namespace ColoursOfCalradia
                 case "URDU": SpellCommunePurple(); break;
                 default: return false;
             }
+
+            if (Mission.Current != null && combo.Length == 4)
+            {
+                ColorSchool? school = SchoolFromCombo(combo);
+                if (school.HasValue)
+                {
+                    _lastCastSchool     = school.Value;
+                    _colourCooldownTimer = ColourSwitchCooldown;
+                }
+            }
             return true;
+        }
+
+        private static ColorSchool? SchoolFromCombo(string combo)
+        {
+            if (combo == null || combo.Length < 2) return null;
+            string colour = combo.Substring(combo.Length - 2);
+            switch (colour)
+            {
+                case "RR": return ColorSchool.Red;
+                case "LD": return ColorSchool.Orange;
+                case "DD": return ColorSchool.Yellow;
+                case "LL": return ColorSchool.Green;
+                case "RU": return ColorSchool.Blue;
+                case "DU": return ColorSchool.Purple;
+                default:   return null;
+            }
+        }
+
+        public static void TickColourCooldown(float dt)
+        {
+            if (_colourCooldownTimer <= 0f) return;
+            _colourCooldownTimer = Math.Max(0f, _colourCooldownTimer - dt);
+            if (_colourCooldownTimer <= 0f) _lastCastSchool = null;
+        }
+
+        public static void ClearColourCooldown()
+        {
+            _colourCooldownTimer = 0f;
+            _lastCastSchool      = null;
         }
 
         // =================================================================

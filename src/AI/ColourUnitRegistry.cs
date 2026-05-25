@@ -431,7 +431,7 @@ namespace ColoursOfCalradia
                             Vec3 to = a.Position - agent.Position;
                             if (to.Length > 8f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.35f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            SpellEffects.DamageAgent(a, 55f);
+                            SpellEffects.DamageAgent(a, 47f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             cast = true;
                         }
@@ -454,7 +454,7 @@ namespace ColoursOfCalradia
                             .Where(a => a.Health < a.HealthLimit * 0.7f
                                      && a.Position.Distance(agent.Position) <= 10f).ToList())
                         {
-                            a.Health = Math.Min(a.Health + 20f, a.HealthLimit);
+                            a.Health = Math.Min(a.Health + 17f, a.HealthLimit);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f);
                             cast = true;
                         }
@@ -467,7 +467,7 @@ namespace ColoursOfCalradia
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             try
                             {
-                                SpellEffects.DamageAgent(a, 15f);
+                                SpellEffects.DamageAgent(a, 13f);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                                 cast = true;
                             }
@@ -480,7 +480,7 @@ namespace ColoursOfCalradia
                             .Where(a => a.Position.Distance(agent.Position) <= 6f).ToList())
                         {
                             if (SpellEffects.ProtectedByMirror(a)) continue;
-                            SpellEffects.DamageAgent(a, 55f);
+                            SpellEffects.DamageAgent(a, 47f);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                             cast = true;
                         }

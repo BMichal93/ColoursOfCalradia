@@ -142,8 +142,8 @@ namespace ColoursOfCalradia
         {
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Green);
-            float heal = Math.Min(40f * power, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 40f * power, Player.HealthLimit);
+            float heal = Math.Min(34f * power, Player.HealthLimit - Player.Health);
+            Player.Health = Math.Min(Player.Health + 34f * power, Player.HealthLimit);
             BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
             SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
             Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
@@ -167,7 +167,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 30f * power, ColorSchool.Blue);
+                    DamageAgent(a, 25f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     bool usingEquip = false;

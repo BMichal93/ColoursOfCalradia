@@ -45,7 +45,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 75f * power, ColorSchool.Red);
+                    DamageAgent(a, 64f * power, ColorSchool.Red);
                     if (a.IsActive() && a.Health > 0f)
                     {
                         Vec3 dir = (a.Position - Player.Position).NormalizedCopy();
@@ -74,7 +74,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 45f * power, ColorSchool.Orange);
+                    DamageAgent(a, 38f * power, ColorSchool.Orange);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
                     BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
@@ -101,7 +101,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 30f * power, ColorSchool.Yellow);
+                    DamageAgent(a, 25f * power, ColorSchool.Yellow);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 60f * power)); } catch { }
                     BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
@@ -126,7 +126,7 @@ namespace ColoursOfCalradia
                 if (a.Team != Player.Team) continue; // enemies excluded
                 try
                 {
-                    float h = Math.Min(35f * power, a.HealthLimit - a.Health);
+                    float h = Math.Min(30f * power, a.HealthLimit - a.Health);
                     if (h > 0f)
                     {
                         a.Health += h;
@@ -155,7 +155,7 @@ namespace ColoursOfCalradia
             {
                 try
                 {
-                    DamageAgent(a, 30f * power, ColorSchool.Blue);
+                    DamageAgent(a, 25f * power, ColorSchool.Blue);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                     bool usingEquip = false;
