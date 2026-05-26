@@ -47,8 +47,8 @@ namespace ColoursOfCalradia
             [ColorSchool.Red] = new SchoolInfo
             {
                 Name             = "Red",
-                FlavorText       = "Blood Price — Violent, fiery magic of war and ruin. Red mages channel rage into devastating waves and burning bursts. " +
-                                   "The art demands payment in pain: each working scorches the caster, and every cast drives your soldiers into a frenzy.",
+                FlavorText       = "Blood Price — Magic of hatred and burning fury. Red mages draw from the white-hot core of loathing, pouring spite into waves of searing destruction. " +
+                                   "The art feeds on hate — and what it cannot find in the world, it scorches out of the caster's own flesh: every cast drives your soldiers into a frenzy and burns the hatred back into you.",
                 PersonalityEffect= "Repeated casting makes you less Calculating — more instinctive, more impulsive.",
                 LimitationA      = "Furious: Each Red spell automatically issues a Charge order to your formations.",
                 LimitationB      = "Blood Price: Each Red spell deals 2 damage to the caster — magic always takes its due.",
@@ -60,7 +60,7 @@ namespace ColoursOfCalradia
                 FlavorText       = "Generous Hunger — Joyful, generous magic of warmth and plenty. Orange mages inspire and conjure allies from nothing. " +
                                    "The warmth only flows when the heart is light — misery chokes the golden current before it can form.",
                 PersonalityEffect= "Repeated casting increases your Generosity — open-handed and free with what you have.",
-                LimitationA      = "Joyful Cast: You cannot cast Orange magic if your party morale is below 51 — the warmth will not flow through misery.",
+                LimitationA      = "Joyful Cast: You cannot cast Orange magic if your party morale is below 65 — the warmth will not flow through misery.",
                 LimitationB      = "",
                 AttributePenalty = "-1 Intelligence"
             },
@@ -87,10 +87,10 @@ namespace ColoursOfCalradia
             [ColorSchool.Blue] = new SchoolInfo
             {
                 Name             = "Blue",
-                FlavorText       = "The Scholar's Craft — Cold, precise magic of clarity and form. Blue mages freeze formations and conjure spectral barriers. " +
-                                   "The art demands empty hands: a mind armed with a blade cannot hold the delicate geometry of the colour. Lay down your weapon, and the blue may answer.",
+                FlavorText       = "The Scholar's Craft — Cold, crystalline magic of stillness and form. Blue mages freeze formations and conjure spectral barriers, shaping the colour through precise, flowing gestures — " +
+                                   "the hands must move freely, tracing the intricate crystal patterns the art demands. A weapon gripped in the hand breaks the working before it can form.",
                 PersonalityEffect= "Repeated casting increases your Calculating trait — measured, deliberate, distant.",
-                LimitationA      = "Scholar's Craft: Cannot cast Blue magic in battle while wielding a weapon — the colour requires empty hands and a focused mind.",
+                LimitationA      = "Scholar's Craft: Cannot cast Blue magic in battle while wielding a weapon — the colour requires free hands to trace its crystalline forms.",
                 LimitationB      = "",
                 AttributePenalty = "-1 Vigor"
             },
@@ -98,7 +98,7 @@ namespace ColoursOfCalradia
             {
                 Name             = "Purple",
                 FlavorText       = "The Waning Art — Melancholic, fading magic of grief and hollow quietude. Purple mages touch the deep sadness beneath living things, drawing on resignation and loss. " +
-                                   "The grey does not take violently — it takes steadily. Each working costs a piece of the future: fertility dims and the body quietly ages.",
+                                   "The purple does not take violently — it takes steadily. Each working costs a piece of the future: fertility dims and the body quietly ages.",
                 PersonalityEffect= "Repeated casting hollows out all personality — grief erodes every trait toward a silent zero.",
                 LimitationA      = "The Slow Unravelling: Each Purple cast reduces the caster's fertility by 1% and ages them by 1 day — both are permanent. The future, sacrificed piece by piece.",
                 LimitationB      = "",

@@ -316,7 +316,7 @@ namespace ColoursOfCalradia
 "\n" +
 "COLOUR LIMITATIONS\n" +
 "  Red    — Furious: each cast auto-issues a Charge order. Blood Price: −2 HP per cast.\n" +
-"  Orange — Joyful Cast: cannot cast if party morale is below 45.\n" +
+"  Orange — Joyful Cast: cannot cast if party morale is below 65.\n" +
 "  Yellow — Animal Fear: cannot cast from horseback.\n" +
 "  Green  — Nature's Calling: cannot cast Green campaign spells inside settlements.\n" +
 "  Blue   — Scholar's Craft: cannot cast Blue in battle while wielding a weapon.\n" +
