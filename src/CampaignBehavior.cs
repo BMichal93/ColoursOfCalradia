@@ -295,6 +295,8 @@ namespace ColoursOfCalradia
             }
             catch { }
 
+            try { ColourLordRegistry.CheckPopulationBounds(); } catch { }
+
             // ~3% chance per school per week for a campaign magical event
             // Season biases which schools are active
             try { ApplyCampaignMagicEvents(); } catch { }
@@ -524,10 +526,10 @@ namespace ColoursOfCalradia
 
                             if (_rng.Next(100) >= 10) continue;
 
-                            // Within the 10% trigger: 70% strain / 15% scatter / 15% blight
-                            // → 7% / 1.5% / 1.5% of all battles
+                            // Within the 10% trigger: 80% strain / 12% scatter / 8% blight
+                            // → 8% / 1.2% / 0.8% of all battles
                             int severityRoll = _rng.Next(100);
-                            if (severityRoll < 70)
+                            if (severityRoll < 80)
                             {
                                 try
                                 {
@@ -539,7 +541,7 @@ namespace ColoursOfCalradia
                                 }
                                 catch { }
                             }
-                            else if (severityRoll < 85)
+                            else if (severityRoll < 92)
                             {
                                 try { ColourLordRegistry.ScatterLordColours(leader); } catch { }
                             }

@@ -61,6 +61,10 @@ namespace ColoursOfCalradia
         private static string _prismLordId = null;
         private static int    _prismRespawnHours = 0;
 
+        // Population bounds: suppress faction respawns while colour lords exceed 30% of all lords
+        // (flag is set when ≥50% is reached, cleared when back below 30%).
+        private static bool _suppressRespawn = false;
+
         // Deferred Prism offer (shown on next daily tick, not during a mission or event)
         private static Action _deferredPrismInquiry = null;
 
@@ -472,10 +476,22 @@ namespace ColoursOfCalradia
             string factionId = (hero.MapFaction as Kingdom)?.StringId;
             if (factionId == null) return;
 
-            _respawnHours[factionId] = 168; // 7 days
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"The colours of {hero.Name} are extinguished. They will pass to another in one week.",
-                Color.FromUint(0xFFAA6644)));
+            // 25% chance the gift dies with the lord rather than passing on.
+            // Counterbalances child-inheritance growth so total colour-lord population
+            // stays roughly stable over a long campaign instead of accumulating.
+            if (_rng.Next(100) < 25)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"The colours of {hero.Name} are extinguished — the gift dies with them.",
+                    Color.FromUint(0xFFAA6644)));
+            }
+            else
+            {
+                _respawnHours[factionId] = 168; // 7 days
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"The colours of {hero.Name} are extinguished. They will pass to another in one week.",
+                    Color.FromUint(0xFFAA6644)));
+            }
         }
 
         // ── Player Prism ──────────────────────────────────────────────────────
@@ -614,6 +630,70 @@ namespace ColoursOfCalradia
             }
         }
 
+        // ── Population bounds ─────────────────────────────────────────────────
+        // Returns (colourLordCount, totalLordCount) excluding the player and blights.
+        private static (int colour, int total) GetLordPopulation()
+        {
+            int total = 0, colour = 0;
+            foreach (Hero h in Hero.AllAliveHeroes)
+            {
+                if (h == Hero.MainHero || !h.IsLord) continue;
+                total++;
+                if (IsColourLord(h) && !BlightSystem.IsBlight(h)) colour++;
+            }
+            return (colour, total);
+        }
+
+        // Called weekly from CampaignBehavior.
+        // • Floor  (<5%):  immediately seeds lords until 5% is reached.
+        // • Ceiling (≥50%): suppresses faction respawns until back below 30%.
+        public static void CheckPopulationBounds()
+        {
+            try
+            {
+                var (colour, total) = GetLordPopulation();
+                if (total == 0) return;
+
+                float pct = colour * 100f / total;
+
+                // Ceiling hysteresis
+                if (pct >= 50f) _suppressRespawn = true;
+                else if (pct < 30f) _suppressRespawn = false;
+
+                // Floor: assign 1 colour to random lords until we reach 5%
+                if (pct < 5f)
+                {
+                    int target = Math.Max(1, (int)Math.Ceiling(total * 0.05f));
+                    int toAdd  = target - colour;
+
+                    var candidates = Hero.AllAliveHeroes
+                        .Where(h => h != Hero.MainHero && h.IsLord && !IsColourLord(h) && h.Age < 50f)
+                        .ToList();
+
+                    int added = 0;
+                    for (int i = 0; i < toAdd && candidates.Count > 0; i++)
+                    {
+                        int idx    = _rng.Next(candidates.Count);
+                        Hero chosen = candidates[idx];
+                        candidates.RemoveAt(idx);
+                        _lordColors[chosen.StringId] = PickColors(1);
+                        ApplyColourTraits(chosen, _lordColors[chosen.StringId]);
+                        ApplyColorRelationships(chosen, _lordColors[chosen.StringId]);
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            FormatAnnouncement(chosen, _lordColors[chosen.StringId]),
+                            new Color(0.7f, 0.5f, 0.8f)));
+                        added++;
+                    }
+
+                    if (added > 0)
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"The colours grow scarce — the gift seeks {added} new vessel{(added > 1 ? "s" : "")}.",
+                            new Color(0.7f, 0.5f, 0.8f)));
+                }
+            }
+            catch { }
+        }
+
         public static void CheckRespawnTimers()
         {
             // Prism respawn
@@ -657,6 +737,9 @@ namespace ColoursOfCalradia
                 _respawnHours[factionId]--;
                 if (_respawnHours[factionId] > 0) continue;
                 _respawnHours.Remove(factionId);
+
+                // Ceiling guard: skip if population is above the 30% resumption threshold
+                if (_suppressRespawn) continue;
 
                 // Seed one new colour lord in this faction
                 Kingdom kingdom = Campaign.Current?.Kingdoms
@@ -1300,6 +1383,10 @@ namespace ColoursOfCalradia
             int prismRespawn   = _prismRespawnHours;
             var dkHeroIds      = _deferredKills.Select(x => x.heroId).ToList();
             var dkSchools      = _deferredKills.Select(x => (int)x.blightSchool).ToList();
+
+            bool suppressRespawn = _suppressRespawn;
+            store.SyncData("COC_SuppressRespawn", ref suppressRespawn);
+            _suppressRespawn = suppressRespawn;
 
             store.SyncData("COC_LordIds",        ref lordIds);
             store.SyncData("COC_LordSchoolCnts", ref lordSchoolCnts);
