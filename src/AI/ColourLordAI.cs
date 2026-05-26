@@ -255,7 +255,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in enemies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
                                 SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -275,7 +275,7 @@ namespace ColoursOfCalradia
             }
 
             // 6. Cone enemies (1+ in forward arc)
-            int coneEnemies = CountEnemiesInCone(agent, 7f, 0.84f);
+            int coneEnemies = CountEnemiesInCone(agent, 9f, 0.80f);
             if (coneEnemies >= 1)
             {
                 if (colors.Contains(ColorSchool.Red))
@@ -287,7 +287,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                            if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                             if (SpellEffects.ProtectedByMirror(a)) continue;
                             SpellEffects.DamageAgent(a, 47f * rp);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -324,7 +324,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in enemies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 try { a.SetMorale(0f); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                                 if (a.Formation != null) formations.Add(a.Formation);
@@ -404,7 +404,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in allies.ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 float h = Math.Min(25f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
@@ -452,7 +452,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                            if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                             try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f * yp)); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                         }
@@ -473,7 +473,7 @@ namespace ColoursOfCalradia
                         foreach (Agent a in enemies.ToList())
                         {
                             Vec3 to = a.Position - agent.Position;
-                            if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                            if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                             SpellEffects.DamageAgent(a, 21f * op);
                             if (!a.IsActive()) continue;
                             try { a.SetMorale(100f); } catch { }
@@ -511,7 +511,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 if (SpellEffects.ProtectedByMirror(a)) continue;
                                 SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
@@ -543,7 +543,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in EnemiesOf(agent).ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 SpellEffects.DamageAgent(a, 21f * op);
                                 if (!a.IsActive()) continue;
                                 try { a.SetMorale(100f); } catch { }
@@ -580,7 +580,7 @@ namespace ColoursOfCalradia
                             foreach (Agent a in AlliesOf(agent).ToList())
                             {
                                 Vec3 to = a.Position - agent.Position;
-                                if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                                if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                                 float h = Math.Min(25f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
@@ -695,7 +695,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in EnemiesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                        if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                         if (SpellEffects.ProtectedByMirror(a)) continue;
                         SpellEffects.DamageAgent(a, 47f * power, school);
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
@@ -722,7 +722,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in EnemiesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                        if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                         try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f * power)); } catch { }
                         SpellEffects.BeginAgentGlow(a, school, 1.5f);
                         hit = true;
@@ -736,7 +736,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in AlliesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                        if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                         float h = Math.Min(25f * power, a.HealthLimit - a.Health);
                         if (h <= 0f) continue;
                         a.Health += h;
@@ -752,7 +752,7 @@ namespace ColoursOfCalradia
                     foreach (Agent a in EnemiesOf(agent).ToList())
                     {
                         Vec3 to = a.Position - agent.Position;
-                        if (to.Length > 7f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.84f) continue;
+                        if (to.Length > 9f || Vec3.DotProduct(fwd, to.NormalizedCopy()) < 0.80f) continue;
                         if (SpellEffects.ProtectedByMirror(a)) continue;
                         SpellEffects.DamageAgent(a, 15f * power, school);
                         try { a.SetMorale(0f); } catch { }

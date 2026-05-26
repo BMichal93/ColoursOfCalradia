@@ -457,12 +457,12 @@ Note: **D** (S key) is valid mid-combo. It cannot appear as the first character 
 
 | Spell | Combo | School | Effect |
 |-------|-------|--------|--------|
-| **Crimson Torrent** | `UURR` | Red | 64 damage to all enemies in a forward cone (7 m, ≈33° arc); pushes them back 6 m. |
-| **Golden Tide** | `UULD` | Orange | 21 damage to cone enemies (7 m); forces all enemy formations to Charge. |
-| **Tide of Dread** | `UUDD` | Yellow | 25 damage to cone enemies (7 m); drains 60 morale from each. |
-| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (7 m) for up to 50 HP each. Player and enemies are not affected. |
-| **Azure Arrest** | `UURU` | Blue | 13 damage to cone enemies (7 m); drains 35 morale; halts all enemy formations; dismounts riders. |
-| **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (7 m); kill count scales with Vigor. |
+| **Crimson Torrent** | `UURR` | Red | 64 damage to all enemies in a forward cone (9 m, ≈37° arc); pushes them back 6 m. |
+| **Golden Tide** | `UULD` | Orange | 21 damage to cone enemies (9 m); forces all enemy formations to Charge. |
+| **Tide of Dread** | `UUDD` | Yellow | 25 damage to cone enemies (9 m); drains 60 morale from each. |
+| **Verdant Surge** | `UULL` | Green | Heals allies in the cone (9 m) for up to 50 HP each. Player and enemies are not affected. |
+| **Azure Arrest** | `UURU` | Blue | 13 damage to cone enemies (9 m); drains 35 morale; halts all enemy formations; dismounts riders. |
+| **Grey Harvest** | `UUDU` | Purple | Instantly kills 1–3 random creatures in the cone (9 m); kill count scales with Vigor. |
 
 ### Self Spells (RR prefix) — Caster-centred effects
 

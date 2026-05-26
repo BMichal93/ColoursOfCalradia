@@ -28,7 +28,7 @@ namespace ColoursOfCalradia
     {
         // =================================================================
         // BLAST SPELLS — medium cone in front of the caster
-        // Cone: 7m range, dot >= 0.84 (≈33° half-angle)
+        // Cone: 9m range, dot >= 0.80 (≈37° half-angle)
         // Glow applied to all affected agents to show the area of effect.
         // =================================================================
 
@@ -38,7 +38,7 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Red);
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f);
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Red); return; }
             int affected = 0;
             foreach (Agent a in inCone)
@@ -67,7 +67,7 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Orange);
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f);
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Orange); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
@@ -95,7 +95,7 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Yellow);
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f);
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Yellow); return; }
             foreach (Agent a in inCone)
             {
@@ -118,7 +118,7 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             float power = SpellPower(ColorSchool.Green);
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f);
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f);
             int healed = 0;
             foreach (Agent a in inCone)
             {
@@ -148,7 +148,7 @@ namespace ColoursOfCalradia
             float power = SpellPower(ColorSchool.Blue);
             float haltDuration = 2f + power * 1.5f; // attr 1 ≈ 2.9 s, attr 5 ≈ 3.5 s, attr 10 ≈ 4.25 s
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f);
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f);
             if (inCone.Count == 0) { Msg("No one in the cone.", ColorSchool.Blue); return; }
             var formations = new HashSet<Formation>();
             foreach (Agent a in inCone)
@@ -187,7 +187,7 @@ namespace ColoursOfCalradia
             if (Player == null) return;
             Vec3 fwd = Player.LookDirection.NormalizedCopy();
             // Exclude heroes — Die() with OwnerId=-1 on a hero crashes Bannerlord's death processing
-            var inCone = ConeAgents(Player.Position, fwd, 7f, 0.84f).Where(a => !a.IsHero).ToList();
+            var inCone = ConeAgents(Player.Position, fwd, 9f, 0.80f).Where(a => !a.IsHero).ToList();
             if (inCone.Count == 0) { Msg("No common souls in the cone — the purple passes over champions.", ColorSchool.Purple); return; }
             float power = SpellPower(ColorSchool.Purple);
             int killCount = Math.Min(inCone.Count, power >= 1.3f ? 3 : power >= 1.0f ? 2 : 1);

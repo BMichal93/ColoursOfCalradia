@@ -246,6 +246,14 @@ namespace ColoursOfCalradia
 
         private static void ShowCampaignCastMenu()
         {
+            if (Hero.MainHero?.IsPrisoner == true)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "You are a captive. Magic cannot be woven in chains.",
+                    Color.FromUint(0xFFAAAAAA)));
+                return;
+            }
+
             var mapSpells = SpellDatabase.All
                 .Where(s => s.Context == SpellContext.Map && HasSchool(s.School))
                 .OrderBy(s => (int)s.School)
