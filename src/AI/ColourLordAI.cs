@@ -797,6 +797,14 @@ namespace ColoursOfCalradia
         // Dark is only passable if at least one of the agent's schools has a seasonal/city affinity.
         private static bool CanCastAny(Agent agent, IReadOnlyList<ColorSchool> colors)
         {
+            // Captive lords cannot cast in battle.
+            try
+            {
+                Hero hero = (agent?.Character as CharacterObject)?.HeroObject;
+                if (hero != null && hero.IsPrisoner) return false;
+            }
+            catch { }
+
             var light = SpellEffects.GetLightLevel();
             if (light == SpellEffects.LightLevel.Bright) return true;
             if (light == SpellEffects.LightLevel.Dark)
@@ -1101,12 +1109,12 @@ namespace ColoursOfCalradia
                 ColorSchoolData.GetMessageColor(school)));
 
             // Oversaturation risk (non-Blight, non-Prism lords only).
-            // 4% lethal: health → 1, near-certain death against any standing enemy.
-            // 6% knockdown: 3-second stagger. 10% total.
+            // 2% lethal: health → 1, near-certain death against any standing enemy.
+            // 4% knockdown: 3-second stagger. 6% total.
             if (!BlightSystem.IsBlight(hero) && !ColourLordRegistry.IsPrismLord(hero))
             {
                 int overRoll = _rng.Next(100);
-                if (overRoll < 4)
+                if (overRoll < 2)
                 {
                     try
                     {
@@ -1120,7 +1128,7 @@ namespace ColoursOfCalradia
                     }
                     catch { }
                 }
-                else if (overRoll < 10)
+                else if (overRoll < 6)
                 {
                     try
                     {
