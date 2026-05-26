@@ -472,10 +472,22 @@ namespace ColoursOfCalradia
             string factionId = (hero.MapFaction as Kingdom)?.StringId;
             if (factionId == null) return;
 
-            _respawnHours[factionId] = 168; // 7 days
-            InformationManager.DisplayMessage(new InformationMessage(
-                $"The colours of {hero.Name} are extinguished. They will pass to another in one week.",
-                Color.FromUint(0xFFAA6644)));
+            // 25% chance the gift dies with the lord rather than passing on.
+            // Counterbalances child-inheritance growth so total colour-lord population
+            // stays roughly stable over a long campaign instead of accumulating.
+            if (_rng.Next(100) < 25)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"The colours of {hero.Name} are extinguished — the gift dies with them.",
+                    Color.FromUint(0xFFAA6644)));
+            }
+            else
+            {
+                _respawnHours[factionId] = 168; // 7 days
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"The colours of {hero.Name} are extinguished. They will pass to another in one week.",
+                    Color.FromUint(0xFFAA6644)));
+            }
         }
 
         // ── Player Prism ──────────────────────────────────────────────────────
