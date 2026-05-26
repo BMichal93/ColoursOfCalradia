@@ -174,7 +174,7 @@ namespace ColoursOfCalradia
                 Flavour="The Scholar turns the great wheel. Base matter becomes coin; time concedes a small step. Twenty-two is the floor — the stone does not grant immortality. Only time." },
             new SpellEntry { Name="Pale Dirge",       Combo="ULDU", School=ColorSchool.Purple,
                 Context=SpellContext.Map,
-                ShortDesc="Nearest enemy party loses 5 soldiers and 20 morale.",
+                ShortDesc="Nearest enemy party loses 3 soldiers and 10 morale.",
                 Flavour="The grey reaches into the nearest enemy host and takes — quietly, without spectacle. Five soldiers simply do not answer the morning muster. Those who remain feel the absence, though they could not say why." },
 
             // ── COMMUNE (UR prefix) — campaign map only, ambient effects ─────────
@@ -200,7 +200,7 @@ namespace ColoursOfCalradia
                 Flavour="The Scholar's eye opens across the whole of Calradia. Colour leaves a trace that time cannot fully erase -- and the Sight follows it, naming who is near, what they carry, how far they roam across her roads." },
             new SpellEntry { Name="The Waning",       Combo="URDU", School=ColorSchool.Purple,
                 Context=SpellContext.Map,
-                ShortDesc="Random enemy lord ages 7 days. Clan renown −3.",
+                ShortDesc="Random enemy lord ages 14 days. Clan renown −8.",
                 Flavour="The grey reaches into another life and takes a week from them — quietly, without asking. Seven days gone, and the reputation their clan built over years dims with it." },
         };
 

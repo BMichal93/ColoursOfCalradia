@@ -166,8 +166,8 @@ namespace ColoursOfCalradia
 
             if (target == null) { Msg("Pale Dirge — no enemy party at war found.", ColorSchool.Purple); return; }
 
-            const int SoldiersLost = 5;
-            const float MoraleLost = 20f;
+            const int SoldiersLost = 3;
+            const float MoraleLost = 10f;
             int removed = 0;
             var troops = target.MemberRoster.GetTroopRoster()
                 .Where(e => !e.Character.IsHero && e.Number > 0).ToList();
@@ -178,7 +178,7 @@ namespace ColoursOfCalradia
                 if (elem.Number <= 1) troops.Remove(elem);
             }
             try { target.RecentEventsMorale -= MoraleLost; } catch { }
-            Msg($"Pale Dirge — {removed} soldiers fade from {target.Name}. Morale −{MoraleLost:F0}. ({minDist:F1} km)", ColorSchool.Purple);
+            Msg($"Pale Dirge — {removed} soldier{(removed == 1 ? "" : "s")} fade from {target.Name}. Morale −{MoraleLost:F0}. ({minDist:F1} km)", ColorSchool.Purple);
         }
 
         // =================================================================
@@ -564,9 +564,9 @@ namespace ColoursOfCalradia
             if (enemies.Count == 0) { Msg("The Waning — no enemy lords to reach.", ColorSchool.Purple); return; }
 
             Hero target = enemies[_rng.Next(enemies.Count)];
-            try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(7)); } catch { }
-            try { target.Clan.AddRenown(-3f); } catch { return; }
-            Msg($"The Waning — seven days taken from {target.Name}. Clan renown falls. | {target.Name} age: {(int)target.Age}", ColorSchool.Purple);
+            try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(14)); } catch { }
+            try { target.Clan.AddRenown(-8f); } catch { return; }
+            Msg($"The Waning — fourteen days taken from {target.Name}. Clan renown falls. | {target.Name} age: {(int)target.Age}", ColorSchool.Purple);
         }
 
     }
