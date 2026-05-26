@@ -522,10 +522,10 @@ namespace ColoursOfCalradia
                                 || BlightSystem.IsBlight(leader)
                                 || ColourLordRegistry.IsPrismLord(leader)) continue;
 
-                            if (_rng.Next(100) >= 10) continue;
+                            if (_rng.Next(100) >= 6) continue;
 
-                            // Within the 10% trigger: 70% strain / 15% scatter / 15% blight
-                            // → 7% / 1.5% / 1.5% of all battles
+                            // Within the 6% trigger: 70% strain / 15% scatter / 15% blight
+                            // → 4.2% / 0.9% / 0.9% of all battles
                             int severityRoll = _rng.Next(100);
                             if (severityRoll < 70)
                             {
