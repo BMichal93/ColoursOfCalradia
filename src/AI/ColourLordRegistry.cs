@@ -1346,8 +1346,8 @@ namespace ColoursOfCalradia
                                      && h.Clan != null && h.IsAlive));
                             if (target != null)
                             {
-                                try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(7)); } catch { }
-                                try { target.Clan.AddRenown(-3f); } catch { }
+                                try { target.SetBirthDay(target.BirthDay - CampaignTime.Days(14)); } catch { }
+                                try { target.Clan.AddRenown(-8f); } catch { }
                                 string tmpl = _purpleCastFlavour[2][_rng.Next(_purpleCastFlavour[2].Length)];
                                 msg = string.Format(tmpl, target.Name, lord.Name);
                             }
