@@ -204,6 +204,7 @@ namespace ColoursOfCalradia
                     {
                         foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                         { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 51f * pp); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 8f, 1.5f);
                     });
                     return;
                 }
@@ -214,7 +215,7 @@ namespace ColoursOfCalradia
                     {
                         foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                         { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 50f * rp); SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f); }
-                        SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Red, 8f, 1.5f);
                     });
                     return;
                 }
@@ -231,6 +232,7 @@ namespace ColoursOfCalradia
                         {
                             foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                             { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 51f * pp); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 8f, 1.5f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Reaping", () =>
@@ -239,6 +241,7 @@ namespace ColoursOfCalradia
                                 try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); } catch { }
                             var kc = enemies.Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
                             if (kc.Count > 0) { var t = kc[_rng.Next(kc.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 2f); SpellEffects.QueueKill(t); }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 15f, 1.5f);
                         });
                     return;
                 }
@@ -257,13 +260,14 @@ namespace ColoursOfCalradia
                                 SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Red, 1.5f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Red, "Cinder Burst", () =>
                         {
                             foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 8f).ToList())
                             { if (SpellEffects.ProtectedByMirror(a)) continue; SpellEffects.DamageAgent(a, 50f * rp); SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f); }
-                            SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Red, 8f, 1.5f);
                         });
                     ApplyRedA1(agent); ApplyRedA2(agent);
                     return;
@@ -288,6 +292,7 @@ namespace ColoursOfCalradia
                             SpellEffects.DamageAgent(a, 47f * rp);
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                         }
+                        SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Red, 1.5f);
                     });
                     ApplyRedA1(agent); ApplyRedA2(agent);
                     return;
@@ -309,7 +314,7 @@ namespace ColoursOfCalradia
                                 if (a.IsActive()) try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             }
-                            SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Blue, 10f, 2f);
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Blue, 10f, 2f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Azure Arrest", () =>
@@ -327,6 +332,7 @@ namespace ColoursOfCalradia
                             if (!SpellEffects.IsSiegeActive())
                                 foreach (Formation f in formations)
                                     try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Blue, 1.5f);
                         });
                     return;
                 }
@@ -345,6 +351,7 @@ namespace ColoursOfCalradia
                             try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); } catch { }
                         var kc = enemies.Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
                         if (kc.Count > 0) { var t = kc[_rng.Next(kc.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 2f); SpellEffects.QueueKill(t); }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 15f, 1.5f);
                     });
                     return;
                 }
@@ -362,6 +369,7 @@ namespace ColoursOfCalradia
                         if (!SpellEffects.IsSiegeActive())
                             foreach (Formation f in formations)
                                 try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Blue, 15f, 2f);
                     });
                     return;
                 }
@@ -372,6 +380,7 @@ namespace ColoursOfCalradia
                     {
                         foreach (Agent a in enemies.Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
                             try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f * yp)); SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); } catch { }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Yellow, 17f, 1.5f);
                     });
                     return;
                 }
@@ -399,6 +408,7 @@ namespace ColoursOfCalradia
                                 float h = Math.Min(25f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Green, 1.5f);
                         });
                     return;
                 }
@@ -419,6 +429,7 @@ namespace ColoursOfCalradia
                     {
                         foreach (Agent a in allies.Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
                         { try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { } SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f); }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Orange, 20f, 1.5f);
                     });
                     return;
                 }
@@ -445,6 +456,7 @@ namespace ColoursOfCalradia
                             try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f * yp)); } catch { }
                             SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
                         }
+                        SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Yellow, 1.5f);
                     });
                 return;
             }
@@ -471,12 +483,14 @@ namespace ColoursOfCalradia
                         if (!SpellEffects.IsSiegeActive())
                             foreach (Formation f in formations)
                                 try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
+                        SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Orange, 1.5f);
                     });
                 else
                     CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
                     {
                         foreach (Agent a in allies.Where(a => a.Position.Distance(agent.Position) <= 20f).ToList())
                         { try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { } SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f); }
+                        SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Orange, 20f, 1.5f);
                     });
             }
         }
@@ -502,6 +516,7 @@ namespace ColoursOfCalradia
                                 SpellEffects.DamageAgent(a, 47f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Red, 1.5f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Red, "Cinder Burst", () =>
@@ -512,7 +527,7 @@ namespace ColoursOfCalradia
                                 SpellEffects.DamageAgent(a, 50f * rp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Red, 1.5f);
                             }
-                            SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Red, 10f, 1.5f);
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Red, 8f, 1.5f);
                         });
                     ApplyRedA1(agent); ApplyRedA2(agent);
                     break;
@@ -538,6 +553,7 @@ namespace ColoursOfCalradia
                             if (!SpellEffects.IsSiegeActive())
                                 foreach (Formation f in formations)
                                     try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Orange, 1.5f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Orange, "Gilded Words", () =>
@@ -547,6 +563,7 @@ namespace ColoursOfCalradia
                                 try { a.SetMorale(Math.Min(a.GetMorale() + 20f * op, 100f)); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
                             }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Orange, 20f, 1.5f);
                         });
                     break;
                 }
@@ -567,6 +584,7 @@ namespace ColoursOfCalradia
                                 float h = Math.Min(25f * gp, a.HealthLimit - a.Health);
                                 if (h > 0f) { a.Health += h; SpellEffects.BeginAgentGlow(a, ColorSchool.Green, 1.5f); }
                             }
+                            SpellEffects.SpawnConeLights(agent.Position, fwd, ColorSchool.Green, 1.5f);
                         });
                     break;
                 }
@@ -587,13 +605,14 @@ namespace ColoursOfCalradia
                                 if (a.IsActive()) try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
                             }
-                            SpellEffects.SpawnTempLight(agent.Position, ColorSchool.Blue, 10f, 2f);
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Blue, 10f, 2f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Blue, "Azure Arrest", () =>
                         {
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 30f).ToList())
                                 try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Blue, 1.5f); } catch { }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Blue, 30f, 2f);
                         });
                     break;
                 }
@@ -608,6 +627,7 @@ namespace ColoursOfCalradia
                         {
                             foreach (Agent a in EnemiesOf(agent).Where(a => a.Position.Distance(agent.Position) <= 17f).ToList())
                                 try { a.SetMorale(Math.Max(0f, a.GetMorale() - 30f * yp)); SpellEffects.BeginAgentGlow(a, ColorSchool.Yellow, 1.5f); } catch { }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Yellow, 17f, 1.5f);
                         });
                     break;
                 }
@@ -626,6 +646,7 @@ namespace ColoursOfCalradia
                                 return to.Length <= 15f && Vec3.DotProduct(fwd, to.NormalizedCopy()) >= 0.6f;
                             }).ToList();
                             if (inCone.Count > 0) { var t = inCone[_rng.Next(inCone.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 1.5f); SpellEffects.QueueKill(t); }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 15f, 1.5f);
                         });
                     else if (roll == 1)
                         CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Reaping", () =>
@@ -634,6 +655,7 @@ namespace ColoursOfCalradia
                                 try { a.SetMorale(0f); SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f); } catch { }
                             var kc = EnemiesOf(agent).Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(agent.Position) <= 15f).ToList();
                             if (kc.Count > 0) { var t = kc[_rng.Next(kc.Count)]; SpellEffects.BeginAgentGlow(t, ColorSchool.Purple, 2f); SpellEffects.QueueKill(t); }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 15f, 1.5f);
                         });
                     else
                         CastWithGlow(agent, hero, ColorSchool.Purple, "Grey Tide", () =>
@@ -644,6 +666,7 @@ namespace ColoursOfCalradia
                                 SpellEffects.DamageAgent(a, 51f * pp);
                                 SpellEffects.BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
                             }
+                            SpellEffects.SpawnCircleLights(agent.Position, ColorSchool.Purple, 8f, 1.5f);
                         });
                     break;
                 }
