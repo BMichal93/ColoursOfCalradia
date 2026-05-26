@@ -295,6 +295,8 @@ namespace ColoursOfCalradia
             }
             catch { }
 
+            try { ColourLordRegistry.CheckPopulationBounds(); } catch { }
+
             // ~3% chance per school per week for a campaign magical event
             // Season biases which schools are active
             try { ApplyCampaignMagicEvents(); } catch { }
