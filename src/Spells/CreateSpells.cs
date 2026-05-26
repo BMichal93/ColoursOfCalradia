@@ -102,7 +102,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Orange, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
+            SpawnCircleLights(Player.Position, ColorSchool.Orange, 14f, 4f);
             Msg("Gilded Refuge — a vast warmth settles across the field. Those inside hold the line with iron resolve and close wounds faster. Cast again to dismiss.", ColorSchool.Orange);
         }
 
@@ -154,7 +154,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Yellow, 6f, 1.5f);
+            SpawnCircleLights(Player.Position, ColorSchool.Yellow, 14f, 4f);
             Msg("Creeping Dread takes shape — nine clouds of formless terror drift across the field. Cast again to dismiss.", ColorSchool.Yellow);
         }
 
@@ -195,7 +195,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Green, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
+            SpawnCircleLights(Player.Position, ColorSchool.Green, 14f, 4f);
             Msg("The Emerald Font opens — three points of living light mend all who stand within. Cast again to dismiss.", ColorSchool.Green);
         }
 
@@ -244,7 +244,7 @@ namespace ColoursOfCalradia
             }
 
             BeginAgentGlow(Player, ColorSchool.Blue, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Blue, 6f, 1.5f);
+            SpawnCircleLights(Player.Position, ColorSchool.Blue, 14f, 4f);
             Msg("Sapphire Bastion rises — a wall of force seals a wide line. Cast again to dismiss.", ColorSchool.Blue);
         }
 
@@ -291,7 +291,7 @@ namespace ColoursOfCalradia
                 _areaEffects.Add(node);
             }
             BeginAgentGlow(Player, ColorSchool.Purple, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Purple, 6f, 1.5f);
+            SpawnCircleLights(Player.Position, ColorSchool.Purple, 14f, 4f);
             Msg("Purple Mist — nine dim wisps settle across the ground. Those who step through them may simply stop. Cast again to dismiss.", ColorSchool.Purple);
         }
 

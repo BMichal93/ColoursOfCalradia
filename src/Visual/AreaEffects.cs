@@ -136,21 +136,36 @@ namespace ColoursOfCalradia
             }
         }
 
-        // Lights a cone shape with 5 temp lights — near centre, two mid-flanks, two far-flanks.
-        // Matches the blast-spell cone geometry: 7m range, ≈±33° half-angle (dot 0.84).
+        // Lights a cone shape with 7 temp lights.
+        // Matches blast-spell cone geometry: 9m range, ≈±37° half-angle (dot 0.80).
         internal static void SpawnConeLights(Vec3 origin, Vec3 fwd, ColorSchool school, float duration)
         {
             Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
             right = right.Length < 0.01f ? new Vec3(1f, 0f, 0f) : right.NormalizedCopy();
             Vec3[] pts = {
-                origin,
-                origin + fwd * 3.5f - right * 2f,
-                origin + fwd * 3.5f + right * 2f,
-                origin + fwd * 6.5f - right * 4f,
-                origin + fwd * 6.5f + right * 4f,
+                origin,                                      // caster origin
+                origin + fwd * 2.5f,                         // near centre
+                origin + fwd * 4.5f - right * 2.5f,          // mid left
+                origin + fwd * 4.5f + right * 2.5f,          // mid right
+                origin + fwd * 7.5f,                         // far centre
+                origin + fwd * 7.5f - right * 5f,            // far left edge
+                origin + fwd * 7.5f + right * 5f,            // far right edge
             };
             foreach (Vec3 pos in pts)
                 SpawnTempLight(pos, school, 4f, duration);
+        }
+
+        // Three-light burst at an impact point — centre flash plus two random scatter offsets.
+        internal static void SpawnImpactBurst(Vec3 origin, ColorSchool school, float duration)
+        {
+            SpawnTempLight(origin, school, 4f, duration);
+            for (int i = 0; i < 2; i++)
+            {
+                float angle = (float)(_rng.NextDouble() * Math.PI * 2);
+                float dist  = 0.8f + (float)_rng.NextDouble() * 1.5f;
+                Vec3  off   = new Vec3((float)Math.Cos(angle) * dist, (float)Math.Sin(angle) * dist, 0f);
+                SpawnTempLight(origin + off, school, 3f, duration * 0.6f);
+            }
         }
 
         internal static void SpawnTempLightWhite(Vec3 position, float radius, float duration)

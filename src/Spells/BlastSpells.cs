@@ -52,12 +52,13 @@ namespace ColoursOfCalradia
                         Vec3 dest = a.Position + dir * (6f * power); dest.z = a.Position.z;
                         QueueMove(a, dest, 0.4f);
                     }
-                    BeginAgentGlow(a, ColorSchool.Red, 1.5f);
+                    BeginAgentGlow(a, ColorSchool.Red, 3f);
+                    SpawnImpactBurst(a.Position, ColorSchool.Red, 3f);
                     affected++;
                 }
                 catch { }
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Red, 1.5f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Red, 5f);
             Msg($"Crimson Torrent tears through {affected} {(affected == 1 ? "creature" : "creatures")}.", ColorSchool.Red);
         }
 
@@ -77,12 +78,13 @@ namespace ColoursOfCalradia
                     DamageAgent(a, 38f * power, ColorSchool.Orange);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(100f); } catch { }
-                    BeginAgentGlow(a, ColorSchool.Orange, 1.5f);
+                    BeginAgentGlow(a, ColorSchool.Orange, 3f);
+                    SpawnImpactBurst(a.Position, ColorSchool.Orange, 3f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
                 catch { }
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Orange, 1.5f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Orange, 5f);
             if (!IsSiegeActive())
                 foreach (Formation f in formations)
                     try { f.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
@@ -104,11 +106,12 @@ namespace ColoursOfCalradia
                     DamageAgent(a, 25f * power, ColorSchool.Yellow);
                     if (!a.IsActive()) continue;
                     try { a.SetMorale(Math.Max(0f, a.GetMorale() - 60f * power)); } catch { }
-                    BeginAgentGlow(a, ColorSchool.Yellow, 1.5f);
+                    BeginAgentGlow(a, ColorSchool.Yellow, 3f);
+                    SpawnImpactBurst(a.Position, ColorSchool.Yellow, 3f);
                 }
                 catch { }
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Yellow, 1.5f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Yellow, 5f);
             Msg($"Tide of Dread — {inCone.Count} {(inCone.Count == 1 ? "creature loses" : "creatures lose")} their nerve.", ColorSchool.Yellow);
         }
 
@@ -131,12 +134,13 @@ namespace ColoursOfCalradia
                     {
                         a.Health += h;
                         healed++;
-                        BeginAgentGlow(a, ColorSchool.Green, 1.5f);
+                        BeginAgentGlow(a, ColorSchool.Green, 3f);
+                        SpawnImpactBurst(a.Position, ColorSchool.Green, 3f);
                     }
                 }
                 catch { }
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Green, 1.5f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Green, 5f);
             if (healed == 0) Msg("Verdant Surge — no allies in the cone to mend.", ColorSchool.Green);
             else Msg($"Verdant Surge mends {healed} {(healed == 1 ? "ally" : "allies")} in the cone.", ColorSchool.Green);
         }
@@ -165,12 +169,13 @@ namespace ColoursOfCalradia
                         try { a.SetMaximumSpeedLimit(0f, false); } catch { }
                         _haltedAgents[a.Index] = (haltDuration, a.Position, a);
                     }
-                    BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
+                    BeginAgentGlow(a, ColorSchool.Blue, 3f);
+                    SpawnImpactBurst(a.Position, ColorSchool.Blue, 3f);
                     if (a.Formation != null) formations.Add(a.Formation);
                 }
                 catch { }
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Blue, 3f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Blue, 5f);
             if (!IsSiegeActive())
                 foreach (Formation f in formations)
                 {
@@ -199,10 +204,11 @@ namespace ColoursOfCalradia
             }
             for (int i = 0; i < killCount; i++)
             {
-                BeginAgentGlow(inCone[i], ColorSchool.Purple, 1.5f);
+                BeginAgentGlow(inCone[i], ColorSchool.Purple, 3f);
+                SpawnImpactBurst(inCone[i].Position, ColorSchool.Purple, 3f);
                 QueueKill(inCone[i]);
             }
-            SpawnConeLights(Player.Position, fwd, ColorSchool.Purple, 1.5f);
+            SpawnConeLights(Player.Position, fwd, ColorSchool.Purple, 5f);
             if (killCount == 1)
                 Msg($"Grey Harvest — {inCone[0].Name} fades. The purple was always going to take them.", ColorSchool.Purple);
             else
