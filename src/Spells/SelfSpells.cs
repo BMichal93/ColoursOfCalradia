@@ -1,238 +1,310 @@
 // =============================================================================
-// COLOURS OF CALRADIA — SelfSpells.cs
-// Mount & Blade II: Bannerlord Mod  v1.2.0.0
+// LIFE & DEATH MAGIC — SelfSpells.cs
+// WAVE FORM (L keys): a gridSize×gridSize block of fire that advances forward.
+//   gridSize  = 3 + max(0, (formCount - 5) / 5)  — grows +1 per 5 inputs above 5
+//   range     = max(3, formCount * 2 - 1) metres  — total travel distance
+//   Speed 4 m/s;  tick every 0.5 s;  node spacing 2 m;  hit radius 1.5 m.
+//   Non-hero agents in warning zone (hit + 3 m) are nudged sideways.
 // =============================================================================
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.CharacterDevelopment;
-using TaleWorlds.CampaignSystem.Party;
-using TaleWorlds.CampaignSystem.Roster;
-using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
-using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
-using TaleWorlds.Engine;
-using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.ObjectSystem;
-using TaleWorlds.CampaignSystem.MapEvents;
 
 namespace ColoursOfCalradia
 {
     public static partial class SpellEffects
     {
-        // =================================================================
-        // SELF SPELLS — glowing aura around the caster
-        // =================================================================
-
-        // Scarlet Barrier — 6-node ring wall; anyone inside takes 20 dmg/tick; toggle
-        private static void SpellSelfRed()
+        // ── Wave state ────────────────────────────────────────────────────────
+        private class WaveState
         {
-            if (Player == null || !Player.IsActive()) return;
-            const string Id = "self_red_barrier";
-            if (HasAreaEffect(Id))
-            {
-                RemoveAreaEffect(Id);
-                Msg("Scarlet Barrier dismissed.", ColorSchool.Red);
-                return;
-            }
-            float power = SpellPower(ColorSchool.Red);
-            Vec3  centre = Player.Position;
-            const float Ring = 4f;
-            for (int i = 0; i < 6; i++)
-            {
-                double angle = Math.PI * 2.0 / 6 * i;
-                Vec3 pos = centre + new Vec3((float)Math.Cos(angle) * Ring, (float)Math.Sin(angle) * Ring, 0f);
-                var node = new AreaEffect
-                {
-                    Id = Id, School = ColorSchool.Red,
-                    Position = pos, Radius = 1.5f,
-                    TickInterval = 1f, TickTimer = 1f, Remaining = -1f,
-                    Power = power
-                };
-                node.LightEntity = SpawnAreaLight(node.Position, node.School, 7f);
-                _areaEffects.Add(node);
-            }
-            BeginAgentGlow(Player, ColorSchool.Red, 3f);
-            SpawnTempLight(centre, ColorSchool.Red, 8f, 2f);
-            Msg("Scarlet Barrier — a ring of crimson pillars erupts around you. Any who step inside burn. Cast again to dismiss.", ColorSchool.Red);
+            public Vec3   Position;           // front-centre of the grid
+            public Vec3   Forward;
+            public Vec3   Right;
+            public int    GridSize;
+            public const float NodeSpacing  = 2f;
+            public const float Speed        = 4f;
+            public const float HitRadius    = 1.5f;
+            public const float TickInterval = 0.5f;
+            public float  TravelLeft;
+            public SpellCast Cast;
+            public Team   CasterTeam;
+            public float  TickTimer = 0f;
+            public readonly List<GameEntity> Lights = new List<GameEntity>();
         }
 
-        // Gilded Words — turn one random nearby unmounted non-hero enemy to fight for the player
-        private static void SpellSelfOrange()
+        private static WaveState _wave = null;
+
+        // ── Execute ───────────────────────────────────────────────────────────
+        public static void ExecuteWave(SpellCast cast)
         {
-            if (Mission.Current == null || Player == null || !Player.IsActive()) return;
-            const float Radius = 15f;
+            Agent caster = Agent.Main;
+            if (caster == null || !caster.IsActive()) return;
 
-            // Exclude mounted enemies — mount would stay on enemy team, creating split state.
-            // Exclude heroes — hero team membership is tied to campaign data.
-            var candidates = Enemies()
-                .Where(a => a.MountAgent == null && a.Position.Distance(Player.Position) <= Radius)
-                .ToList();
-
-            if (candidates.Count == 0)
+            if (_wave != null)
             {
-                Msg("Gilded Words — no unguarded souls within reach.", ColorSchool.Orange);
+                ClearWave();
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "Wave dissolved.", new Color(0.7f, 0.7f, 0.7f)));
                 return;
             }
 
-            Agent target = candidates[_rng.Next(candidates.Count)];
-            string targetName = target.Name?.ToString() ?? "the creature";
-            bool converted = false;
+            Vec3 fwd   = caster.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            right = right.Length < 0.01f ? new Vec3(1f, 0f, 0f) : right.NormalizedCopy();
 
-            try
+            int   gridSize = 3 + Math.Max(0, (cast.FormCount - 5) / 5);
+            float range    = Math.Max(3f, cast.FormCount * 2f - 1f);
+
+            // Place wave front so that back row clears the caster
+            float halfDepth = (gridSize - 1) * WaveState.NodeSpacing * 0.5f;
+            Vec3  startPos  = caster.Position + fwd * (halfDepth + 2.5f);
+
+            _wave = new WaveState
             {
-                // Try to move the agent to the player's team via the internal SetTeam method.
-                var setTeam = typeof(Agent).GetMethod("SetTeam",
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                if (setTeam != null)
+                Position   = startPos,
+                Forward    = fwd,
+                Right      = right,
+                GridSize   = gridSize,
+                TravelLeft = range,
+                Cast       = cast,
+                CasterTeam = caster.Team,
+            };
+
+            SpawnWaveLights(_wave);
+
+            ColorSchool col = cast.VisualColor;
+            TryCastSound(caster.Position, col);
+            TryCastAnimation(caster);
+            BeginAgentGlow(caster, col, 1.5f);
+
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"Wave ({gridSize}×{gridSize}, {range:F0}m) — {cast.EffectSummary()}.",
+                ColorSchoolData.GetMessageColor(col)));
+        }
+
+        private static void SpawnWaveLights(WaveState w)
+        {
+            for (int row = 0; row < w.GridSize; row++)
+            for (int col = 0; col < w.GridSize; col++)
+            {
+                Vec3 pos = WaveNodePos(w, row, col);
+                w.Lights.Add(SpawnAreaLight(pos, w.Cast.VisualColor, 3f));
+            }
+        }
+
+        // row 0 = front edge of wave; col 0 = leftmost column (from caster PoV)
+        private static Vec3 WaveNodePos(WaveState w, int row, int col)
+        {
+            float half = (w.GridSize - 1) * 0.5f;
+            return w.Position
+                 + w.Right   * ((col - half) * WaveState.NodeSpacing)
+                 - w.Forward * (row           * WaveState.NodeSpacing);
+        }
+
+        // ── Tick (called from MagicSystem every mission frame) ────────────────
+        public static void TickWave(float dt)
+        {
+            if (_wave == null || Mission.Current == null) return;
+
+            float moved      = WaveState.Speed * dt;
+            _wave.Position  += _wave.Forward * moved;
+            _wave.TravelLeft -= moved;
+
+            // Reposition lights
+            int idx = 0;
+            for (int row = 0; row < _wave.GridSize; row++)
+            for (int col = 0; col < _wave.GridSize; col++)
+            {
+                if (idx < _wave.Lights.Count && _wave.Lights[idx] != null)
                 {
-                    setTeam.Invoke(target, new object[] { Player.Team, true });
-                    converted = true;
-                }
-            }
-            catch { }
-
-            if (!converted)
-            {
-                // Fallback: remove from formation and set a long halt so they stop fighting
-                try { if (target.Formation != null) target.Formation = null; } catch { }
-                try { target.SetMaximumSpeedLimit(0f, false); } catch { }
-                _haltedAgents[target.Index] = (30f, target.Position, target);
-            }
-
-            try { target.SetWatchState(Agent.WatchState.Alarmed); } catch { }
-            BeginAgentGlow(target, ColorSchool.Orange, 2f);
-            SpawnTempLight(target.Position, ColorSchool.Orange, 6f, 1.5f);
-            BeginAgentGlow(Player, ColorSchool.Orange, 1.5f);
-            SpawnTempLight(Player.Position, ColorSchool.Orange, 6f, 1.5f);
-            Msg($"Gilded Words — {targetName} is swayed. They fight for you now.", ColorSchool.Orange);
-        }
-
-        // Nausea Bloom — persistent toxic aura; toggle to dismiss
-        private static void SpellSelfYellow()
-        {
-            if (Player == null) return;
-            if (HasAreaEffect("self_yellow"))
-            {
-                RemoveAreaEffect("self_yellow");
-                Msg("Nausea Bloom dismissed. The wrongness fades.", ColorSchool.Yellow);
-                return;
-            }
-            ToggleAreaEffect("self_yellow", new AreaEffect
-            {
-                Id = "self_yellow", School = ColorSchool.Yellow,
-                Position = Player.Position, Radius = 8f,
-                Velocity = new Vec3(1f, 0f, 0f), DirTimer = 3f,
-                TickInterval = 2f, TickTimer = 2f, Remaining = -1f,
-                Power = SpellPower(ColorSchool.Yellow)
-            });
-            BeginAgentGlow(Player, ColorSchool.Yellow, 2f);
-            SpawnTempLight(Player.Position, ColorSchool.Yellow, 6f, 1.5f);
-            Msg("Nausea Bloom — something deeply wrong radiates from you. All nearby will feel it. Cast again to dismiss.", ColorSchool.Yellow);
-        }
-
-        // Verdant Touch — heal self
-        private static void SpellSelfGreen()
-        {
-            if (Player == null) return;
-            float power = SpellPower(ColorSchool.Green);
-            float heal = Math.Min(34f * power, Player.HealthLimit - Player.Health);
-            Player.Health = Math.Min(Player.Health + 34f * power, Player.HealthLimit);
-            BeginAgentGlow(Player, ColorSchool.Green, 1.5f);
-            SpawnTempLight(Player.Position, ColorSchool.Green, 6f, 1.5f);
-            Msg($"Verdant Touch — you restore {heal:F0} HP.", ColorSchool.Green);
-        }
-
-        // Cerulean Burst — instant AoE (10m): damages, halts, and drains morale of all enemies
-        private static void SpellSelfBlue()
-        {
-            if (Player == null || !Player.IsActive()) return;
-            float power = SpellPower(ColorSchool.Blue);
-            float haltDuration = 2f + power * 1.5f;
-            const float Radius = 10f;
-            var enemies = Mission.Current?.Agents
-                .Where(a => a.IsActive() && !a.IsMount && a != Player
-                         && a.Team != Player.Team
-                         && a.Position.Distance(Player.Position) <= Radius)
-                .ToList();
-            if (enemies == null || enemies.Count == 0) { Msg("No enemies within burst range.", ColorSchool.Blue); return; }
-            var formations = new HashSet<Formation>();
-            foreach (Agent a in enemies)
-            {
-                try
-                {
-                    DamageAgent(a, 10f * power, ColorSchool.Blue);
-                    if (!a.IsActive()) continue;
-                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 35f)); } catch { }
-                    bool usingEquip = false;
-                    try { usingEquip = a.IsUsingGameObject; } catch { }
-                    if (a.MountAgent == null && !usingEquip)
+                    Vec3 p = WaveNodePos(_wave, row, col) + new Vec3(0f, 0f, 0.5f);
+                    try
                     {
-                        try { a.SetMaximumSpeedLimit(0f, false); } catch { }
-                        _haltedAgents[a.Index] = (haltDuration, a.Position, a);
+                        var f = new MatrixFrame(Mat3.Identity, p);
+                        _wave.Lights[idx].SetGlobalFrame(in f, true);
                     }
-                    BeginAgentGlow(a, ColorSchool.Blue, 1.5f);
-                    if (a.Formation != null) formations.Add(a.Formation);
+                    catch { }
                 }
-                catch { }
+                idx++;
             }
-            if (!IsSiegeActive())
-                foreach (Formation f in formations)
-                {
-                    try { f.SetMovementOrder(MovementOrder.MovementOrderStop); } catch { }
-                    try { if (f.HasAnyMountedUnit) f.SetRidingOrder(RidingOrder.RidingOrderDismount); } catch { }
-                }
-            BeginAgentGlow(Player, ColorSchool.Blue, 2f);
-            SpawnCircleLights(Player.Position, ColorSchool.Blue, Radius, 3f);
-            Msg($"Cerulean Burst — a blue shockwave halts {enemies.Count} {(enemies.Count == 1 ? "enemy" : "enemies")} for {haltDuration:F1}s.", ColorSchool.Blue);
+
+            if (_wave.TravelLeft <= 0f) { ClearWave(); return; }
+
+            _wave.TickTimer -= dt;
+            if (_wave.TickTimer > 0f) return;
+            _wave.TickTimer = WaveState.TickInterval;
+
+            TickWaveEffects(_wave);
         }
 
-        // Grey Reaping — snuffs 1–2 nearby souls; those who remain lose all nerve
-        private static void SpellSelfPurple()
+        private static void TickWaveEffects(WaveState w)
         {
-            if (Player == null || Mission.Current == null) return;
-            float power = SpellPower(ColorSchool.Purple);
-            const float Radius = 15f;
+            if (Mission.Current == null) return;
 
-            // Drain morale of all nearby enemies
-            int drained = 0;
-            foreach (Agent a in Enemies().Where(a => a.Position.Distance(Player.Position) <= Radius).ToList())
+            List<Agent> all;
+            try { all = Mission.Current.Agents.ToList(); } catch { return; }
+
+            var hit = new HashSet<Agent>();
+
+            for (int row = 0; row < w.GridSize; row++)
+            for (int col = 0; col < w.GridSize; col++)
             {
-                try { a.SetMorale(0f); BeginAgentGlow(a, ColorSchool.Purple, 1.5f); drained++; } catch { }
+                Vec3 nodePos = WaveNodePos(w, row, col);
+
+                foreach (Agent a in all)
+                {
+                    if (!a.IsActive() || a.IsMount) continue;
+
+                    float dist = a.Position.Distance(nodePos);
+
+                    // Avoidance: non-hero agents in warning zone sidestep the wave
+                    if (!a.IsHero && dist > WaveState.HitRadius && dist < WaveState.HitRadius + 3f)
+                        try { NudgeWaveSideStep(w, a); } catch { }
+
+                    // Hit only enemies not yet struck this tick
+                    if (w.CasterTeam != null && a.Team == w.CasterTeam) continue;
+                    if (dist > WaveState.HitRadius) continue;
+                    if (hit.Contains(a)) continue;
+
+                    try
+                    {
+                        if (!IsWarded(a))
+                        {
+                            ApplyEffectsToAgent(a, w.Cast, Agent.Main, applyPush: true, applyPull: false);
+                            SpawnImpactBurst(a.Position, w.Cast.VisualColor, 0.5f);
+                        }
+                        hit.Add(a);
+                    }
+                    catch { }
+                }
             }
 
-            // Kill 1 (or 2 at high power) random non-hero enemies within radius
-            int killCount = power >= 1.0f ? 2 : 1;
-            var candidates = Enemies()
-                .Where(a => !a.IsHero && a.IsActive() && a.Position.Distance(Player.Position) <= Radius)
-                .ToList();
-            int kills = 0;
-            for (int i = 0; i < killCount && candidates.Count > 0; i++)
+            if (hit.Count > 0)
+                RecordMagicCast(w.Position);
+        }
+
+        // Nudge agent toward whichever lateral side of the wave is closer to them
+        private static void NudgeWaveSideStep(WaveState w, Agent a)
+        {
+            bool isMounted = false;
+            try { isMounted = a.MountAgent != null; } catch { }
+            if (isMounted) return;
+            if (IsWarded(a)) return;
+
+            Vec3  toAgent  = a.Position - w.Position;
+            float rDot     = Vec3.DotProduct(toAgent, w.Right);
+            Vec3  sideDir  = rDot >= 0f ? w.Right : new Vec3(-w.Right.x, -w.Right.y, 0f);
+            Vec3  dest     = a.Position + sideDir * 2.5f;
+            dest.z = a.Position.z;
+            QueueMove(a, dest, 0.35f);
+        }
+
+        public static void ClearWave()
+        {
+            if (_wave == null) return;
+            foreach (GameEntity e in _wave.Lights)
+                try { e?.Remove(0); } catch { }
+            _wave = null;
+        }
+
+        // ── Legacy aura stub ──────────────────────────────────────────────────
+        // Forwards to Wave so any residual call-sites compile.
+        private const string AuraId = "spell_aura";
+        public static void ExecuteAura(SpellCast cast) => ExecuteWave(cast);
+
+        // ── Ward state ────────────────────────────────────────────────────────
+        // Keyed by Agent reference, not index — avoids inheriting protection when
+        // an agent dies and a newly spawned agent reuses the same index slot.
+        private static readonly Dictionary<Agent, float> _wardedAgents = new Dictionary<Agent, float>();
+
+        public static bool IsWarded(Agent a)
+        {
+            if (a == null) return false;
+            return _wardedAgents.TryGetValue(a, out float t) && t > 0f;
+        }
+
+        // Player sigil DD×N — wards caster + all allies within (N-1)×2 m for 10 s
+        public static void ExecuteWard(int dCount)
+        {
+            Agent caster = Agent.Main;
+            if (caster == null || !caster.IsActive()) return;
+
+            float radius = (dCount - 1) * 2f;
+            _wardedAgents[caster] = 10f;
+            BeginAgentGlow(caster, ColorSchool.White, 10f);
+            SpawnCircleLights(caster.Position, ColorSchool.White, Math.Max(2f, radius), 3f);
+            TryCastSound(caster.Position, ColorSchool.White);
+            TryCastAnimation(caster);
+
+            int count = 1;
+            if (radius > 0f && Mission.Current != null)
             {
-                int idx = _rng.Next(candidates.Count);
-                Agent target = candidates[idx];
-                candidates.RemoveAt(idx);
                 try
                 {
-                    BeginAgentGlow(target, ColorSchool.Purple, 1.5f);
-                    QueueKill(target);
-                    kills++;
+                    foreach (Agent ally in Mission.Current.Agents.ToList())
+                    {
+                        if (ally == caster || !ally.IsActive() || ally.IsMount) continue;
+                        if (caster.Team != null && ally.Team != caster.Team) continue;
+                        if (ally.Position.Distance(caster.Position) > radius) continue;
+                        _wardedAgents[ally] = 10f;
+                        BeginAgentGlow(ally, ColorSchool.White, 10f);
+                        count++;
+                    }
                 }
                 catch { }
             }
 
-            BeginAgentGlow(Player, ColorSchool.Purple, 2f);
-            SpawnCircleLights(Player.Position, ColorSchool.Purple, Radius, 1.5f);
+            string msg = count > 1
+                ? $"Ward ({radius:F0}m) — {count} protected for 10 seconds."
+                : "Ward — magic cannot touch you for 10 seconds.";
+            InformationManager.DisplayMessage(new InformationMessage(
+                msg, ColorSchoolData.GetMessageColor(ColorSchool.White)));
+        }
 
-            string killMsg  = kills  > 0 ? $" {kills} {(kills == 1 ? "soul" : "souls")} snuffed." : "";
-            string drainMsg = drained > 0 ? $" {drained} {(drained == 1 ? "enemy loses" : "enemies lose")} their nerve." : " No enemies within range.";
-            Msg($"Grey Reaping —{killMsg}{drainMsg}", ColorSchool.Purple);
+        // NPC ward — wards caster and optionally nearby allies within allyRadius
+        public static void ExecuteWardFromAgent(Agent caster, float allyRadius = 0f)
+        {
+            if (caster == null || !caster.IsActive()) return;
+            _wardedAgents[caster] = 10f;
+            BeginAgentGlow(caster, ColorSchool.White, 10f);
+            TryCastSound(caster.Position, ColorSchool.White);
+            TryCastAnimation(caster);
+
+            if (allyRadius > 0f && Mission.Current != null)
+            {
+                try
+                {
+                    foreach (Agent ally in Mission.Current.Agents.ToList())
+                    {
+                        if (ally == caster || !ally.IsActive() || ally.IsMount) continue;
+                        if (ally.Team != caster.Team) continue;
+                        if (ally.Position.Distance(caster.Position) > allyRadius) continue;
+                        _wardedAgents[ally] = 10f;
+                        BeginAgentGlow(ally, ColorSchool.White, 10f);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        public static void TickWard(float dt)
+        {
+            var keys = _wardedAgents.Keys.ToList();
+            foreach (Agent a in keys)
+            {
+                float t = _wardedAgents[a] - dt;
+                if (t <= 0f) _wardedAgents.Remove(a);
+                else _wardedAgents[a] = t;
+            }
+        }
+
+        public static void ClearWard()
+        {
+            _wardedAgents.Clear();
         }
     }
 }

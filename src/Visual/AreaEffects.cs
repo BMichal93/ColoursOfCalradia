@@ -153,9 +153,13 @@ namespace ColoursOfCalradia
             };
             foreach (Vec3 pos in pts)
                 SpawnTempLight(pos, school, 4f, duration);
+            // Fire particle at the cast origin
+            if (school != ColorSchool.Blight)
+                SpawnTempFireParticle(origin, duration * 2f);
         }
 
         // Three-light burst at an impact point — centre flash plus two random scatter offsets.
+        // Also spawns a brief fire particle if school is warm (non-blight).
         internal static void SpawnImpactBurst(Vec3 origin, ColorSchool school, float duration)
         {
             SpawnTempLight(origin, school, 4f, duration);
@@ -165,6 +169,54 @@ namespace ColoursOfCalradia
                 float dist  = 0.8f + (float)_rng.NextDouble() * 1.5f;
                 Vec3  off   = new Vec3((float)Math.Cos(angle) * dist, (float)Math.Sin(angle) * dist, 0f);
                 SpawnTempLight(origin + off, school, 3f, duration * 0.6f);
+            }
+            if (school != ColorSchool.Blight)
+                SpawnTempFireParticle(origin, duration * 1.5f);
+        }
+
+        // ── Fire particle effects ──────────────────────────────────────────────
+        // Particle names are wrapped in try/catch — silently skipped if the asset
+        // does not exist in the running version of the game.
+        private static readonly string[] _fireParticleNames =
+        {
+            "psys_campfire",
+            "psys_game_fire_torch_small",
+            "psys_env_fire_medium_01",
+        };
+
+        private static GameEntity SpawnParticleEntity(Vec3 position, string particleName)
+        {
+            try
+            {
+                var scene = Mission.Current?.Scene;
+                if (scene == null) return null;
+                var entity = GameEntity.CreateEmpty(scene, false, false, false);
+                var frame  = new MatrixFrame(Mat3.Identity, position);
+                entity.SetGlobalFrame(in frame, true);
+                entity.AddParticleSystemComponent(particleName);
+                return entity;
+            }
+            catch { return null; }
+        }
+
+        // Tries each candidate particle name in order; stops at the first that works.
+        internal static void SpawnTempFireParticle(Vec3 position, float duration)
+        {
+            foreach (string name in _fireParticleNames)
+            {
+                GameEntity entity = SpawnParticleEntity(position, name);
+                if (entity == null) continue;
+                _areaEffects.Add(new AreaEffect
+                {
+                    Id          = "temp_particle",
+                    Position    = position,
+                    School      = ColorSchool.Red,
+                    TickInterval = duration,
+                    TickTimer   = duration,
+                    Remaining   = duration,
+                    LightEntity = entity,
+                });
+                return;
             }
         }
 
@@ -185,13 +237,15 @@ namespace ColoursOfCalradia
         {
             switch (school)
             {
-                case ColorSchool.Red:    return new Vec3(1f,    0.15f, 0.05f);
-                case ColorSchool.Orange: return new Vec3(1f,    0.50f, 0.05f);
-                case ColorSchool.Yellow: return new Vec3(1f,    0.90f, 0.10f);
-                case ColorSchool.Green:  return new Vec3(0.15f, 0.80f, 0.15f);
-                case ColorSchool.Blue:   return new Vec3(0.10f, 0.35f, 1f);
-                case ColorSchool.Purple: return new Vec3(0.60f, 0.10f, 0.90f);
-                default:                 return new Vec3(1f,    1f,    1f);
+                case ColorSchool.Red:    return new Vec3(1f,    0.15f, 0.02f); // bright fire-red
+                case ColorSchool.Orange: return new Vec3(1f,    0.47f, 0.02f); // deep orange
+                case ColorSchool.Yellow: return new Vec3(1f,    0.80f, 0.05f); // amber-gold
+                case ColorSchool.Green:  return new Vec3(1f,    0.60f, 0.02f); // warm amber (was cold green)
+                case ColorSchool.Blue:   return new Vec3(1f,    0.40f, 0.02f); // hot ember-orange (was cold blue)
+                case ColorSchool.Purple: return new Vec3(0.87f, 0.07f, 0.02f); // deep crimson (was purple)
+                case ColorSchool.White:  return new Vec3(1f,    0.93f, 0.75f); // pale warm flame
+                case ColorSchool.Blight: return new Vec3(0.28f, 0.32f, 0.42f); // dim ash grey-blue
+                default:                 return new Vec3(1f,    0.70f, 0.30f);
             }
         }
 
@@ -213,36 +267,20 @@ namespace ColoursOfCalradia
                 }
 
                 // Yellow clouds drift randomly from their spawn position
-                if (e.Id == "create_yellow" || e.Id == "self_yellow" || e.Id == "npc_yellow_cloud")
+                if (e.Id == "npc_yellow_cloud")
                 {
                     e.DirTimer -= dt;
                     if (e.DirTimer <= 0f)
                     {
                         float angle    = (float)(_rng.NextDouble() * Math.PI * 2);
-                        Vec3  newVel   = new Vec3((float)Math.Cos(angle) * 2f, (float)Math.Sin(angle) * 2f, 0f);
-                        float newTimer = 3f + (float)_rng.NextDouble() * 4f;
-                        if (e.Id == "create_yellow")
-                        {
-                            // Whole cloud turns together — propagate to all nodes (no alloc: plain for loop)
-                            for (int j = 0; j < _areaEffects.Count; j++)
-                                if (_areaEffects[j].Id == "create_yellow")
-                                {
-                                    _areaEffects[j].Velocity = newVel;
-                                    _areaEffects[j].DirTimer = newTimer;
-                                }
-                        }
-                        else
-                        {
-                            // self_yellow and npc_yellow_cloud: each node drifts independently
-                            e.Velocity = newVel;
-                            e.DirTimer = newTimer;
-                        }
+                        e.Velocity     = new Vec3((float)Math.Cos(angle) * 2f, (float)Math.Sin(angle) * 2f, 0f);
+                        e.DirTimer     = 3f + (float)_rng.NextDouble() * 4f;
                     }
                     e.Position += e.Velocity * dt;
                 }
 
                 // Moving clouds need their light repositioned every frame
-                if (e.LightEntity != null && (e.Id == "create_yellow" || e.Id == "self_yellow" || e.Id == "npc_yellow_cloud"))
+                if (e.LightEntity != null && e.Id == "npc_yellow_cloud")
                 {
                     try
                     {
@@ -261,174 +299,20 @@ namespace ColoursOfCalradia
                 {
                 switch (e.Id)
                 {
-                    case "self_red_barrier": // Scarlet Barrier — damage all agents inside the node
-                    {
-                        float barrierDmg = 38f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents.ToList())
-                        {
-                            if (!a.IsActive() || a.IsMount || a == Player) continue;
-                            if (a.Position.Distance(e.Position) > e.Radius) continue;
-                            try
-                            {
-                                DamageAgent(a, barrierDmg, ColorSchool.Red);
-                                BeginAgentGlow(a, ColorSchool.Red, 1f);
-                            }
-                            catch { }
-                        }
+                    case "spell_aura":
+                        TickAuraNode(e);
                         break;
-                    }
 
-                    case "create_orange": // Gilded Refuge — +100 morale and 2 HP/sec to all inside
-                    {
-                        float refugeHeal = 0.5f * e.TickInterval;
-                        foreach (Agent a in Mission.Current.Agents.ToList())
-                        {
-                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
-                            try
-                            {
-                                try { a.SetMorale(Math.Min(a.GetMorale() + 100f, 100f)); } catch { }
-                                float h = Math.Min(refugeHeal, a.HealthLimit - a.Health);
-                                if (h > 0f) a.Health += h;
-                                BeginAgentGlow(a, e.School, 2f);
-                            }
-                            catch { }
-                        }
+                    case "spell_barrier":
+                        TickBarrierNode(e);
                         break;
-                    }
 
-                    case "create_yellow": // Creeping Dread — damage agents in cloud
-                    {
-                        int dreadHit = 0;
-                        float dreadDmg = 17f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
-                        {
-                            if (ProtectedByMirror(a)) continue;
-                            try
-                            {
-                                if (a.Health <= dreadDmg)
-                                {
-                                    QueueKill(a);
-                                }
-                                else
-                                {
-                                    a.Health -= dreadDmg;
-                                    try { a.SetMorale(Math.Max(0f, a.GetMorale() - 10f)); } catch { }
-                                }
-                                BeginAgentGlow(a, e.School, 1.5f);
-                                dreadHit++;
-                            }
-                            catch { }
-                        }
-                        if (dreadHit > 0)
-                            Msg($"Creeping Dread: {dreadHit} caught in the cloud. (−{dreadDmg:F0} HP)", ColorSchool.Yellow);
-                        break;
-                    }
-
-                    case "create_green": // Emerald Font — heal all agents in area
-                    {
-                        float fontHeal = 21f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents.ToList())
-                        {
-                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
-                            try
-                            {
-                                float h = Math.Min(fontHeal, a.HealthLimit - a.Health);
-                                if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
-                            }
-                            catch { }
-                        }
-                        break;
-                    }
-
-                    case "create_blue": // Sapphire Bastion — push all agents outside radius every tick
-                    {
-                        foreach (Agent a in Mission.Current.Agents.ToList())
-                        {
-                            if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
-                            if (a == Player) continue; // never push the caster off their own wall
-                            if (a.Position.Distance(e.Position) > e.Radius) continue;
-                            try
-                            {
-                                Vec3 dir = (a.Position - e.Position);
-                                if (dir.Length < 0.01f) dir = new Vec3(1f, 0f, 0f);
-                                else dir = dir.NormalizedCopy();
-                                Vec3 dest = e.Position + dir * (e.Radius + 2f);
-                                dest.z = a.Position.z;
-                                a.TeleportToPosition(dest);
-                                BeginAgentGlow(a, e.School, 1.5f);
-                            }
-                            catch { }
-                        }
-                        break;
-                    }
-
-                    case "create_purple_mist": // Purple Mist — 8 HP drain/tick + 5% instakill chance
-                    {
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount && !a.IsHero && a != Player &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
-                        {
-                            try
-                            {
-                                BeginAgentGlow(a, ColorSchool.Purple, 1.5f);
-                                DamageAgent(a, 8f * e.Power, ColorSchool.Purple);
-                                if (a.IsActive() && _rng.Next(20) == 0) QueueKill(a);
-                            }
-                            catch { }
-                        }
-                        break;
-                    }
-
-                    case "self_yellow": // Nausea Bloom — drifting toxic cloud
-                    {
-                        int bloomHit = 0;
-                        float bloomDmg = 4f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents
-                            .Where(a => a.IsActive() && !a.IsMount && a != Player &&
-                                        a.Position.Distance(e.Position) <= e.Radius).ToList())
-                        {
-                            if (ProtectedByMirror(a)) continue;
-                            try
-                            {
-                                float before = a.Health;
-                                DamageAgent(a, bloomDmg);
-                                if (a.Health < before || a.Health <= 0f) bloomHit++;
-                                BeginAgentGlow(a, e.School, 1.5f);
-                            }
-                            catch { }
-                        }
-                        if (bloomHit > 0)
-                            Msg($"Nausea Bloom: {bloomHit} caught in the cloud. (−{bloomDmg:F0} HP)", ColorSchool.Yellow);
-                        break;
-                    }
-
-                    case "npc_green_font": // NPC Emerald Font — heal caster-side allies in area
-                    {
-                        float fontHeal = 21f * e.Power;
-                        foreach (Agent a in Mission.Current.Agents.ToList())
-                        {
-                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
-                            // Only heal the caster's own team (if team is known)
-                            if (e.CasterTeam != null && a.Team != e.CasterTeam) continue;
-                            try
-                            {
-                                float h = Math.Min(fontHeal, a.HealthLimit - a.Health);
-                                if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
-                            }
-                            catch { }
-                        }
-                        break;
-                    }
-
-                    case "npc_blue_wall": // NPC Sapphire Wall — push enemy agents outward
+                    case "npc_barrier":
                     {
                         foreach (Agent a in Mission.Current.Agents.ToList())
                         {
                             if (!a.IsActive() || a.IsMount || a.MountAgent != null) continue;
                             if (a.Position.Distance(e.Position) > e.Radius) continue;
-                            // Only push enemies of the caster (if team is known)
                             if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
                             try
                             {
@@ -445,14 +329,46 @@ namespace ColoursOfCalradia
                         break;
                     }
 
-                    case "npc_yellow_cloud": // NPC Creeping Dread — drifting damage cloud vs enemies only
+                    case "npc_heal_zone":
+                    {
+                        float heal = 15f * e.Power;
+                        foreach (Agent a in Mission.Current.Agents.ToList())
+                        {
+                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
+                            if (e.CasterTeam != null && a.Team != e.CasterTeam) continue;
+                            try
+                            {
+                                float h = Math.Min(heal, a.HealthLimit - a.Health);
+                                if (h > 0f) { a.Health += h; BeginAgentGlow(a, e.School, 1.5f); }
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
+                    case "npc_morale_aura":
+                    {
+                        foreach (Agent a in Mission.Current.Agents.ToList())
+                        {
+                            if (!a.IsActive() || a.IsMount || a.Position.Distance(e.Position) > e.Radius) continue;
+                            if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
+                            try
+                            {
+                                a.SetMorale(Math.Max(0f, a.GetMorale() - 5f));
+                                BeginAgentGlow(a, e.School, 1.5f);
+                            }
+                            catch { }
+                        }
+                        break;
+                    }
+
+                    case "npc_yellow_cloud":
                     {
                         float cloudDmg = 38f * e.Power;
                         foreach (Agent a in Mission.Current.Agents
                             .Where(a => a.IsActive() && !a.IsMount &&
                                         a.Position.Distance(e.Position) <= e.Radius).ToList())
                         {
-                            // Never damage the caster's own team — prevents killing player troops
                             if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
                             try
                             {
@@ -495,6 +411,7 @@ namespace ColoursOfCalradia
             _areaEffects.Clear();
             _haltedAgents.Clear();
             _haltTeleportTimer = 0f;
+            ClearWave();
         }
     }
 }
