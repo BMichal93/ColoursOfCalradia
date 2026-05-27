@@ -451,7 +451,7 @@ namespace ColoursOfCalradia
                 catch { }
 
                 // Overwhelming morale bane (≥10) panics affected unit into charging headlong
-                if (cast.MoraleCount >= 10 && !cast.Reversed)
+                if (cast.MoraleCount >= 10 && !cast.Reversed && !target.IsHero)
                 {
                     try { target.Formation?.SetMovementOrder(MovementOrder.MovementOrderCharge); } catch { }
                 }

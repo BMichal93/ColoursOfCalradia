@@ -172,13 +172,19 @@ namespace ColoursOfCalradia
 
                     try
                     {
-                        ApplyEffectsToAgent(a, w.Cast, Agent.Main, applyPush: true, applyPull: false);
-                        SpawnImpactBurst(a.Position, w.Cast.VisualColor, 0.5f);
+                        if (!IsWarded(a))
+                        {
+                            ApplyEffectsToAgent(a, w.Cast, Agent.Main, applyPush: true, applyPull: false);
+                            SpawnImpactBurst(a.Position, w.Cast.VisualColor, 0.5f);
+                        }
                         hit.Add(a);
                     }
                     catch { }
                 }
             }
+
+            if (hit.Count > 0)
+                RecordMagicCast(w.Position);
         }
 
         // Nudge agent toward whichever lateral side of the wave is closer to them
@@ -187,6 +193,7 @@ namespace ColoursOfCalradia
             bool isMounted = false;
             try { isMounted = a.MountAgent != null; } catch { }
             if (isMounted) return;
+            if (IsWarded(a)) return;
 
             Vec3  toAgent  = a.Position - w.Position;
             float rDot     = Vec3.DotProduct(toAgent, w.Right);
@@ -210,23 +217,24 @@ namespace ColoursOfCalradia
         public static void ExecuteAura(SpellCast cast) => ExecuteWave(cast);
 
         // ── Ward state ────────────────────────────────────────────────────────
-        // agentIndex → seconds remaining; prevents magic from affecting the warded agent
-        private static readonly Dictionary<int, float> _wardedAgents = new Dictionary<int, float>();
+        // Keyed by Agent reference, not index — avoids inheriting protection when
+        // an agent dies and a newly spawned agent reuses the same index slot.
+        private static readonly Dictionary<Agent, float> _wardedAgents = new Dictionary<Agent, float>();
 
         public static bool IsWarded(Agent a)
         {
             if (a == null) return false;
-            return _wardedAgents.TryGetValue(a.Index, out float t) && t > 0f;
+            return _wardedAgents.TryGetValue(a, out float t) && t > 0f;
         }
 
-        // Player sigil ULDR×reps — wards caster + all allies within reps×3 m for 10 s
-        public static void ExecuteWard(int reps)
+        // Player sigil DD×N — wards caster + all allies within (N-1)×2 m for 10 s
+        public static void ExecuteWard(int dCount)
         {
             Agent caster = Agent.Main;
             if (caster == null || !caster.IsActive()) return;
 
-            float radius = reps * 3f;
-            _wardedAgents[caster.Index] = 10f;
+            float radius = (dCount - 1) * 2f;
+            _wardedAgents[caster] = 10f;
             BeginAgentGlow(caster, ColorSchool.White, 10f);
             SpawnCircleLights(caster.Position, ColorSchool.White, Math.Max(2f, radius), 3f);
             TryCastSound(caster.Position, ColorSchool.White);
@@ -242,7 +250,7 @@ namespace ColoursOfCalradia
                         if (ally == caster || !ally.IsActive() || ally.IsMount) continue;
                         if (caster.Team != null && ally.Team != caster.Team) continue;
                         if (ally.Position.Distance(caster.Position) > radius) continue;
-                        _wardedAgents[ally.Index] = 10f;
+                        _wardedAgents[ally] = 10f;
                         BeginAgentGlow(ally, ColorSchool.White, 10f);
                         count++;
                     }
@@ -261,7 +269,7 @@ namespace ColoursOfCalradia
         public static void ExecuteWardFromAgent(Agent caster, float allyRadius = 0f)
         {
             if (caster == null || !caster.IsActive()) return;
-            _wardedAgents[caster.Index] = 10f;
+            _wardedAgents[caster] = 10f;
             BeginAgentGlow(caster, ColorSchool.White, 10f);
             TryCastSound(caster.Position, ColorSchool.White);
             TryCastAnimation(caster);
@@ -275,7 +283,7 @@ namespace ColoursOfCalradia
                         if (ally == caster || !ally.IsActive() || ally.IsMount) continue;
                         if (ally.Team != caster.Team) continue;
                         if (ally.Position.Distance(caster.Position) > allyRadius) continue;
-                        _wardedAgents[ally.Index] = 10f;
+                        _wardedAgents[ally] = 10f;
                         BeginAgentGlow(ally, ColorSchool.White, 10f);
                     }
                 }
@@ -286,11 +294,11 @@ namespace ColoursOfCalradia
         public static void TickWard(float dt)
         {
             var keys = _wardedAgents.Keys.ToList();
-            foreach (int k in keys)
+            foreach (Agent a in keys)
             {
-                float t = _wardedAgents[k] - dt;
-                if (t <= 0f) _wardedAgents.Remove(k);
-                else _wardedAgents[k] = t;
+                float t = _wardedAgents[a] - dt;
+                if (t <= 0f) _wardedAgents.Remove(a);
+                else _wardedAgents[a] = t;
             }
         }
 

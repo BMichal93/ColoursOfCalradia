@@ -64,6 +64,7 @@ namespace ColoursOfCalradia
             SpellEffects.TickMagicMemory(dt);
             SpellEffects.TickHaltedAgents(dt);
             SpellEffects.FlushPendingDeaths();
+            BanditMageAI.MissionTick(dt);
         }
 
         protected override void OnEndMission()
@@ -78,6 +79,7 @@ namespace ColoursOfCalradia
             try { SpellEffects.ClearColourCooldown();} catch { }
             try { SpellEffects.ClearMoves();         } catch { }
             try { ColourLordAI.ClearCooldowns();     } catch { }
+            try { BanditMageAI.OnMissionEnd();       } catch { }
             try { AgingSystem.ClearKnockdowns();     } catch { }
         }
 

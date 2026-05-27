@@ -151,9 +151,9 @@ namespace ColoursOfCalradia
                 "Combined fires\n" +
                 "  Flame+Smoulder = Scorch  |  Surge+Flame = Cinder  |  Smoulder+Surge = Ember Surge\n\n" +
                 "Sigil  (no Break needed, repeat to expand)\n" +
-                "  ↑←↓→      Ward — self only,  3m radius, 1 day\n" +
-                "  ↑←↓→×2    Ward — 6m radius,  2 days\n" +
-                "  ↑←↓→×3    Ward — 9m radius,  3 days\n\n" +
+                "  ↓↓         Ward — self only,        1 day\n" +
+                "  ↓↓↓        Ward — 2m radius,        2 days\n" +
+                "  ↓↓↓↓       Ward — 4m radius,        3 days\n\n" +
                 "Burning cost  (form inputs + effect inputs)\n" +
                 "  Below 4 — free  |  4–5 = 1 day  |  6–7 = 2 days  |  8–9 = 3 days\n" +
                 (TalentSystem.Has(TalentId.BattleMage) ? "  [Tempered] Threshold raised to 5.\n" : "") +

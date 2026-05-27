@@ -169,17 +169,17 @@ namespace ColoursOfCalradia
         {
             if (_formBuffer.Length == 0) return;
 
-            // Sigil: ULDR×N → Ward (no Break required)
-            //   1× ULDR = self only,  3m radius;  cost 1 day
-            //   2× ULDRULDR          = 6m radius;  cost 2 days
-            //   3× ULDRULDRULDR      = 9m radius;  cost 3 days
-            int uldrReps = CountUldrReps(_formBuffer);
-            if (uldrReps > 0)
+            // Sigil: DD×N → Ward (no Break required, must not have entered effect phase)
+            //   DD   = self only,  0m radius;  cost 1 day
+            //   DDD  = 2m radius;  cost 2 days
+            //   DDDD = 4m radius;  cost 3 days  (dCount-1 days, radius = (dCount-1)×2m)
+            int dCount = _formBuffer.Length;
+            if (!_inEffectPhase && dCount >= 2 && IsAllD(_formBuffer))
             {
                 if (!inMission) { Fizzle("The ward only holds in battle."); return; }
                 try { if (Hero.MainHero?.IsPrisoner == true) { Fizzle("You are bound. The fire cannot kindle."); return; } } catch { }
-                SpellEffects.ExecuteWard(uldrReps);
-                int cost = uldrReps; // 1 day per ULDR repetition
+                SpellEffects.ExecuteWard(dCount);
+                int cost = dCount - 1; // DD=1day, DDD=2days, DDDD=3days
                 if (cost > 0)
                 {
                     if (MageKnowledge.IsBlight) ApplyBlightCastCost(cost);
@@ -286,13 +286,11 @@ namespace ColoursOfCalradia
             catch { }
         }
 
-        // Returns N if buf is exactly N repetitions of "ULDR", 0 otherwise.
-        private static int CountUldrReps(string buf)
+        private static bool IsAllD(string buf)
         {
-            if (buf.Length == 0 || buf.Length % 4 != 0) return 0;
-            for (int i = 0; i < buf.Length; i += 4)
-                if (buf[i] != 'U' || buf[i+1] != 'L' || buf[i+2] != 'D' || buf[i+3] != 'R') return 0;
-            return buf.Length / 4;
+            for (int i = 0; i < buf.Length; i++)
+                if (buf[i] != 'D') return false;
+            return true;
         }
 
         private static void Fizzle(string msg) =>
