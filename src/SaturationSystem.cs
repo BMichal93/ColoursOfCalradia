@@ -101,7 +101,7 @@ namespace ColoursOfCalradia
         {
             try
             {
-                foreach (Hero h in Hero.AllAliveHeroes.Where(h => h.IsAlive && MageLordRegistry.IsMage(h)).ToList())
+                foreach (Hero h in Hero.AllAliveHeroes.Where(h => h.IsAlive && ColourLordRegistry.IsColourLord(h)).ToList())
                     CheckAgeLimit(h);
                 // Also check player
                 if (Hero.MainHero != null && MageKnowledge.IsMage)

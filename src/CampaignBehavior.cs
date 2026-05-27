@@ -273,9 +273,8 @@ namespace ColoursOfCalradia
         public override void SyncData(IDataStore dataStore)
         {
             dataStore.SyncData("LDM_SelectionDone", ref _selectionDone);
-            MageKnowledge.Save(dataStore);
+            MageKnowledge.Save(dataStore);      // also saves TalentSystem internally
             ColourLordRegistry.Save(dataStore);
-            TalentSystem.Save(dataStore);
         }
     }
 }

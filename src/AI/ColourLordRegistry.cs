@@ -194,7 +194,6 @@ namespace ColoursOfCalradia
                     try
                     {
                         TalentSystem.ExecuteNpcMapSpell(hero, chosen);
-                        AgingSystem.AgeHero(hero, 1);
                         _campaignCooldowns[id] = 5 + _rng.Next(5);
                     }
                     catch { }

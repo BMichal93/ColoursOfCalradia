@@ -212,7 +212,7 @@ namespace ColoursOfCalradia
             {
                 foreach (Hero h in Hero.AllAliveHeroes.ToList())
                 {
-                    if (h == player || !MageLordRegistry.IsMage(h)) continue;
+                    if (h == player || !ColourLordRegistry.IsColourLord(h)) continue;
                     try
                     {
                         ChangeRelationAction.ApplyRelationChangeBetweenHeroes(player, h, 10, false);
@@ -245,22 +245,17 @@ namespace ColoursOfCalradia
             var def = GetDef(id);
             if (!def.IsSpell) return;
 
-            bool aged = false;
-            if (!Has(TalentId.Sorcerer) || _rng.Next(4) != 0) // 75% chance to age (25% no-age with Sorcerer)
+            // Sorcerer: 25% chance to skip aging; without Sorcerer always age
+            bool skipAging = Has(TalentId.Sorcerer) && _rng.Next(4) == 0;
+            if (skipAging)
             {
-                aged = true;
-                if (!Has(TalentId.Sorcerer))
-                    AgingSystem.AgeHero(Hero.MainHero, 1);
-                else
-                {
-                    // Sorcerer: 25% no cost
-                    if (_rng.Next(4) != 0)
-                        AgingSystem.AgeHero(Hero.MainHero, 1);
-                    else
-                        InformationManager.DisplayMessage(new InformationMessage(
-                            "[Sorcerer] The current gives back — no aging this time.",
-                            new Color(0.7f, 0.9f, 0.7f)));
-                }
+                InformationManager.DisplayMessage(new InformationMessage(
+                    "[Sorcerer] The current gives back — no aging this time.",
+                    new Color(0.7f, 0.9f, 0.7f)));
+            }
+            else
+            {
+                AgingSystem.AgeHero(Hero.MainHero, 1);
             }
 
             switch (id)
