@@ -36,7 +36,8 @@ namespace ColoursOfCalradia
 
         private const float CooldownDuration = 18f;
         private const float WarmupDuration   = 8f;
-        private const float MageChance       = 0.12f;
+        private const float MageChance       = 0.04f;  // ~1 caster per 25 eligible bandits
+        private const float BurnoutChance    = 0.25f;  // 25% chance the fire consumes them after casting
         private const float TickInterval     = 0.5f;
 
         private static readonly HashSet<Agent>            _mageAgents = new HashSet<Agent>();
@@ -161,9 +162,20 @@ namespace ColoursOfCalradia
 
                 _cooldowns[mage] = CooldownDuration;
 
+                string title = GetTitle(mage);
                 InformationManager.DisplayMessage(new InformationMessage(
-                    $"The {GetTitle(mage)} channels dark fire!",
+                    $"The {title} channels dark fire!",
                     new Color(0.85f, 0.35f, 0.15f)));
+
+                // The fire burns those who borrow it without the gift
+                if (_rng.NextDouble() < BurnoutChance)
+                {
+                    _mageAgents.Remove(mage);
+                    SpellEffects.QueueKill(mage);
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"The {title} is consumed by the fire.",
+                        new Color(0.6f, 0.2f, 0.1f)));
+                }
             }
             catch { }
         }
