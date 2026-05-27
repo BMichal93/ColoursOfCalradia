@@ -202,7 +202,11 @@ namespace ColoursOfCalradia
                     if (_campaignCooldowns.TryGetValue(id, out int cd) && cd > 0)
                     { _campaignCooldowns[id] = cd - 1; continue; }
 
-                    if (_rng.Next(100) >= 8) continue; // 8% per day
+                    // Older lords cast less often — the fire has cost them too much before
+                    int castChance = hero.Age < 50f ? 8
+                                   : hero.Age < 70f ? 4
+                                   : 2;
+                    if (_rng.Next(100) >= castChance) continue;
 
                     if (!_lordTalents.TryGetValue(id, out var talents) || talents.Count == 0) continue;
                     // Pick a spell talent (not passive)
