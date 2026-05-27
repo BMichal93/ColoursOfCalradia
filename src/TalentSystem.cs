@@ -31,6 +31,7 @@ namespace ColoursOfCalradia
         BattleMage  = 10,  // Passive
         Sorcerer    = 11,  // Passive
         Camaraderie = 12,  // Passive
+        Reap        = 13,  // Passive
     }
 
     public class TalentDef
@@ -125,6 +126,12 @@ namespace ColoursOfCalradia
                 Id = TalentId.Camaraderie, IsSpell = false, Name = "Kinship",
                 Lore = "You know what it is to carry the weight of the gift alone. So do they. That understanding moves faster than politics.",
                 MechanicDesc = "Passive. +10 relations with those who carry the gift. Never falls below −10."
+            },
+            new TalentDef
+            {
+                Id = TalentId.Reap, IsSpell = false, Name = "Reap",
+                Lore = "Every life spent in your shadow leaves something behind — a warmth, a residue, a small debt paid forward. You have learned to collect.",
+                MechanicDesc = "Passive. Raiding a village draws back 5 days of youth. Each prisoner discarded has a 5% chance to draw back 1 day."
             },
         };
 

@@ -20,6 +20,7 @@ namespace ColoursOfCalradia
     public class MagicCampaignBehavior : CampaignBehaviorBase
     {
         private bool _selectionDone;
+        private int  _prisonerCountSnapshot = -1;
         private static readonly Random _rng = new Random();
 
         public override void RegisterEvents()
@@ -95,6 +96,7 @@ namespace ColoursOfCalradia
             try { ColourLordRegistry.SeedInitialLords(); } catch { }
             try { ColourLordRegistry.DailyMapCast(); } catch { }
             try { AgingSystem.DailyAgeCheck(); } catch { }
+            try { CheckReapPrisonerYield(); } catch { }
         }
 
         // ── Weekly tick ───────────────────────────────────────────────────────
@@ -120,6 +122,46 @@ namespace ColoursOfCalradia
             if (mapEvent == null) return;
             try { ApplyNpcBattleAging(mapEvent); } catch { }
             try { ApplyNpcBattleMoraleBonus(mapEvent); } catch { }
+            try { CheckReapRaidYield(mapEvent); } catch { }
+            // Refresh snapshot so battle-captured prisoners don't count as discards
+            try { _prisonerCountSnapshot = MobileParty.MainParty?.PrisonRoster?.TotalManCount ?? _prisonerCountSnapshot; } catch { }
+        }
+
+        // ── Reap: raid yield ──────────────────────────────────────────────────
+        private void CheckReapRaidYield(MapEvent mapEvent)
+        {
+            if (!MageKnowledge.IsMage || !TalentSystem.Has(TalentId.Reap)) return;
+            if (mapEvent.EventType != MapEvent.BattleTypes.Raid) return;
+
+            bool playerAttacker = mapEvent.AttackerSide?.Parties
+                .Any(p => p.Party == PartyBase.MainParty) == true;
+            if (!playerAttacker) return;
+            if (mapEvent.WinningSide != BattleSideEnum.Attacker) return;
+
+            AgingSystem.RejuvenateHero(Hero.MainHero, 5);
+        }
+
+        // ── Reap: prisoner discard yield ──────────────────────────────────────
+        private void CheckReapPrisonerYield()
+        {
+            if (!MageKnowledge.IsMage || !TalentSystem.Has(TalentId.Reap)) return;
+
+            int current = MobileParty.MainParty?.PrisonRoster?.TotalManCount ?? 0;
+
+            if (_prisonerCountSnapshot >= 0 && current < _prisonerCountSnapshot)
+            {
+                int discarded = _prisonerCountSnapshot - current;
+                int daysGained = 0;
+                for (int i = 0; i < discarded; i++)
+                {
+                    if (_rng.NextDouble() < 0.05)
+                        daysGained++;
+                }
+                if (daysGained > 0)
+                    AgingSystem.RejuvenateHero(Hero.MainHero, daysGained);
+            }
+
+            _prisonerCountSnapshot = current;
         }
 
         private void ApplyNpcBattleAging(MapEvent mapEvent)
@@ -272,7 +314,8 @@ namespace ColoursOfCalradia
         // ── Save / Load ───────────────────────────────────────────────────────
         public override void SyncData(IDataStore dataStore)
         {
-            dataStore.SyncData("LDM_SelectionDone", ref _selectionDone);
+            dataStore.SyncData("LDM_SelectionDone",        ref _selectionDone);
+            dataStore.SyncData("LDM_PrisonerSnapshot",     ref _prisonerCountSnapshot);
             MageKnowledge.Save(dataStore);      // also saves TalentSystem internally
             ColourLordRegistry.Save(dataStore);
         }

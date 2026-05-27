@@ -54,6 +54,25 @@ namespace ColoursOfCalradia
             return totalInputs / threshold;
         }
 
+        /// <summary>
+        /// Reverses aging by <paramref name="days"/> in-game days.
+        /// Shows a message only for the player hero.
+        /// </summary>
+        public static void RejuvenateHero(Hero hero, int days)
+        {
+            if (hero == null || days <= 0) return;
+            try
+            {
+                hero.SetBirthDay(hero.BirthDay + CampaignTime.Days(days));
+
+                if (hero == Hero.MainHero)
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"Life flows back — {days} day{(days > 1 ? "s" : "")} younger. Age: {(int)hero.Age}.",
+                        new Color(0.5f, 0.9f, 0.6f)));
+            }
+            catch { }
+        }
+
         // ── Death at 100 ──────────────────────────────────────────────────────
 
         public static void CheckAgeLimit(Hero hero)
