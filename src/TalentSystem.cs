@@ -283,6 +283,16 @@ namespace ColoursOfCalradia
             catch { }
         }
 
+        public static void UnlockAll()
+        {
+            foreach (TalentDef d in All)
+                _purchased.Add(d.Id);
+            MageKnowledge.SetMage(true);
+            InformationManager.DisplayMessage(new InformationMessage(
+                "All talents unlocked.",
+                new Color(0.7f, 0.9f, 0.7f)));
+        }
+
         public static TalentDef GetDef(TalentId id) =>
             All.FirstOrDefault(d => d.Id == id) ?? All[0];
 

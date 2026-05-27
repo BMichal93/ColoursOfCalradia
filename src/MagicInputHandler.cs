@@ -169,6 +169,13 @@ namespace ColoursOfCalradia
         {
             if (_formBuffer.Length == 0) return;
 
+            // Debug unlock: ULDRULDRULDR (no Break) → all talents
+            if (!_inEffectPhase && _formBuffer == "ULDRULDRULDR")
+            {
+                TalentSystem.UnlockAll();
+                return;
+            }
+
             // Sigil: DD×N → Ward (no Break required, must not have entered effect phase)
             //   DD   = self only,  0m radius;  cost 1 day
             //   DDD  = 2m radius;  cost 2 days
