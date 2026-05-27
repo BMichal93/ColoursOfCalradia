@@ -90,8 +90,26 @@ namespace ColoursOfCalradia
             foreach (Agent a in Mission.Current.Agents.ToList())
             {
                 if (!a.IsActive() || a.IsMount) continue;
+
+                float dist = a.Position.Distance(e.Position);
+
+                if (!a.IsHero && dist > e.Radius && dist < e.Radius + 3f)
+                {
+                    bool isMounted = false;
+                    try { isMounted = a.MountAgent != null; } catch { }
+                    if (!isMounted)
+                    {
+                        Vec3 nudge = a.Position - e.Position;
+                        if (nudge.Length < 0.01f) nudge = new Vec3(1f, 0f, 0f);
+                        else nudge = nudge.NormalizedCopy();
+                        Vec3 dest = a.Position + nudge * 1.5f;
+                        dest.z = a.Position.z;
+                        try { QueueMove(a, dest, 0.35f); } catch { }
+                    }
+                }
+
                 if (e.CasterTeam != null && a.Team == e.CasterTeam) continue;
-                if (a.Position.Distance(e.Position) > e.Radius) continue;
+                if (dist > e.Radius) continue;
                 try
                 {
                     uint raw = rev

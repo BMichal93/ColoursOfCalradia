@@ -140,7 +140,7 @@ namespace ColoursOfCalradia
                 "  Mixed form inputs fumble. Effects stack.\n\n" +
                 "Forms  (before Break)\n" +
                 "  ↑  Blast   — forward cone, 2m per ↑\n" +
-                "  ←  Aura    — expanding cloud, +1 node per ←\n" +
+                "  ←  Wave    — 3×3 fire grid, +2m per ←, +1 size per 5←\n" +
                 "  →  Barrier — wall of nodes, 1 per →\n" +
                 "  ↓  Burst   — circle around self, 2m radius per ↓\n\n" +
                 "Effects  (after Break)\n" +

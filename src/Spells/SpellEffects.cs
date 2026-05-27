@@ -140,6 +140,7 @@ namespace ColoursOfCalradia
             RemoveAreaEffect("spell_aura");
             RemoveAreaEffect("spell_barrier");
             _haltedAgents.Clear();
+            ClearWave();
         }
 
         // ── Halted-agent tick (Blue push freeze) ─────────────────────────────

@@ -1,8 +1,10 @@
 // =============================================================================
 // LIFE & DEATH MAGIC — SelfSpells.cs
-// AURA FORM: expanding cloud centred on caster, radius = formCount * 2m.
-// Persistent toggle: cast again to dismiss. Glow marks affected agents each tick.
-// Uses the existing area-effect infrastructure with IDs "spell_aura".
+// WAVE FORM (L keys): a gridSize×gridSize block of fire that advances forward.
+//   gridSize  = 3 + max(0, (formCount - 5) / 5)  — grows +1 per 5 inputs above 5
+//   range     = max(3, formCount * 2 - 1) metres  — total travel distance
+//   Speed 4 m/s;  tick every 0.5 s;  node spacing 2 m;  hit radius 1.5 m.
+//   Non-hero agents in warning zone (hit + 3 m) are nudged sideways.
 // =============================================================================
 
 using System;
@@ -16,141 +18,195 @@ namespace ColoursOfCalradia
 {
     public static partial class SpellEffects
     {
-        private const string AuraId = "spell_aura";
+        // ── Wave state ────────────────────────────────────────────────────────
+        private class WaveState
+        {
+            public Vec3   Position;           // front-centre of the grid
+            public Vec3   Forward;
+            public Vec3   Right;
+            public int    GridSize;
+            public const float NodeSpacing  = 2f;
+            public const float Speed        = 4f;
+            public const float HitRadius    = 1.5f;
+            public const float TickInterval = 0.5f;
+            public float  TravelLeft;
+            public SpellCast Cast;
+            public Team   CasterTeam;
+            public float  TickTimer = 0f;
+            public readonly List<GameEntity> Lights = new List<GameEntity>();
+        }
 
-        // ── Player Aura ───────────────────────────────────────────────────────
-        public static void ExecuteAura(SpellCast cast)
+        private static WaveState _wave = null;
+
+        // ── Execute ───────────────────────────────────────────────────────────
+        public static void ExecuteWave(SpellCast cast)
         {
             Agent caster = Agent.Main;
             if (caster == null || !caster.IsActive()) return;
 
-            // Toggle off
-            if (HasAreaEffect(AuraId))
+            if (_wave != null)
             {
-                RemoveAreaEffect(AuraId);
+                ClearWave();
                 InformationManager.DisplayMessage(new InformationMessage(
-                    "Aura released.", new Color(0.7f, 0.7f, 0.7f)));
+                    "Wave dissolved.", new Color(0.7f, 0.7f, 0.7f)));
                 return;
             }
 
-            float radius = Math.Max(2f, cast.FormCount * 2f);
-            SpawnAuraNodes(caster.Position, radius, cast, caster.Team);
+            Vec3 fwd   = caster.LookDirection.NormalizedCopy();
+            Vec3 right = new Vec3(-fwd.y, fwd.x, 0f);
+            right = right.Length < 0.01f ? new Vec3(1f, 0f, 0f) : right.NormalizedCopy();
+
+            int   gridSize = 3 + Math.Max(0, (cast.FormCount - 5) / 5);
+            float range    = Math.Max(3f, cast.FormCount * 2f - 1f);
+
+            // Place wave front so that back row clears the caster
+            float halfDepth = (gridSize - 1) * WaveState.NodeSpacing * 0.5f;
+            Vec3  startPos  = caster.Position + fwd * (halfDepth + 2.5f);
+
+            _wave = new WaveState
+            {
+                Position   = startPos,
+                Forward    = fwd,
+                Right      = right,
+                GridSize   = gridSize,
+                TravelLeft = range,
+                Cast       = cast,
+                CasterTeam = caster.Team,
+            };
+
+            SpawnWaveLights(_wave);
 
             ColorSchool col = cast.VisualColor;
-            BeginAgentGlow(caster, col, 3f);
-            SpawnCircleLights(caster.Position, col, radius, 3f);
             TryCastSound(caster.Position, col);
             TryCastAnimation(caster);
+            BeginAgentGlow(caster, col, 1.5f);
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"Aura — {cast.EffectSummary()}. Cast again to release.",
+                $"Wave ({gridSize}×{gridSize}, {range:F0}m) — {cast.EffectSummary()}.",
                 ColorSchoolData.GetMessageColor(col)));
         }
 
-        private static void SpawnAuraNodes(Vec3 centre, float radius, SpellCast cast, Team casterTeam)
+        private static void SpawnWaveLights(WaveState w)
         {
-            int nodeCount = Math.Max(1, cast.FormCount);
-            // Centre node
-            AddAuraNode(centre, radius, cast, casterTeam);
-            // Ring nodes (for larger auras)
-            if (nodeCount > 1)
+            for (int row = 0; row < w.GridSize; row++)
+            for (int col = 0; col < w.GridSize; col++)
             {
-                int ring = nodeCount - 1;
-                float ringR = Math.Min(radius * 0.6f, 8f);
-                for (int i = 0; i < ring; i++)
-                {
-                    double angle = Math.PI * 2.0 / ring * i;
-                    Vec3 pos = centre + new Vec3((float)Math.Cos(angle) * ringR, (float)Math.Sin(angle) * ringR, 0f);
-                    AddAuraNode(pos, radius / 2f, cast, casterTeam);
-                }
+                Vec3 pos = WaveNodePos(w, row, col);
+                w.Lights.Add(SpawnAreaLight(pos, w.Cast.VisualColor, 3f));
             }
         }
 
-        private static void AddAuraNode(Vec3 pos, float radius, SpellCast cast, Team casterTeam)
+        // row 0 = front edge of wave; col 0 = leftmost column (from caster PoV)
+        private static Vec3 WaveNodePos(WaveState w, int row, int col)
         {
-            // Store cast parameters inside the Power field (encode as a token)
-            // We store DamageCount, PushCount, MoraleCount, Reversed as encoded float
-            // Format: (damage * 1000 + push * 100 + morale * 10 + (reversed?1:0)) as float
-            float token = cast.DamageCount * 1000f + cast.PushCount * 100f
-                        + cast.MoraleCount * 10f   + (cast.Reversed ? 1f : 0f);
-            var node = new AreaEffect
-            {
-                Id           = AuraId,
-                School       = cast.VisualColor,
-                Position     = pos,
-                Radius       = radius,
-                TickInterval = 2f,
-                TickTimer    = 2f,
-                Remaining    = -1f,  // toggle-only, no expiry
-                Power        = token,
-                CasterTeam   = casterTeam
-            };
-            node.LightEntity = SpawnAreaLight(node.Position, cast.VisualColor, radius);
-            _areaEffects.Add(node);
+            float half = (w.GridSize - 1) * 0.5f;
+            return w.Position
+                 + w.Right   * ((col - half) * WaveState.NodeSpacing)
+                 - w.Forward * (row           * WaveState.NodeSpacing);
         }
 
-        // Called from AreaEffects.cs tick
-        internal static void TickAuraNode(AreaEffect e)
+        // ── Tick (called from MagicSystem every mission frame) ────────────────
+        public static void TickWave(float dt)
+        {
+            if (_wave == null || Mission.Current == null) return;
+
+            float moved      = WaveState.Speed * dt;
+            _wave.Position  += _wave.Forward * moved;
+            _wave.TravelLeft -= moved;
+
+            // Reposition lights
+            int idx = 0;
+            for (int row = 0; row < _wave.GridSize; row++)
+            for (int col = 0; col < _wave.GridSize; col++)
+            {
+                if (idx < _wave.Lights.Count && _wave.Lights[idx] != null)
+                {
+                    Vec3 p = WaveNodePos(_wave, row, col) + new Vec3(0f, 0f, 0.5f);
+                    try
+                    {
+                        var f = new MatrixFrame(Mat3.Identity, p);
+                        _wave.Lights[idx].SetGlobalFrame(in f, true);
+                    }
+                    catch { }
+                }
+                idx++;
+            }
+
+            if (_wave.TravelLeft <= 0f) { ClearWave(); return; }
+
+            _wave.TickTimer -= dt;
+            if (_wave.TickTimer > 0f) return;
+            _wave.TickTimer = WaveState.TickInterval;
+
+            TickWaveEffects(_wave);
+        }
+
+        private static void TickWaveEffects(WaveState w)
         {
             if (Mission.Current == null) return;
-            // Decode cast parameters from Power token
-            int token    = (int)e.Power;
-            int dmg      = token / 1000;
-            int push     = (token % 1000) / 100;
-            int morale   = (token % 100) / 10;
-            bool rev     = (token % 10) == 1;
 
-            var cast = new SpellCast
-            {
-                DamageCount = dmg, PushCount = push,
-                MoraleCount = morale, Reversed = rev
-            };
+            List<Agent> all;
+            try { all = Mission.Current.Agents.ToList(); } catch { return; }
 
-            Vec3 origin = e.Position;
-            foreach (Agent a in Mission.Current.Agents.ToList())
+            var hit = new HashSet<Agent>();
+
+            for (int row = 0; row < w.GridSize; row++)
+            for (int col = 0; col < w.GridSize; col++)
             {
-                if (!a.IsActive() || a.IsMount) continue;
-                if (e.CasterTeam != null && a.Team == e.CasterTeam) continue; // friendly fire off
-                if (a.Position.Distance(origin) > e.Radius) continue;
-                try
+                Vec3 nodePos = WaveNodePos(w, row, col);
+
+                foreach (Agent a in all)
                 {
-                    uint raw = rev
-                        ? ColorSchoolData.GetReversedGlowColor(e.School)
-                        : ColorSchoolData.GetGlowColor(e.School);
-                    BeginAgentGlowRaw(a, raw, 2f);
-                    if (cast.DamageCount > 0)
+                    if (!a.IsActive() || a.IsMount) continue;
+
+                    float dist = a.Position.Distance(nodePos);
+
+                    // Avoidance: non-hero agents in warning zone sidestep the wave
+                    if (!a.IsHero && dist > WaveState.HitRadius && dist < WaveState.HitRadius + 3f)
+                        try { NudgeWaveSideStep(w, a); } catch { }
+
+                    // Hit only enemies not yet struck this tick
+                    if (w.CasterTeam != null && a.Team == w.CasterTeam) continue;
+                    if (dist > WaveState.HitRadius) continue;
+                    if (hit.Contains(a)) continue;
+
+                    try
                     {
-                        float amt = cast.DamageCount * 8f * 0.5f; // halved for persistent
-                        if (rev) HealAgent(a, amt); else DamageAgent(a, amt);
+                        ApplyEffectsToAgent(a, w.Cast, Agent.Main, applyPush: true, applyPull: false);
+                        SpawnImpactBurst(a.Position, w.Cast.VisualColor, 0.5f);
+                        hit.Add(a);
                     }
-                    if (cast.MoraleCount > 0)
-                    {
-                        float delta = cast.MoraleCount * 5f;
-                        float cur   = a.GetMorale();
-                        a.SetMorale(rev ? Math.Min(cur + delta, 100f) : Math.Max(cur - delta, 0f));
-                    }
-                    // Push/pull in aura — skip mounted riders
-                    if (cast.PushCount > 0)
-                    {
-                        bool isMounted = false;
-                        try { isMounted = a.MountAgent != null; } catch { }
-                        if (!isMounted)
-                        {
-                            float dist = cast.PushCount * 1.5f;
-                            Agent src = Agent.Main;
-                            if (src != null)
-                            {
-                                Vec3 dir = rev
-                                    ? (src.Position - a.Position).NormalizedCopy()
-                                    : (a.Position - src.Position).NormalizedCopy();
-                                Vec3 dest = a.Position + dir * dist; dest.z = a.Position.z;
-                                QueueMove(a, dest, 0.4f);
-                            }
-                        }
-                    }
+                    catch { }
                 }
-                catch { }
             }
         }
+
+        // Nudge agent toward whichever lateral side of the wave is closer to them
+        private static void NudgeWaveSideStep(WaveState w, Agent a)
+        {
+            bool isMounted = false;
+            try { isMounted = a.MountAgent != null; } catch { }
+            if (isMounted) return;
+
+            Vec3  toAgent  = a.Position - w.Position;
+            float rDot     = Vec3.DotProduct(toAgent, w.Right);
+            Vec3  sideDir  = rDot >= 0f ? w.Right : new Vec3(-w.Right.x, -w.Right.y, 0f);
+            Vec3  dest     = a.Position + sideDir * 2.5f;
+            dest.z = a.Position.z;
+            QueueMove(a, dest, 0.35f);
+        }
+
+        public static void ClearWave()
+        {
+            if (_wave == null) return;
+            foreach (GameEntity e in _wave.Lights)
+                try { e?.Remove(0); } catch { }
+            _wave = null;
+        }
+
+        // ── Legacy aura stub ──────────────────────────────────────────────────
+        // Forwards to Wave so any residual call-sites compile.
+        private const string AuraId = "spell_aura";
+        public static void ExecuteAura(SpellCast cast) => ExecuteWave(cast);
     }
 }

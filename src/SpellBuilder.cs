@@ -73,7 +73,10 @@ namespace ColoursOfCalradia
             switch (Form)
             {
                 case SpellForm.Blast:   return $"Blast ({FormCount * 2}m range cone, 37°)";
-                case SpellForm.Aura:    return $"Aura ({FormCount} nodes, radius {FormCount * 2}m)";
+                case SpellForm.Aura:
+                    int waveGs  = 3 + Math.Max(0, (FormCount - 5) / 5);
+                    float waveR = Math.Max(3f, FormCount * 2f - 1f);
+                    return $"Wave ({waveGs}×{waveGs} grid, {waveR:F0}m)";
                 case SpellForm.Barrier: return $"Barrier ({FormCount} node{(FormCount > 1 ? "s" : "")})";
                 case SpellForm.Burst:   return $"Burst ({FormCount * 2}m radius)";
                 default:                return "Unknown form";
@@ -149,7 +152,7 @@ namespace ColoursOfCalradia
                 switch (cast.Form)
                 {
                     case SpellForm.Blast:   SpellEffects.ExecuteBlast(cast);   break;
-                    case SpellForm.Aura:    SpellEffects.ExecuteAura(cast);    break;
+                    case SpellForm.Aura:    SpellEffects.ExecuteWave(cast);    break;
                     case SpellForm.Barrier: SpellEffects.ExecuteBarrier(cast); break;
                     case SpellForm.Burst:   SpellEffects.ExecuteBurst(cast);   break;
                     default: return false;
