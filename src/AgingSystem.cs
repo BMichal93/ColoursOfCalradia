@@ -1,13 +1,11 @@
 // =============================================================================
-// LIFE & DEATH MAGIC — AgingSystem.cs  (SaturationSystem.cs)
-// Replaces Saturation with the aging cost mechanic.
-// Each battle spell ages the caster: 4 inputs = 1 day, +1 per 2 extra inputs.
-// Each campaign spell ages the caster by 1 day (mitigated by Sorcerer talent).
-// On reaching age 100, mage dies.
+// LIFE & DEATH MAGIC — AgingSystem.cs
+// Aging cost mechanic: each battle spell costs (totalInputs / 4) days,
+// each campaign spell costs 1 day (Resonance: 25% chance to skip).
+// On reaching age 100, the mage dies.
 // =============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
@@ -18,24 +16,6 @@ namespace ColoursOfCalradia
 {
     public static class AgingSystem
     {
-        // Stub properties kept so any lingering call-sites compile
-        public static bool IsPlayerBlight => false;
-        public static bool IsPlayerPrism  => false;
-        public static int  PlayerSaturation    => 0;
-        public static int  PlayerMaxSaturation => 99;
-
-        public static void ResetForNewGame() { }
-        public static void GainSaturation() { }
-        public static void GainSaturationCampaign() { }
-        public static void CheckNightReset() { }
-        public static void RecalcMax() { }
-        public static void TickKnockdown(float dt) { }
-        public static void FlushMaxDepletionPrompt() { }
-        public static void ClearKnockdowns() { }
-        public static void SetPlayerPrism(bool v) { }
-
-        public static void Save(IDataStore store) { }
-
         // ── Core aging ────────────────────────────────────────────────────────
 
         /// <summary>

@@ -1,7 +1,8 @@
 // =============================================================================
-// LIFE & DEATH MAGIC — MageKnowledge.cs  (ColourKnowledge.cs)
-// Tracks whether the player is a mage, manages the spellbook UI,
-// and provides the talent Learning tab.
+// LIFE & DEATH MAGIC — MageKnowledge.cs
+// Tracks whether the player carries the gift, manages the grimoire UI,
+// and provides the talent learning menu.
+// ColourKnowledge is a legacy alias kept for backward-compatible call sites.
 // =============================================================================
 
 using System;
